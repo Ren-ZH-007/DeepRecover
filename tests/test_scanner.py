@@ -67,7 +67,8 @@ class ScannerTests(unittest.TestCase):
         self.assertEqual(hashlib.sha256(self.source.read_bytes()).digest(), hashlib.sha256(data).digest())
         self.assertEqual([(c.file_type,c.offset,c.size,c.integrity) for c in results],
                          [('jpg',7,len(JPEG),'structure_checked'), ('png',7+len(JPEG)+3,len(png),'structure_checked')])
-        self.assertTrue(all(c.status == 'candidate' and not c.local_path and c.sha256 is None for c in results))
+        self.assertTrue(all(c.status == 'candidate' and not c.local_path and c.source_stat for c in results))
+        self.assertEqual([c.sha256 for c in results],[hashlib.sha256(JPEG).hexdigest(),hashlib.sha256(png).hexdigest()])
         self.assertEqual(list(self.root.iterdir()), [self.source])
 
     def test_signatures_cross_every_block_boundary_without_duplicates(self):

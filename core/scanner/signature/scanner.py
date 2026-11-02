@@ -4,6 +4,7 @@ import stat
 
 from core.scanner.image.validation import validate
 from storage.models.candidate import Candidate, CandidateStatus
+from core.candidate_io import snapshot, range_digest
 
 
 class ScanError(RuntimeError):
@@ -67,9 +68,11 @@ class SignatureScanner:
                         count += 1
                         token.report_progress(offset, total, count)
                         partial = validation.integrity in ('truncated', 'validation_limit')
+                        digest = range_digest(container, offset, validation.size, token) if validation.integrity == 'structure_checked' else None
                         yield Candidate(source='signature_scan', name=f'offset_{offset:016x}.{kind}',
                             file_type=kind, size=validation.size, original_path=str(source), offset=offset,
                             integrity=validation.integrity,
+                            sha256=digest, source_stat=snapshot(original),
                             status=CandidateStatus.PARTIAL if partial else (
                                 CandidateStatus.FAILED if validation.integrity == 'invalid_structure' else CandidateStatus.CANDIDATE))
                         skip = offset + (validation.size if validation.integrity == 'structure_checked' else 1)

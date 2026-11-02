@@ -28,6 +28,7 @@ class Candidate:
     source_id: str | None = None
     local_path: str = ""
     acquired_at: str | None = None
+    source_stat: dict | None = None
 
     def __post_init__(self):
         if self.size < 0 or (self.offset is not None and self.offset < 0):
