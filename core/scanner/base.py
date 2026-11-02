@@ -4,5 +4,5 @@ from core.tasks import CancellationToken
 from storage.models.candidate import Candidate
 
 class Scanner(Protocol):
-    """Reserved interface; signature carving is not implemented in v0.1.0."""
+    """Read-only candidates; offsets/lengths do not imply successful recovery."""
     def scan(self, source: Path, token: CancellationToken) -> Iterator[Candidate]: ...

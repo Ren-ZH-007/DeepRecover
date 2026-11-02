@@ -6,6 +6,7 @@ import unittest
 import hashlib
 import subprocess
 import shlex
+from threading import Event
 from unittest.mock import patch
 try:
     from PySide6.QtWidgets import QApplication
@@ -18,6 +19,9 @@ from storage.database.repository import Repository
 from storage.models.candidate import Candidate
 from storage.models.source import DataSource
 from core.device.android.adapter import AndroidAdapter
+from core.scanner.signature.scanner import SignatureScanner
+from core.tasks import TaskCancelled
+from tests.test_scanner import JPEG, png_image
 
 @unittest.skipUnless(QT_AVAILABLE,'PySide6 not installed')
 class UiTests(unittest.TestCase):
@@ -136,5 +140,98 @@ class UiTests(unittest.TestCase):
                 self.assertEqual(window.result_table.item(0,0).text(),'legacy.jpg')
                 self.assertIn('旧记录',window.result_source.text())
                 self.assertEqual(window.result_table.item(0,5).text(),'')
+            finally:
+                window.close()
+
+    def test_scan_ui_select_run_progress_offsets_and_reopen_history(self):
+        app=QApplication.instance() or QApplication([])
+        with tempfile.TemporaryDirectory() as directory:
+            source=Path(directory)/'source.img'
+            image=b'prefix'+png_image()+b'gap'+JPEG
+            source.write_bytes(image)
+            config=AppConfig(Path(directory)/'data'); config.initialize()
+            repo=Repository(config.database)
+            window=MainWindow(config,repo)
+            try:
+                self.assertFalse(window.scan_start_button.isEnabled())
+                with patch('app.main_window.QFileDialog.getOpenFileName',return_value=(str(source),'')):
+                    window.choose_scan_source()
+                self.assertTrue(window.scan_start_button.isEnabled())
+                window.scan_start_button.click()
+                self.finish_task(window)
+                self.assertEqual(window.scan_progress.value(),1000)
+                self.assertIn('completed',window.scan_status.text())
+                self.assertEqual(window.result_table.rowCount(),2)
+                self.assertEqual(window.result_table.item(0,8).text(),'6')
+                self.assertEqual(window.result_table.item(0,9).text(),'candidate')
+                self.assertEqual(window.result_table.item(0,5).text(),'')
+                task=window.result_task_id
+                self.assertEqual(repo.source(repo.task(task)['source_id'])['kind'],'image')
+            finally:
+                window.close()
+            source.unlink()  # Historical readback must not access the source.
+            window=MainWindow(config,Repository(config.database))
+            try:
+                window.nav.setCurrentRow(5)
+                window.history_table.selectRow(0)
+                window.open_history_result()
+                self.assertEqual(window.result_task_id,task)
+                self.assertEqual(window.result_table.rowCount(),2)
+                self.assertEqual(window.result_table.item(1,8).text(),str(6+len(png_image())+3))
+            finally:
+                window.close()
+
+    def test_scan_ui_cancel_preserves_partial_history_and_incomplete_progress(self):
+        app=QApplication.instance() or QApplication([])
+        with tempfile.TemporaryDirectory() as directory:
+            source=Path(directory)/'source.img'; source.write_bytes(png_image()+JPEG)
+            config=AppConfig(Path(directory)/'data'); config.initialize()
+            repo=Repository(config.database)
+            window=MainWindow(config,repo)
+            scanner=SignatureScanner()
+            ready,release=Event(),Event()
+            def cancelled_scan(path,token):
+                iterator=scanner.scan(path,token)
+                try:
+                    yield next(iterator)
+                    ready.set()
+                    if not release.wait(5):
+                        raise RuntimeError('UI did not release scanner')
+                    token.checkpoint()
+                finally:
+                    iterator.close()
+            try:
+                window.scan_source=source
+                with patch('app.main_window.SignatureScanner') as factory:
+                    factory.return_value.scan.side_effect=cancelled_scan
+                    window.start_scan()
+                    task=window.pending[0].id
+                    self.assertTrue(ready.wait(5))
+                    window.cancel_scan()
+                    release.set()
+                    with self.assertRaises(TaskCancelled): window.pending[0].future.result(5)
+                    window.poll()
+                self.assertLess(window.scan_progress.value(),1000)
+                self.assertIn('cancelled',window.scan_status.text())
+                self.assertEqual(repo.candidate_count(task),1)
+                window.nav.setCurrentRow(5)
+                window.history_table.selectRow(0)
+                window.open_history_result()
+                self.assertIn('cancelled',window.result_source.text())
+                self.assertEqual(window.result_table.rowCount(),1)
+            finally:
+                release.set()
+                window.close()
+
+    def test_scan_ui_rejects_working_database(self):
+        app=QApplication.instance() or QApplication([])
+        with tempfile.TemporaryDirectory() as directory:
+            config=AppConfig(Path(directory)); config.initialize()
+            window=MainWindow(config,Repository(config.database))
+            try:
+                with patch('app.main_window.QFileDialog.getOpenFileName',return_value=(str(config.database),'')):
+                    window.choose_scan_source()
+                self.assertIsNone(window.scan_source)
+                self.assertFalse(window.scan_start_button.isEnabled())
             finally:
                 window.close()
