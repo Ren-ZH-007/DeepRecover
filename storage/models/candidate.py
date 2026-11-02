@@ -25,6 +25,9 @@ class Candidate:
     is_cache: bool = False
     is_duplicate: bool = False
     id: str = field(default_factory=lambda: str(uuid4()))
+    source_id: str | None = None
+    local_path: str = ""
+    acquired_at: str | None = None
 
     def __post_init__(self):
         if self.size < 0 or (self.offset is not None and self.offset < 0):

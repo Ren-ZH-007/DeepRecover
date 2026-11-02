@@ -1,5 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from threading import Event
 import logging
 
@@ -29,17 +29,19 @@ class TaskManager:
         self.executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="deeprecover")
         self.handles = []
 
-    def submit(self, kind, operation, *, persist_candidates=False):
-        task_id = self.repository.create_task(kind)
+    def submit(self, kind, operation, *, persist_candidates=False, source=None, batch_size=100):
+        if not 1 <= batch_size <= 1000:
+            raise ValueError("Invalid batch size")
+        task_id = self.repository.create_task(kind, source)
         token = CancellationToken()
         def run():
             self.repository.update_task(task_id, "running")
             try:
                 token.checkpoint()
                 result = operation(token)
-                token.checkpoint()
                 if persist_candidates:
-                    self.repository.add_candidates(task_id, result)
+                    result = self.persist(task_id, result, token, source, batch_size)
+                token.checkpoint()
                 self.repository.update_task(task_id, "completed")
                 return result
             except TaskCancelled:
@@ -54,6 +56,29 @@ class TaskManager:
         handle = TaskHandle(task_id, token, self.executor.submit(run))
         self.handles.append(handle)
         return handle
+
+    def persist(self, task_id, candidates, token, source, batch_size):
+        iterator = iter(candidates)
+        try:
+            batch, count = [], 0
+            for candidate in iterator:
+                # Persist completed pulls before honoring cancellation at the
+                # storage hand-off. Acquisition uses one file per transaction.
+                if not candidate.acquired_at:
+                    token.checkpoint()
+                batch.append(replace(candidate, source_id=source.id) if source else candidate)
+                if len(batch) >= batch_size:
+                    self.repository.add_candidates(task_id, batch)
+                    count += len(batch)
+                    batch.clear()
+                token.checkpoint()
+            if batch:
+                self.repository.add_candidates(task_id, batch)
+                count += len(batch)
+            return count
+        finally:
+            if hasattr(iterator, 'close'):
+                iterator.close()
 
     def shutdown(self):
         for handle in self.handles:

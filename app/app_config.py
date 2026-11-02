@@ -17,5 +17,5 @@ class AppConfig:
         return self.data_dir / "index.db"
 
     def initialize(self):
-        for name in ("Devices", "Backups", "ScanCache", "Recovered", "Reports", "Logs"):
+        for name in ("Devices", "Backups", "Acquisitions", "ScanCache", "Recovered", "Reports", "Logs"):
             (self.data_dir / name).mkdir(parents=True, exist_ok=True)
