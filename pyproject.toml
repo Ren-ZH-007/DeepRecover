@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "deeprecover"
+version = "0.1.0"
+description = "Local mobile data recovery workbench — phase 1 foundation"
+requires-python = ">=3.12"
+dependencies = ["PySide6==6.8.3"]
+
+[project.scripts]
+deeprecover = "app.bootstrap:main"
+
+[tool.setuptools.packages.find]
+include = ["app*", "core*", "storage*", "ui*"]
