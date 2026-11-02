@@ -1,19 +1,40 @@
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, replace
-from threading import Event
+from threading import Event, Lock
 import logging
 
 class TaskCancelled(Exception):
     pass
 
+@dataclass(frozen=True)
+class Progress:
+    processed: int
+    total: int
+    candidates: int
+
 class CancellationToken:
     def __init__(self):
         self._event = Event()
+        self._progress_lock = Lock()
+        self._progress = None
     def cancel(self):
         self._event.set()
     def checkpoint(self):
         if self._event.is_set():
             raise TaskCancelled()
+
+    @property
+    def progress(self):
+        with self._progress_lock:
+            return self._progress
+
+    def report_progress(self, processed, total, candidates):
+        if not 0 <= processed <= total or candidates < 0:
+            raise ValueError('Invalid progress')
+        with self._progress_lock:
+            if self._progress and (total != self._progress.total or processed < self._progress.processed or candidates < self._progress.candidates):
+                raise ValueError('Progress cannot go backwards')
+            self._progress = Progress(processed, total, candidates)
 
 @dataclass
 class TaskHandle:

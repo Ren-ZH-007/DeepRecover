@@ -1,7 +1,7 @@
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (QAbstractItemView, QFileDialog, QHBoxLayout, QLabel,
     QListWidget, QMainWindow, QPushButton, QStackedWidget, QTableWidget,
-    QTableWidgetItem, QVBoxLayout, QWidget, QHeaderView, QInputDialog, QMessageBox)
+    QTableWidgetItem, QVBoxLayout, QWidget, QHeaderView, QInputDialog, QMessageBox, QProgressBar)
 from app.navigation import PAGES
 from core.tasks import TaskManager, TaskCancelled
 from core.device.android.adapter import AndroidAdapter, AdbError
@@ -9,6 +9,7 @@ from core.device.ios.discovery import discover_backups
 from core.parser.ios_backup.manifest import iter_manifest, BackupError
 from core.acquisition.android import acquire_files
 from storage.models.source import DataSource
+from core.scanner.signature.scanner import SignatureScanner, ScanError
 
 STYLE = '''
 QWidget { background: #101823; color: #dbe5f2; font-family: "Segoe UI"; font-size: 14px; }
@@ -38,7 +39,8 @@ class MainWindow(QMainWindow):
         self.result_offset = 0
         self.page_size = 100
         self.history = []
-        self.setWindowTitle('DeepRecover · 第一阶段 M2 · 0.1.0')
+        self.scan_source = None
+        self.setWindowTitle('DeepRecover · 第一阶段 M3 · 0.1.0')
         self.resize(1180, 780)
         self.setMinimumSize(880, 620)
         self.setStyleSheet(STYLE)
@@ -59,7 +61,7 @@ class MainWindow(QMainWindow):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.poll)
         self.timer.start(100)
-        self.statusBar().showMessage('本地处理 · M2 授权文件采集与索引 · 未执行设备操作')
+        self.statusBar().showMessage('本地处理 · M3 JPG/PNG 连续签名扫描 · 未执行设备操作')
 
     def page(self, title, subtitle):
         page = QWidget()
@@ -92,8 +94,8 @@ class MainWindow(QMainWindow):
         return button
 
     def build_pages(self):
-        box = self.page('DeepRecover', '手机数据恢复工作台 / 第一阶段 M2 · 授权采集与来源追踪')
-        label = QLabel('已就绪\n\n• 本地数据库与 v2 迁移\n• Android 授权设备与选中文件采集\n• iPhone 本地备份发现与只读索引\n• 数据来源、分页与历史结果回读\n• 后台任务、取消和任务记录\n\n下一里程碑\n\n连续文件签名扫描 → 预览 → 批量导出及校验')
+        box = self.page('DeepRecover', '手机数据恢复工作台 / 第一阶段 M3 · 连续签名扫描')
+        label = QLabel('已就绪\n\n• 本地数据库与 v2 迁移\n• Android 授权设备与选中文件采集\n• iPhone 本地备份发现与只读索引\n• 数据来源、分页与历史结果回读\n• JPG/PNG 连续签名扫描、结构检查和偏移\n• 后台任务、进度与取消\n\n下一里程碑\n\n预览 → 分类 → 批量导出及校验')
         label.setWordWrap(True); box.addWidget(label)
         box.addStretch()
         box.addWidget(QLabel('索引中的文件仅为候选记录，不代表已恢复或已验证完整。'))
@@ -115,15 +117,28 @@ class MainWindow(QMainWindow):
         self.button(row, '选择备份目录', self.choose_backup)
         self.button(row, '读取选中备份索引', self.parse_backup)
         self.backup_table = self.table(['设备', 'iOS 版本', '加密状态', '备份时间', '目录']); box.addWidget(self.backup_table)
-        box = self.page('文件扫描', '扫描引擎接口已建立，文件签名扫描将在下一里程碑实现。')
-        button = QPushButton('开始扫描 · 待实现'); button.setEnabled(False); box.addWidget(button); box.addStretch()
-        box = self.page('恢复结果 / 候选索引', '普通文件采集和备份索引不等于已删除数据恢复。未检查文件结构；SHA-256 仅表示本地副本摘要，不证明采集时源文件稳定。')
+        box = self.page('文件扫描', '只读扫描本地普通文件或镜像中的连续 JPG/PNG 签名。记录偏移和结构检查结果，不提取文件、不分析文件系统或重组碎片，无法判断数据是否已删除。')
+        self.button(box, '选择本地镜像或文件', self.choose_scan_source)
+        self.scan_source_label = QLabel('尚未选择源文件。')
+        self.scan_source_label.setTextFormat(Qt.TextFormat.PlainText)
+        self.scan_source_label.setWordWrap(True)
+        box.addWidget(self.scan_source_label)
+        self.scan_start_button = self.button(box, '开始 JPG/PNG 签名扫描', self.start_scan)
+        self.scan_start_button.setEnabled(False)
+        self.button(box, '停止扫描', self.cancel_scan)
+        self.scan_progress = QProgressBar(); self.scan_progress.setRange(0, 1000); box.addWidget(self.scan_progress)
+        self.scan_status = QLabel('单个候选最多检查 64 MiB；PNG 解压检查最多 256 MiB；最多 10,000 个候选。\n结构检查不等于完整像素解码、可预览或恢复成功。')
+        self.scan_status.setWordWrap(True); box.addWidget(self.scan_status); box.addStretch()
+        box = self.page('恢复结果 / 候选索引', '普通文件采集和备份索引不等于已删除数据恢复。structure_checked 仅表示支持的结构检查通过；SHA-256 仅表示本地采集副本摘要。扫描候选不生成副本。')
         self.result_source = QLabel('从任务记录选择任务回读结果。')
         self.result_source.setWordWrap(True)
         self.result_source.setTextFormat(Qt.TextFormat.PlainText)
         self.result_source.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         box.addWidget(self.result_source)
-        self.result_table = self.table(['文件名', '类型', '大小 / 字节', '完整性', '原始路径', '本地文件', 'SHA-256', '采集时间 / UTC']); box.addWidget(self.result_table)
+        self.result_table = self.table(['文件名', '类型', '大小 / 字节', '完整性', '原始路径', '本地文件', 'SHA-256', '采集时间 / UTC', '源内偏移 / 字节', '候选状态']); box.addWidget(self.result_table)
+        self.result_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
+        for column in range(self.result_table.columnCount()):
+            self.result_table.setColumnWidth(column, 150)
         row = QHBoxLayout(); box.addLayout(row)
         self.previous_page = self.button(row, '上一页', lambda: self.change_result_page(-1))
         self.result_page_label = QLabel('0 条'); row.addWidget(self.result_page_label)
@@ -148,7 +163,13 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage('任务执行中…')
 
     def poll(self):
-        if self.pending is None or not self.pending[0].future.done():
+        if self.pending is None:
+            return
+        progress = self.pending[0].token.progress
+        if progress is not None:
+            self.scan_progress.setValue(progress.processed * 1000 // progress.total if progress.total else 0)
+            self.scan_status.setText(f'已扫描 {progress.processed} / {progress.total} 字节 · {progress.candidates} 个签名候选（不等于恢复成功）')
+        if not self.pending[0].future.done():
             return
         handle, callback = self.pending
         self.pending = None
@@ -158,11 +179,45 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage('任务完成。')
         except TaskCancelled:
             self.statusBar().showMessage('任务已停止。')
-        except (AdbError, BackupError) as error:
+        except (AdbError, BackupError, ScanError) as error:
             self.statusBar().showMessage(str(error))
         except Exception as error:
             self.statusBar().showMessage(f'操作未完成（{type(error).__name__}），请检查数据源和目录权限。')
+        if progress is not None:
+            task = self.repository.task(handle.id)
+            self.scan_status.setText(self.scan_status.text() + f" · 任务状态：{task['status']}，已入库 {self.repository.candidate_count(handle.id)} 条")
+            if task['status'] == 'completed':
+                self.scan_progress.setValue(1000)
         self.refresh_history()
+
+    def choose_scan_source(self):
+        if self.pending:
+            self.statusBar().showMessage('请等待或停止当前任务后再选择扫描源。'); return
+        filename, _ = QFileDialog.getOpenFileName(self, '选择只读扫描源', '', '镜像或文件 (*.img *.dd *.bin *.jpg *.jpeg *.png);;所有文件 (*)')
+        if filename:
+            from pathlib import Path
+            source = Path(filename).resolve()
+            if not source.is_file() or source == self.config.database.resolve() or source.is_relative_to((self.config.data_dir / 'Logs').resolve()):
+                self.statusBar().showMessage('请选择稳定的普通文件；不能扫描程序工作数据库或日志。'); return
+            self.scan_source = source
+            self.scan_source_label.setText(str(source))
+            self.scan_start_button.setEnabled(True)
+
+    def start_scan(self):
+        if self.scan_source is None or self.pending:
+            self.statusBar().showMessage('请先选择扫描源，并等待当前任务结束。'); return
+        source = self.scan_source
+        self.scan_progress.setValue(0)
+        self.scan_status.setText('正在只读扫描…')
+        self.run_task('signature_scan', lambda token: SignatureScanner().scan(source, token),
+                      lambda _, task_id: self.open_results(task_id), persist_candidates=True,
+                      source=DataSource('image', str(source), source.name), batch_size=1)
+
+    def cancel_scan(self):
+        if self.pending and self.repository.task(self.pending[0].id)['kind'] == 'signature_scan':
+            self.cancel_task()
+        else:
+            self.statusBar().showMessage('当前没有正在执行的扫描任务。')
 
     def detect_android(self):
         def complete(devices, _):
@@ -246,7 +301,8 @@ class MainWindow(QMainWindow):
         self.result_offset = min(self.result_offset, max(0, (total - 1) // self.page_size * self.page_size))
         candidates = self.repository.candidate_page(self.result_task_id, offset=self.result_offset, limit=self.page_size)
         self.fill(self.result_table, [(c['name'], c['file_type'], c['size'], c['integrity'], c['original_path'],
-                                      c.get('local_path', ''), c.get('sha256') or '', c.get('acquired_at') or '') for c in candidates])
+                                      c.get('local_path', ''), c.get('sha256') or '', c.get('acquired_at') or '',
+                                      c.get('offset') if c.get('offset') is not None else '', c['status']) for c in candidates])
         description = f"{source['kind']} · {source['label']} · {source['locator']}" if source else '旧记录：未保存独立数据源，见原始路径'
         self.result_source.setText(f"任务 {task['id']} · {task['status']}\n来源：{description}\n取消、失败或中断任务仅展示已入库的部分结果。历史路径可能已失效，不自动重新采集。")
         self.result_page_label.setText(f'{self.result_offset + 1 if total else 0}–{self.result_offset + len(candidates)} / {total} 条')
@@ -275,7 +331,10 @@ class MainWindow(QMainWindow):
     def cancel_task(self):
         if self.pending:
             self.pending[0].cancel()
-            self.statusBar().showMessage('已请求停止；正在进行的 ADB pull 最长等待 60 秒，其他 ADB 调用最长 15 秒。')
+            if self.repository.task(self.pending[0].id)['kind'] == 'signature_scan':
+                self.statusBar().showMessage('已请求停止扫描；已入库的候选记录会保留。')
+            else:
+                self.statusBar().showMessage('已请求停止；正在进行的 ADB pull 最长等待 60 秒，其他 ADB 调用最长 15 秒。')
 
     def closeEvent(self, event):
         if self.pending and not self.pending[0].future.done():
