@@ -6,6 +6,7 @@ import tempfile
 
 from core.device.android.adapter import AdbError
 from storage.models.candidate import Candidate
+from core.candidate_io import snapshot
 
 
 def acquire_files(adapter, serial, paths, destination, token):
@@ -45,4 +46,5 @@ def acquire_files(adapter, serial, paths, destination, token):
                         size=final.stat().st_size, original_path=remote,
                         local_path=str(final.resolve()), sha256=digest.hexdigest(),
                         acquired_at=datetime.now(timezone.utc).isoformat(),
+                        source_stat=snapshot(final.stat()),
                         integrity='not_checked')

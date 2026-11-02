@@ -1,7 +1,8 @@
 from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (QAbstractItemView, QFileDialog, QHBoxLayout, QLabel,
     QListWidget, QMainWindow, QPushButton, QStackedWidget, QTableWidget,
-    QTableWidgetItem, QVBoxLayout, QWidget, QHeaderView, QInputDialog, QMessageBox, QProgressBar)
+    QTableWidgetItem, QVBoxLayout, QWidget, QHeaderView, QInputDialog, QMessageBox, QProgressBar, QComboBox, QSplitter)
 from app.navigation import PAGES
 from core.tasks import TaskManager, TaskCancelled
 from core.device.android.adapter import AndroidAdapter, AdbError
@@ -10,6 +11,10 @@ from core.parser.ios_backup.manifest import iter_manifest, BackupError
 from core.acquisition.android import acquire_files
 from storage.models.source import DataSource
 from core.scanner.signature.scanner import SignatureScanner, ScanError
+from core.candidate_io import CandidateAccessError
+from core.preview.images import preview_image
+from core.export.service import export_batch, ExportError
+from ui.recovery.export_history import ExportHistory
 
 STYLE = '''
 QWidget { background: #101823; color: #dbe5f2; font-family: "Segoe UI"; font-size: 14px; }
@@ -40,7 +45,10 @@ class MainWindow(QMainWindow):
         self.page_size = 100
         self.history = []
         self.scan_source = None
-        self.setWindowTitle('DeepRecover · 第一阶段 M3 · 0.1.0')
+        self.current_candidates = []
+        self.preview_candidate_id = None
+        self.export_dialog = None
+        self.setWindowTitle('DeepRecover · 第一阶段 M4 · 0.1.0')
         self.resize(1180, 780)
         self.setMinimumSize(880, 620)
         self.setStyleSheet(STYLE)
@@ -61,7 +69,7 @@ class MainWindow(QMainWindow):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.poll)
         self.timer.start(100)
-        self.statusBar().showMessage('本地处理 · M3 JPG/PNG 连续签名扫描 · 未执行设备操作')
+        self.statusBar().showMessage('本地处理 · M4 图片预览与校验导出 · 未执行设备操作')
 
     def page(self, title, subtitle):
         page = QWidget()
@@ -94,8 +102,8 @@ class MainWindow(QMainWindow):
         return button
 
     def build_pages(self):
-        box = self.page('DeepRecover', '手机数据恢复工作台 / 第一阶段 M3 · 连续签名扫描')
-        label = QLabel('已就绪\n\n• 本地数据库与 v2 迁移\n• Android 授权设备与选中文件采集\n• iPhone 本地备份发现与只读索引\n• 数据来源、分页与历史结果回读\n• JPG/PNG 连续签名扫描、结构检查和偏移\n• 后台任务、进度与取消\n\n下一里程碑\n\n预览 → 分类 → 批量导出及校验')
+        box = self.page('DeepRecover', '手机数据恢复工作台 / 第一阶段 M4 · 图片预览与校验导出')
+        label = QLabel('已就绪\n\n• 本地数据库与 v3 迁移\n• Android 授权普通文件采集\n• iPhone 本地备份发现与只读索引\n• JPG/PNG 连续签名扫描与偏移\n• 图片预览、分类筛选和历史回读\n• 批量导出、防覆盖、SHA-256 对照清单\n\n下一里程碑\n\n真实手机/备份 → Windows 实机 → 安装包验收')
         label.setWordWrap(True); box.addWidget(label)
         box.addStretch()
         box.addWidget(QLabel('索引中的文件仅为候选记录，不代表已恢复或已验证完整。'))
@@ -129,13 +137,35 @@ class MainWindow(QMainWindow):
         self.scan_progress = QProgressBar(); self.scan_progress.setRange(0, 1000); box.addWidget(self.scan_progress)
         self.scan_status = QLabel('单个候选最多检查 64 MiB；PNG 解压检查最多 256 MiB；最多 10,000 个候选。\n结构检查不等于完整像素解码、可预览或恢复成功。')
         self.scan_status.setWordWrap(True); box.addWidget(self.scan_status); box.addStretch()
-        box = self.page('恢复结果 / 候选索引', '普通文件采集和备份索引不等于已删除数据恢复。structure_checked 仅表示支持的结构检查通过；SHA-256 仅表示本地采集副本摘要。扫描候选不生成副本。')
+        box = self.page('恢复结果 / 候选索引', '分类依据类型元数据；普通文件复制不等于已删除数据恢复。预览仅支持 JPG/PNG；导出前检查来源，导出后核对 SHA-256，原始候选状态保持不变。')
         self.result_source = QLabel('从任务记录选择任务回读结果。')
         self.result_source.setWordWrap(True)
         self.result_source.setTextFormat(Qt.TextFormat.PlainText)
         self.result_source.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         box.addWidget(self.result_source)
-        self.result_table = self.table(['文件名', '类型', '大小 / 字节', '完整性', '原始路径', '本地文件', 'SHA-256', '采集时间 / UTC', '源内偏移 / 字节', '候选状态']); box.addWidget(self.result_table)
+        row = QHBoxLayout(); box.addLayout(row)
+        self.category_filter = QComboBox()
+        for label, value in [('全部类型','all'),('图片','image'),('视频','video'),('音频','audio'),('文档','document'),('其他','other')]:
+            self.category_filter.addItem(label,value)
+        row.addWidget(self.category_filter)
+        self.status_filter = QComboBox()
+        for label, value in [('全部状态','all'),('候选','candidate'),('部分/受限','partial'),('失败','failed')]:
+            self.status_filter.addItem(label,value)
+        row.addWidget(self.status_filter)
+        self.category_filter.currentIndexChanged.connect(self.filter_results)
+        self.status_filter.currentIndexChanged.connect(self.filter_results)
+        splitter = QSplitter(); box.addWidget(splitter,1)
+        self.result_table = self.table(['文件名', '类型', '大小 / 字节', '完整性', '原始路径', '本地文件', '来源范围 SHA-256', '采集时间 / UTC', '源内偏移 / 字节', '候选状态'])
+        self.result_table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        splitter.addWidget(self.result_table)
+        preview = QWidget(); preview_box = QVBoxLayout(preview); splitter.addWidget(preview)
+        self.preview_label = QLabel('选择一张 JPG/PNG，再点击预览。')
+        self.preview_label.setWordWrap(True); self.preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.preview_label.setTextFormat(Qt.TextFormat.PlainText); self.preview_label.setMinimumWidth(240)
+        self.result_table.itemSelectionChanged.connect(self.clear_preview)
+        preview_box.addWidget(self.preview_label)
+        self.preview_button = self.button(preview_box, '预览选中图片', self.preview_selected)
+        splitter.setSizes([650,280])
         self.result_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         for column in range(self.result_table.columnCount()):
             self.result_table.setColumnWidth(column, 150)
@@ -144,6 +174,12 @@ class MainWindow(QMainWindow):
         self.result_page_label = QLabel('0 条'); row.addWidget(self.result_page_label)
         self.next_page = self.button(row, '下一页', lambda: self.change_result_page(1))
         self.previous_page.setEnabled(False); self.next_page.setEnabled(False)
+        row = QHBoxLayout(); box.addLayout(row)
+        self.export_selected_button = self.button(row,'导出选中项（本页）',lambda: self.export_results(False))
+        self.export_all_button = self.button(row,'导出全部筛选结果',lambda: self.export_results(True))
+        self.button(row,'停止当前导出',self.cancel_export)
+        self.export_progress = QProgressBar(); self.export_progress.setRange(0,1000); box.addWidget(self.export_progress)
+        self.export_status = QLabel('导出使用新批次目录和生成文件名，不覆盖现有文件。'); self.export_status.setWordWrap(True); box.addWidget(self.export_status)
         box = self.page('任务记录', '显示最近 200 条任务。异常退出后的未完成任务标记为 interrupted；暂不支持断点续扫。')
         self.button(box, '刷新任务记录', self.refresh_history)
         self.button(box, '停止当前任务', self.cancel_task)
@@ -155,20 +191,23 @@ class MainWindow(QMainWindow):
         label.setWordWrap(True); label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         box.addWidget(label); box.addStretch()
 
-    def run_task(self, kind, operation, on_success, *, persist_candidates=False, source=None, batch_size=100):
+    def run_task(self, kind, operation, on_success, *, persist_candidates=False, source=None, batch_size=100, with_task_id=False):
         if self.pending:
             self.statusBar().showMessage('已有任务执行中，请等待或在任务记录页停止。'); return
         self.pending = (self.manager.submit(kind, operation, persist_candidates=persist_candidates,
-                                            source=source, batch_size=batch_size), on_success)
+                                            source=source, batch_size=batch_size, with_task_id=with_task_id), on_success)
         self.statusBar().showMessage('任务执行中…')
 
     def poll(self):
         if self.pending is None:
             return
         progress = self.pending[0].token.progress
-        if progress is not None:
+        if progress is not None and progress.phase == 'scan':
             self.scan_progress.setValue(progress.processed * 1000 // progress.total if progress.total else 0)
             self.scan_status.setText(f'已扫描 {progress.processed} / {progress.total} 字节 · {progress.candidates} 个签名候选（不等于恢复成功）')
+        elif progress is not None and progress.phase == 'export':
+            self.export_progress.setValue(progress.processed * 1000 // progress.total if progress.total else 0)
+            self.export_status.setText(f'已处理 {progress.processed} / {progress.total} 项 · 已校验导出 {progress.candidates} 项')
         if not self.pending[0].future.done():
             return
         handle, callback = self.pending
@@ -179,16 +218,80 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage('任务完成。')
         except TaskCancelled:
             self.statusBar().showMessage('任务已停止。')
-        except (AdbError, BackupError, ScanError) as error:
+        except (AdbError, BackupError, ScanError, CandidateAccessError, ExportError) as error:
             self.statusBar().showMessage(str(error))
         except Exception as error:
             self.statusBar().showMessage(f'操作未完成（{type(error).__name__}），请检查数据源和目录权限。')
-        if progress is not None:
+        if progress is not None and progress.phase == 'scan':
             task = self.repository.task(handle.id)
             self.scan_status.setText(self.scan_status.text() + f" · 任务状态：{task['status']}，已入库 {self.repository.candidate_count(handle.id)} 条")
             if task['status'] == 'completed':
                 self.scan_progress.setValue(1000)
+        task = self.repository.task(handle.id)
+        if task['kind'] == 'image_preview' and task['status'] != 'completed' and self.preview_candidate_id is not None:
+            self.preview_label.setText(self.statusBar().currentMessage())
+        if task['kind'] == 'export':
+            self.export_status.setText(self.export_status.text() + f" · 任务状态：{task['status']}，详见导出记录")
+            self.show_export_history(handle.id)
         self.refresh_history()
+
+    def filter_results(self, *_):
+        self.result_offset = 0
+        if self.result_task_id:
+            self.load_result_page()
+
+    def selected_candidate_ids(self):
+        return [self.current_candidates[index.row()]['id'] for index in self.result_table.selectionModel().selectedRows()]
+
+    def clear_preview(self):
+        self.preview_candidate_id = None
+        self.preview_label.clear()
+        self.preview_label.setText('选择一张 JPG/PNG，再点击预览。')
+
+    def preview_selected(self):
+        ids = self.selected_candidate_ids()
+        if len(ids) != 1 or self.pending:
+            self.statusBar().showMessage('请选择一张图片，并等待当前任务结束。'); return
+        selected, task_id = ids[0], self.result_task_id
+        self.preview_candidate_id = selected
+        self.preview_label.clear(); self.preview_label.setText('正在校验来源并解码图片…')
+        def complete(image, _):
+            if self.result_task_id == task_id and self.preview_candidate_id == selected:
+                self.preview_label.setPixmap(QPixmap.fromImage(image).scaled(280,240,Qt.AspectRatioMode.KeepAspectRatio,Qt.TransformationMode.SmoothTransformation))
+                self.preview_label.setToolTip('本地解码预览；不更改候选状态，不表示已删除数据恢复成功。')
+        self.run_task('image_preview',lambda token: preview_image(self.repository,selected,self.config.data_dir,token),complete)
+
+    def export_results(self, all_filtered):
+        if self.pending or not self.result_task_id:
+            self.statusBar().showMessage('请先打开结果并等待当前任务结束。'); return
+        try:
+            ids = self.repository.candidate_ids(self.result_task_id,category=self.category_filter.currentData(),status=self.status_filter.currentData()) if all_filtered else self.selected_candidate_ids()
+        except ValueError as error:
+            self.statusBar().showMessage(str(error)); return
+        if not ids:
+            self.statusBar().showMessage('没有选中或符合筛选条件的候选。'); return
+        directory = QFileDialog.getExistingDirectory(self,'选择本地导出目录',str(self.config.data_dir / 'Recovered'))
+        if not directory:
+            return
+        if QMessageBox.question(self,'确认本地批量导出',f'导出 {len(ids)} 项到新批次目录。\n源文件保持只读；复制不等于已删除数据恢复。\n失败或取消时保留此前已校验文件和本地清单，是否继续？',
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
+            return
+        self.export_progress.setValue(0); self.export_status.setText('正在导出并核对来源与目标摘要…')
+        self.run_task('export',lambda token,task_id: export_batch(self.repository,task_id,tuple(ids),directory,self.config.data_dir,token),
+                      lambda *_: None,with_task_id=True)
+
+    def cancel_export(self):
+        if self.pending and self.repository.task(self.pending[0].id)['kind'] == 'export':
+            self.cancel_task()
+        else:
+            self.statusBar().showMessage('当前没有正在执行的导出任务。')
+
+    def show_export_history(self, task_id):
+        if self.export_dialog:
+            self.export_dialog.close()
+            self.export_dialog.deleteLater()
+        self.export_dialog = ExportHistory(self.repository,task_id,self)
+        self.export_dialog.show()
 
     def choose_scan_source(self):
         if self.pending:
@@ -287,8 +390,14 @@ class MainWindow(QMainWindow):
                       source=DataSource('ios_backup', str(path), self.backups[row].device_name))
 
     def open_results(self, task_id):
+        task = self.repository.task(task_id)
+        if task and task['kind'] == 'export':
+            self.show_export_history(task_id); return
         self.result_task_id = task_id
         self.result_offset = 0
+        self.category_filter.blockSignals(True); self.status_filter.blockSignals(True)
+        self.category_filter.setCurrentIndex(0); self.status_filter.setCurrentIndex(0)
+        self.category_filter.blockSignals(False); self.status_filter.blockSignals(False)
         self.load_result_page()
         self.nav.setCurrentRow(4)
 
@@ -297,9 +406,13 @@ class MainWindow(QMainWindow):
         if task is None:
             return
         source = self.repository.source(task['source_id']) if task['source_id'] else None
-        total = self.repository.candidate_count(self.result_task_id)
+        filters = {'category':self.category_filter.currentData(),'status':self.status_filter.currentData()}
+        total = self.repository.candidate_count(self.result_task_id,**filters)
         self.result_offset = min(self.result_offset, max(0, (total - 1) // self.page_size * self.page_size))
-        candidates = self.repository.candidate_page(self.result_task_id, offset=self.result_offset, limit=self.page_size)
+        candidates = self.repository.candidate_page(self.result_task_id, offset=self.result_offset, limit=self.page_size,**filters)
+        self.current_candidates = candidates
+        self.preview_candidate_id = None
+        self.preview_label.clear(); self.preview_label.setText('选择一张 JPG/PNG，再点击预览。')
         self.fill(self.result_table, [(c['name'], c['file_type'], c['size'], c['integrity'], c['original_path'],
                                       c.get('local_path', ''), c.get('sha256') or '', c.get('acquired_at') or '',
                                       c.get('offset') if c.get('offset') is not None else '', c['status']) for c in candidates])
@@ -333,6 +446,8 @@ class MainWindow(QMainWindow):
             self.pending[0].cancel()
             if self.repository.task(self.pending[0].id)['kind'] == 'signature_scan':
                 self.statusBar().showMessage('已请求停止扫描；已入库的候选记录会保留。')
+            elif self.repository.task(self.pending[0].id)['kind'] in ('export','image_preview'):
+                self.statusBar().showMessage('已请求停止；此前已校验的导出文件和记录会保留。')
             else:
                 self.statusBar().showMessage('已请求停止；正在进行的 ADB pull 最长等待 60 秒，其他 ADB 调用最长 15 秒。')
 

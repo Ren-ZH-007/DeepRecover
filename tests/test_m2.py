@@ -14,7 +14,7 @@ from core.acquisition.android import acquire_files
 from core.device.android.adapter import AndroidAdapter, AdbError
 from core.parser.ios_backup.manifest import iter_manifest
 from core.tasks import CancellationToken, TaskCancelled, TaskManager
-from storage.database.repository import Repository
+from storage.database.repository import Repository, SCHEMA_VERSION
 from storage.models.candidate import Candidate
 from storage.models.source import DataSource
 
@@ -54,7 +54,7 @@ class M2Tests(unittest.TestCase):
     def test_migrate_v1_preserves_tasks_and_legacy_payload(self):
         path = self.root / 'v1.db'
         payload = asdict(Candidate('ios_backup', 'old.jpg', 'jpg', 5))
-        for name in ('source_id', 'local_path', 'acquired_at'):
+        for name in ('source_id', 'local_path', 'acquired_at', 'source_stat'):
             payload.pop(name)
         with sqlite3.connect(path) as db:
             db.execute('CREATE TABLE tasks(id TEXT PRIMARY KEY,kind TEXT NOT NULL,status TEXT NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL,error_code TEXT)')
@@ -68,7 +68,7 @@ class M2Tests(unittest.TestCase):
         self.assertEqual(migrated.candidate_page('task')[0], payload)
         self.assertEqual(Repository(path).candidate_count('task'), 1)
         with sqlite3.connect(path) as db:
-            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], 2)
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], SCHEMA_VERSION)
 
     def test_source_and_paginated_results_survive_reopen(self):
         source = DataSource('android', 'SERIAL', 'Phone')

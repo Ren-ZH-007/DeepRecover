@@ -11,6 +11,7 @@ class Progress:
     processed: int
     total: int
     candidates: int
+    phase: str = 'scan'
 
 class CancellationToken:
     def __init__(self):
@@ -28,13 +29,13 @@ class CancellationToken:
         with self._progress_lock:
             return self._progress
 
-    def report_progress(self, processed, total, candidates):
+    def report_progress(self, processed, total, candidates, phase='scan'):
         if not 0 <= processed <= total or candidates < 0:
             raise ValueError('Invalid progress')
         with self._progress_lock:
             if self._progress and (total != self._progress.total or processed < self._progress.processed or candidates < self._progress.candidates):
                 raise ValueError('Progress cannot go backwards')
-            self._progress = Progress(processed, total, candidates)
+            self._progress = Progress(processed, total, candidates, phase)
 
 @dataclass
 class TaskHandle:
@@ -50,7 +51,7 @@ class TaskManager:
         self.executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="deeprecover")
         self.handles = []
 
-    def submit(self, kind, operation, *, persist_candidates=False, source=None, batch_size=100):
+    def submit(self, kind, operation, *, persist_candidates=False, source=None, batch_size=100, with_task_id=False):
         if not 1 <= batch_size <= 1000:
             raise ValueError("Invalid batch size")
         task_id = self.repository.create_task(kind, source)
@@ -59,7 +60,7 @@ class TaskManager:
             self.repository.update_task(task_id, "running")
             try:
                 token.checkpoint()
-                result = operation(token)
+                result = operation(token, task_id) if with_task_id else operation(token)
                 if persist_candidates:
                     result = self.persist(task_id, result, token, source, batch_size)
                 token.checkpoint()

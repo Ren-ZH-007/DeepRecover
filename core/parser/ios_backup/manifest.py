@@ -4,6 +4,7 @@ import re
 import sqlite3
 from core.device.ios.discovery import inspect_backup
 from storage.models.candidate import Candidate
+from core.candidate_io import snapshot
 
 class BackupError(RuntimeError):
     pass
@@ -44,10 +45,12 @@ def iter_manifest(path, token=None, limit=None):
                 if not blob.is_file():
                     blob = backup.path / file_id
                 exists = blob.is_file() and blob.resolve().is_relative_to(backup.path)
+                info = blob.stat() if exists else None
                 name = str(relative_path or file_id).replace("\\", "/").rsplit("/", 1)[-1]
                 yield Candidate(source="ios_backup", name=name, file_type=Path(name).suffix.lower().lstrip("."),
-                    size=blob.stat().st_size if exists else 0,
+                    size=info.st_size if info else 0,
                     original_path=f"{domain}/{relative_path}", local_path=str(blob) if exists else "",
+                    source_stat=snapshot(info) if info else None,
                     integrity="not_checked" if exists else "missing")
     except sqlite3.Error as error:
         if token:
