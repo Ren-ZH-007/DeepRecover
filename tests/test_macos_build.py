@@ -36,7 +36,8 @@ class MacOSBuildVerificationTests(unittest.TestCase):
         self.report = self.root / 'report.json'
         self.payload = {'success': True, 'version': '0.3.0', 'schema_version': 3,
                         'navigation_pages': 7, 'verified_exports': 2,
-                        'decoded_formats': ['PNG', 'JPEG'], 'qt_platform': 'cocoa'}
+                        'decoded_formats': ['PNG', 'JPEG'], 'qt_platform': 'cocoa',
+                        'native_quit_verified': True}
 
     def write_info(self):
         with (self.bundle / 'Contents/Info.plist').open('wb') as stream:

@@ -65,8 +65,8 @@ def _verify_packaged(app, window, report_path, screenshot_path=None):
     import hashlib
     import json
     from pathlib import Path
-    from PySide6.QtCore import QBuffer, QIODevice
-    from PySide6.QtGui import QImage
+    from PySide6.QtCore import QBuffer, QIODevice, Qt
+    from PySide6.QtGui import QImage, QAction, QKeySequence
     from core.scanner.signature.scanner import SignatureScanner
     from core.preview.images import preview_image
     from core.export.service import export_batch
@@ -114,6 +114,22 @@ def _verify_packaged(app, window, report_path, screenshot_path=None):
             screenshot.parent.mkdir(parents=True, exist_ok=True)
             if not window.grab().save(str(screenshot), 'PNG'):
                 raise RuntimeError('Cannot save application verification screenshot')
+        if app.platformName() == 'cocoa':
+            shortcuts = QKeySequence.keyBindings(QKeySequence.StandardKey.Quit)
+            assert shortcuts and window.quit_action.shortcuts() == shortcuts
+            # Qt's logical Control modifier maps to Command on macOS. Do not
+            # infer functionality from the translated shortcut display glyph.
+            assert any(key.count() == 1 and key[0].key() == Qt.Key.Key_Q
+                       and key[0].keyboardModifiers() == Qt.KeyboardModifier.ControlModifier
+                       for key in shortcuts)
+            assert window.quit_action.menuRole() == QAction.MenuRole.QuitRole
+            assert window.quit_action.shortcutContext() == Qt.ShortcutContext.ApplicationShortcut
+            assert not app.testAttribute(Qt.ApplicationAttribute.AA_MacDontSwapCtrlAndMeta)
+            assert window.menuBar().isNativeMenuBar()
+            window.quit_action.trigger()
+            app.processEvents()
+            assert not window.isVisible()
+            result['native_quit_verified'] = True
         result.update(success=True, verified_exports=2, decoded_formats=['PNG', 'JPEG'])
         exit_code = 0
     except Exception as error:

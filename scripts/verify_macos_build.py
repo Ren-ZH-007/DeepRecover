@@ -23,6 +23,8 @@ def validate_report(path, expected_version, qt_platform):
     expected = {'success': True, 'version': expected_version, 'schema_version': 3,
                 'navigation_pages': 7, 'verified_exports': 2,
                 'decoded_formats': ['PNG', 'JPEG'], 'qt_platform': qt_platform}
+    if qt_platform == 'cocoa':
+        expected['native_quit_verified'] = True
     for name, value in expected.items():
         if type(data.get(name)) is not type(value) or data.get(name) != value:
             raise RuntimeError(f'Packaged macOS smoke report mismatch: {name}')
