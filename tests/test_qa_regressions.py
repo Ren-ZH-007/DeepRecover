@@ -33,6 +33,9 @@ class DetailedQaRegressions(unittest.TestCase):
         root=self.root/'backup'; root.mkdir()
         (root/'Manifest.plist').write_bytes(plistlib.dumps({'IsEncrypted':False}))
         db=sqlite3.connect(root/'Manifest.db')
+        # WAL cases deliberately retain this handle; close before directory
+        # cleanup even when a test assertion fails before its explicit close.
+        self.addCleanup(db.close)
         if wal:
             db.execute('PRAGMA journal_mode=WAL'); db.execute('PRAGMA wal_autocheckpoint=0')
         db.execute('CREATE TABLE Files(fileID TEXT,domain TEXT,relativePath TEXT,flags INTEGER)')

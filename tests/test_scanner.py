@@ -58,7 +58,7 @@ class ScannerTests(unittest.TestCase):
         original_open = Path.open
         modes = []
         def tracked_open(path, mode='r', *args, **kwargs):
-            if path == self.source:
+            if path.resolve() == self.source.resolve():
                 modes.append(mode)
             return original_open(path, mode, *args, **kwargs)
         with patch.object(Path, 'open', tracked_open):
