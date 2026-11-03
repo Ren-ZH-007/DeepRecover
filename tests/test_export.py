@@ -1,4 +1,5 @@
 from dataclasses import replace
+from contextlib import closing
 import hashlib
 import json
 import os
@@ -264,7 +265,7 @@ class ExportTests(unittest.TestCase):
 
     def test_v2_migration_keeps_sources_and_adds_export_audit(self):
         path=self.root/'v2.db'
-        with sqlite3.connect(path) as db:
+        with closing(sqlite3.connect(path)) as db, db:
             db.execute('CREATE TABLE sources(id TEXT PRIMARY KEY,kind TEXT,locator TEXT,label TEXT,created_at TEXT)')
             db.execute('CREATE TABLE tasks(id TEXT PRIMARY KEY,kind TEXT,status TEXT,created_at TEXT,updated_at TEXT,error_code TEXT,source_id TEXT REFERENCES sources(id))')
             db.execute('CREATE TABLE candidates(id TEXT PRIMARY KEY,task_id TEXT REFERENCES tasks(id),payload TEXT)')
@@ -275,5 +276,5 @@ class ExportTests(unittest.TestCase):
         self.assertEqual(migrated.source('source')['locator'],'disk.img')
         self.assertIsNone(migrated.task('task')['result_path'])
         self.assertEqual(migrated.exports('task'),[])
-        with sqlite3.connect(path) as db:
+        with closing(sqlite3.connect(path)) as db, db:
             self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],SCHEMA_VERSION)

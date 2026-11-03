@@ -1,0 +1,155 @@
+{
+  "date": "2026-11-03",
+  "backend": "Qt offscreen; synthetic files and mocked ADB transport; real core services/SQLite",
+  "cases": [
+    {
+      "id": "QA-01",
+      "result": "passed",
+      "observed": "Unauthorized device made no shell/pull request"
+    },
+    {
+      "id": "QA-02",
+      "result": "passed",
+      "copied": 2,
+      "source_phone_hashes_unchanged": true
+    },
+    {
+      "id": "QA-03",
+      "result": "passed",
+      "indexed": 2,
+      "closed_wal_sidecars_created": false,
+      "backup_hashes_unchanged": true
+    },
+    {
+      "id": "QA-04",
+      "result": "passed",
+      "total_candidates": 103,
+      "cross_block_first_offset": 1048571,
+      "last_page_integrity": [
+        "structure_checked",
+        "structure_checked",
+        "truncated"
+      ]
+    },
+    {
+      "id": "QA-05",
+      "result": "passed",
+      "filtered_candidates": 102,
+      "decoded_preview": true
+    },
+    {
+      "id": "QA-06",
+      "result": "passed",
+      "verified_exports": 102,
+      "manifest_exported": 102
+    },
+    {
+      "id": "QA-07",
+      "result": "passed",
+      "changed_copy_preview_rejected": true,
+      "source_phone_unchanged": true
+    },
+    {
+      "id": "QA-08",
+      "result": "passed",
+      "unrelated_backup_destination_rejected": true,
+      "source_backup_unchanged": true
+    },
+    {
+      "id": "QA-09",
+      "result": "passed",
+      "live_wal_rejected": true,
+      "source_and_shm_hashes_unchanged": true
+    },
+    {
+      "id": "QA-10",
+      "result": "passed",
+      "exported_before_cancel": 1,
+      "not_attempted": 101,
+      "gate": "Worker paused after the first real audit commit; UI stop invoked"
+    },
+    {
+      "id": "QA-11",
+      "result": "passed",
+      "history_exports_after_reopen": 102,
+      "unfinished_task": "interrupted"
+    },
+    {
+      "id": "QA-12",
+      "result": "passed",
+      "requested_size": [
+        880,
+        620
+      ],
+      "actual_size": [
+        880,
+        620
+      ],
+      "export_control_visible": true
+    }
+  ],
+  "source_phone_backup_image_hashes_unchanged": true,
+  "fault_injection": "Only a working acquisition copy was deliberately changed; live WAL writer closed after the no-write assertion",
+  "screenshots": [
+    {
+      "file": "02-overview.png",
+      "sha256": "26e0c4ee290594a5b5d7bb0629ee9ea3945a3cb58ee8624ef1556631168380c6"
+    },
+    {
+      "file": "03-android-unauthorized.png",
+      "sha256": "f9cabe95db2640115932b18ba795333cfc142fc4ae0fdbc0e5cdf21d1e3c77db"
+    },
+    {
+      "file": "04-android-selected-files.png",
+      "sha256": "f53f9d5e9959b0b476656d7fae9889bc6478683d6604e44f1c07cad59dd0c1fd"
+    },
+    {
+      "file": "05-ios-index-readonly.png",
+      "sha256": "7aa4338d3b9840de8e2a58490ebeeaccd840b231816df1e4d4e98822215b3c2d"
+    },
+    {
+      "file": "05b-scan-source-selected.png",
+      "sha256": "abfd76adf1db7509bfca72755540d8ffc533f62bf1d48b2bc86d423a94801024"
+    },
+    {
+      "file": "06-scan-page-2.png",
+      "sha256": "ef26306dd621f8292183e4d0b5f000a0bb2aa6c9276c0de32f3b6d153a5703ac"
+    },
+    {
+      "file": "07-preview-and-filter.png",
+      "sha256": "60e89849cbee2d5ad0ba9b369cea4e7d0545433401e9492ed888d554d6e070e9"
+    },
+    {
+      "file": "08-verified-export-page-2.png",
+      "sha256": "ff0afd646a153d3bc83e265f204e7bd6c3ea3d09ffda1686c714daed63e105aa"
+    },
+    {
+      "file": "09-source-change-blocked.png",
+      "sha256": "f052457b0f8826ecdd9b3ca5ce57768dcefd04d80d973f92d65d5d5e4bbf40e6"
+    },
+    {
+      "file": "10-after-backup-write-blocked.png",
+      "sha256": "06d35ebd5ba141e9751467cb5dc0a6bc7b42103512e8ac552267352aa0131ea1"
+    },
+    {
+      "file": "11-wal-index-rejected.png",
+      "sha256": "f66f3dc71c341552ed2af2de0d85fbf230cedc13bbd50d93307c18ee52452f4a"
+    },
+    {
+      "file": "12-cancelled-export-audit.png",
+      "sha256": "b7afe9be1023dc0e9608b75577929ab17617e58f43fe216c0d19a0b0c31f7360"
+    },
+    {
+      "file": "13-history-after-reopen.png",
+      "sha256": "803877d88d4c9d2114304efa1c59e44cd3fc56876961d7da8f44e431553cfc1a"
+    },
+    {
+      "file": "16-settings-local-paths.png",
+      "sha256": "d4aaeef35731ec6e22c3a720feae5dd873473499a186dabbb0c2c87ea76ed345"
+    },
+    {
+      "file": "14-minimum-window.png",
+      "sha256": "34a4153565f93e01026d53a3b235a7ce63cf805d378ffe413bb6fe1e7e43ac3a"
+    }
+  ]
+}

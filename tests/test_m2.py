@@ -1,4 +1,6 @@
 import hashlib
+import os
+from contextlib import closing
 import json
 import plistlib
 import shlex
@@ -56,7 +58,7 @@ class M2Tests(unittest.TestCase):
         payload = asdict(Candidate('ios_backup', 'old.jpg', 'jpg', 5))
         for name in ('source_id', 'local_path', 'acquired_at', 'source_stat'):
             payload.pop(name)
-        with sqlite3.connect(path) as db:
+        with closing(sqlite3.connect(path)) as db, db:
             db.execute('CREATE TABLE tasks(id TEXT PRIMARY KEY,kind TEXT NOT NULL,status TEXT NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL,error_code TEXT)')
             db.execute('CREATE TABLE candidates(id TEXT PRIMARY KEY,task_id TEXT NOT NULL REFERENCES tasks(id),payload TEXT NOT NULL)')
             db.execute('CREATE INDEX candidate_task ON candidates(task_id)')
@@ -67,7 +69,7 @@ class M2Tests(unittest.TestCase):
         self.assertIsNone(migrated.task('task')['source_id'])
         self.assertEqual(migrated.candidate_page('task')[0], payload)
         self.assertEqual(Repository(path).candidate_count('task'), 1)
-        with sqlite3.connect(path) as db:
+        with closing(sqlite3.connect(path)) as db, db:
             self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], SCHEMA_VERSION)
 
     def test_source_and_paginated_results_survive_reopen(self):
@@ -214,14 +216,16 @@ class M2Tests(unittest.TestCase):
         backup = self.root/'backup'
         backup.mkdir()
         (backup/'Manifest.plist').write_bytes(plistlib.dumps({'IsEncrypted': False}))
-        with sqlite3.connect(backup/'Manifest.db') as db:
+        with closing(sqlite3.connect(backup/'Manifest.db')) as db, db:
             db.execute('CREATE TABLE Files(fileID TEXT PRIMARY KEY,domain TEXT,relativePath TEXT,flags INTEGER) WITHOUT ROWID')
             db.executemany('INSERT INTO Files VALUES(?,?,?,1)',
                 ((f'{i:040x}', 'HomeDomain', f'Documents/{i}.jpg') for i in range(10005)))
         before = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in backup.iterdir()}
         source = DataSource('ios_backup', str(backup), 'Backup')
         handle = self.manager().submit('ios_manifest', lambda token: iter_manifest(backup, token), source=source, persist_candidates=True)
-        self.assertEqual(handle.future.result(20), 10005)
+        # This is a correctness fixture, not a 20-second indexing SLA. Native
+        # Windows CI incurs more SQLite/file-inspection I/O than Linux.
+        self.assertEqual(handle.future.result(90 if os.name == 'nt' else 20), 10005)
         self.assertEqual(self.repo.candidate_count(handle.id), 10005)
         self.assertEqual(len(self.repo.candidate_page(handle.id, offset=10000)), 5)
         self.assertEqual(self.repo.candidate_page(handle.id)[0]['source_id'], source.id)

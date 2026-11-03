@@ -1,8 +1,8 @@
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QPixmap, QColor
 from PySide6.QtWidgets import (QAbstractItemView, QFileDialog, QHBoxLayout, QLabel,
     QListWidget, QMainWindow, QPushButton, QStackedWidget, QTableWidget,
-    QTableWidgetItem, QVBoxLayout, QWidget, QHeaderView, QInputDialog, QMessageBox, QProgressBar, QComboBox, QSplitter)
+    QTableWidgetItem, QVBoxLayout, QWidget, QHeaderView, QInputDialog, QMessageBox, QProgressBar, QComboBox, QSplitter, QFrame, QListWidgetItem)
 from app.navigation import PAGES
 from core.tasks import TaskManager, TaskCancelled
 from core.device.android.adapter import AndroidAdapter, AdbError
@@ -15,20 +15,8 @@ from core.candidate_io import CandidateAccessError
 from core.preview.images import preview_image
 from core.export.service import export_batch, ExportError
 from ui.recovery.export_history import ExportHistory
-
-STYLE = '''
-QWidget { background: #101823; color: #dbe5f2; font-family: "Segoe UI"; font-size: 14px; }
-QListWidget { background: #152131; border: none; padding: 12px; }
-QListWidget::item { padding: 14px 8px; margin: 3px 0; }
-QListWidget::item:selected { background: #244d67; color: #6ee7df; border-radius: 6px; }
-QLabel#title { font-size: 27px; font-weight: 600; }
-QLabel#subtitle { color: #9aaec3; }
-QPushButton { background: #236d82; border: none; border-radius: 5px; padding: 10px 18px; }
-QPushButton:hover { background: #2b8195; }
-QPushButton:disabled { background: #263343; color: #8a99ab; }
-QTableWidget { background: #152131; border: 1px solid #2b3b4e; gridline-color: #29394c; }
-QHeaderView::section { background: #213247; color: #bdccdd; padding: 9px; border: none; }
-'''
+from app.theme import STYLE, icon, brand_icon
+from app.version import VERSION
 
 class MainWindow(QMainWindow):
     def __init__(self, config, repository):
@@ -48,18 +36,31 @@ class MainWindow(QMainWindow):
         self.current_candidates = []
         self.preview_candidate_id = None
         self.export_dialog = None
-        self.setWindowTitle('DeepRecover · 第一阶段 M4 · 0.1.0')
-        self.resize(1180, 780)
+        self.setWindowTitle(f'DeepRecover · 本地数据工作台 · {VERSION}')
+        self.setWindowIcon(brand_icon())
+        self.resize(1280, 820)
         self.setMinimumSize(880, 620)
         self.setStyleSheet(STYLE)
         container = QWidget()
         layout = QHBoxLayout(container)
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        sidebar = QFrame(); sidebar.setObjectName('sideBar'); sidebar.setFixedWidth(208)
+        sidebox = QVBoxLayout(sidebar); sidebox.setContentsMargins(18,28,18,20); sidebox.setSpacing(14)
+        brand = QHBoxLayout(); sidebox.addLayout(brand)
+        mark = QLabel(); mark.setPixmap(brand_icon().pixmap(32,32)); brand.addWidget(mark)
+        words = QVBoxLayout(); brand.addLayout(words)
+        name = QLabel('DeepRecover'); name.setObjectName('brand'); words.addWidget(name)
+        tagline = QLabel('本地数据工作台'); tagline.setObjectName('brandSubtitle'); words.addWidget(tagline)
+        section = QLabel('工作空间'); section.setObjectName('sidebarSection'); sidebox.addWidget(section)
         self.nav = QListWidget()
-        self.nav.setFixedWidth(190)
-        self.nav.addItems(PAGES)
+        self.nav.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        for label, name in zip(PAGES,('home','android','iphone','scan','results','history','settings')):
+            self.nav.addItem(QListWidgetItem(icon(name),label))
+        sidebox.addWidget(self.nav,1)
+        footer = QLabel(f'●  本地处理 · 源数据只读\nv{VERSION}  /  Preview'); footer.setObjectName('sidebarFooter'); sidebox.addWidget(footer)
         self.stack = QStackedWidget()
-        layout.addWidget(self.nav)
+        layout.addWidget(sidebar)
         layout.addWidget(self.stack, 1)
         self.setCentralWidget(container)
         self.build_pages()
@@ -69,13 +70,16 @@ class MainWindow(QMainWindow):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.poll)
         self.timer.start(100)
-        self.statusBar().showMessage('本地处理 · M4 图片预览与校验导出 · 未执行设备操作')
+        self.statusBar().setSizeGripEnabled(False)
+        self.statusBar().showMessage('就绪  ·  数据仅在本机处理')
 
     def page(self, title, subtitle):
         page = QWidget()
+        page.setObjectName('page')
         box = QVBoxLayout(page)
-        box.setContentsMargins(30, 28, 30, 24)
-        box.setSpacing(18)
+        box.setContentsMargins(24, 22, 24, 18)
+        box.setSpacing(10)
+        eyebrow = QLabel('DEEPRECOVER  /  WORKSPACE'); eyebrow.setObjectName('pageEyebrow'); box.addWidget(eyebrow)
         label = QLabel(title); label.setObjectName('title'); box.addWidget(label)
         label = QLabel(subtitle); label.setWordWrap(True); label.setObjectName('subtitle'); box.addWidget(label)
         self.stack.addWidget(page)
@@ -88,6 +92,10 @@ class MainWindow(QMainWindow):
         table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        table.setAlternatingRowColors(True)
+        table.setShowGrid(False)
+        table.verticalHeader().setDefaultSectionSize(40)
+        table.setWordWrap(False)
         table.verticalHeader().hide()
         return table
 
@@ -95,101 +103,135 @@ class MainWindow(QMainWindow):
         table.setRowCount(len(rows))
         for i, row in enumerate(rows):
             for j, value in enumerate(row):
-                item = QTableWidgetItem(str(value)); item.setToolTip(str(value)); table.setItem(i, j, item)
+                item = QTableWidgetItem(str(value)); item.setToolTip(str(value))
+                if value in ('completed','exported','structure_checked','device'): item.setForeground(QColor('#087c68'))
+                elif value in ('failed','missing','invalid_structure','unauthorized'): item.setForeground(QColor('#c53f53'))
+                elif value in ('partial','truncated','validation_limit','cancelled','interrupted'): item.setForeground(QColor('#a86608'))
+                table.setItem(i, j, item)
 
-    def button(self, box, label, callback):
-        button = QPushButton(label); button.clicked.connect(callback); box.addWidget(button)
+    def button(self, box, label, callback, kind='secondary', symbol=None):
+        button = QPushButton(label); button.setProperty('kind',kind)
+        if symbol: button.setIcon(icon(symbol,color='#ffffff' if kind=='primary' else '#52708e'))
+        button.clicked.connect(callback); box.addWidget(button)
         return button
 
+    def card(self, box, title=None):
+        frame = QFrame(); frame.setObjectName('card'); box.addWidget(frame)
+        inner = QVBoxLayout(frame); inner.setContentsMargins(18,16,18,16); inner.setSpacing(10)
+        if title:
+            label = QLabel(title); label.setObjectName('sectionTitle'); inner.addWidget(label)
+        return inner
+
     def build_pages(self):
-        box = self.page('DeepRecover', '手机数据恢复工作台 / 第一阶段 M4 · 图片预览与校验导出')
-        label = QLabel('已就绪\n\n• 本地数据库与 v3 迁移\n• Android 授权普通文件采集\n• iPhone 本地备份发现与只读索引\n• JPG/PNG 连续签名扫描与偏移\n• 图片预览、分类筛选和历史回读\n• 批量导出、防覆盖、SHA-256 对照清单\n\n下一里程碑\n\n真实手机/备份 → Windows 实机 → 安装包验收')
-        label.setWordWrap(True); box.addWidget(label)
-        box.addStretch()
-        box.addWidget(QLabel('索引中的文件仅为候选记录，不代表已恢复或已验证完整。'))
-        box = self.page('Android 设备', '在手机上允许 USB 调试，选择设备和共享目录，再明确选择文件采集。仅复制现存普通文件，不是已删除数据恢复；不执行 root、删除或写入设备。')
-        self.button(box, '检测 ADB 与设备', self.detect_android)
-        self.android_table = self.table(['设备序列号', '型号', '状态']); box.addWidget(self.android_table)
-        self.button(box, '列出所选设备的共享目录文件', self.list_android_files)
-        self.android_list_source = QLabel('尚未列出目录。')
-        self.android_list_source.setTextFormat(Qt.TextFormat.PlainText)
-        self.android_list_source.setWordWrap(True)
-        box.addWidget(self.android_list_source)
-        self.android_file_table = self.table(['普通文件路径（可多选）'])
-        self.android_file_table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
-        box.addWidget(self.android_file_table)
-        self.button(box, '采集选中文件到本地', self.collect_android)
-        box = self.page('iPhone 本地备份', '发现 Apple Devices / iTunes 备份。仅支持未加密备份；只读遍历全部普通文件索引，分批入库、分页展示，不提取文件。')
+        box = self.page('让数据处理，更有条理', '连接授权设备或打开本地备份，从来源记录到校验导出，全程在本机完成。')
+        hero = QFrame(); hero.setObjectName('heroCard'); box.addWidget(hero)
+        hero_box = QVBoxLayout(hero); hero_box.setContentsMargins(26,24,26,24); hero_box.setSpacing(12)
+        badge = QLabel('●  LOCAL FIRST   /   本地优先'); badge.setObjectName('badge'); badge.setMaximumWidth(240); hero_box.addWidget(badge)
+        headline = QLabel('从一个可靠的数据源开始'); headline.setObjectName('heroTitle'); hero_box.addWidget(headline)
+        note = QLabel('只读索引与图片候选扫描，保留来源线索。\n预览确认后，按需导出并逐项核对 SHA-256。'); note.setObjectName('heroText'); note.setWordWrap(True); hero_box.addWidget(note)
+        actions = QHBoxLayout(); hero_box.addLayout(actions)
+        self.button(actions,'打开本地备份',lambda: self.nav.setCurrentRow(2),'primary','folder')
+        self.button(actions,'扫描本地镜像',lambda: self.nav.setCurrentRow(3),'secondary','scan'); actions.addStretch()
+        cards = QHBoxLayout(); cards.setSpacing(12); box.addLayout(cards)
+        for number,title,description,symbol in [('01','连接与采集','选择已授权设备或本地备份','android'),('02','定位与预览','按类型筛选，查看 JPG / PNG','image'),('03','校验与导出','独立批次，源 / 目标摘要对照','check')]:
+            frame = QFrame(); frame.setObjectName('card'); cards.addWidget(frame,1)
+            inner = QVBoxLayout(frame); inner.setContentsMargins(18,18,18,18); inner.setSpacing(10)
+            mark = QLabel(); mark.setPixmap(icon(symbol,26,'#2563eb').pixmap(26,26)); inner.addWidget(mark)
+            label = QLabel(number); label.setObjectName('metricValue'); inner.addWidget(label)
+            label = QLabel(title); label.setObjectName('sectionTitle'); inner.addWidget(label)
+            label = QLabel(description); label.setObjectName('sectionNote'); label.setWordWrap(True); inner.addWidget(label)
+        help_box = self.card(box,'把每一步，都留在可追溯的记录中')
+        label = QLabel('来源、路径、扫描偏移与导出校验记录会保存在本地工作目录。任务结束后，可在「任务记录」重新打开结果。'); label.setWordWrap(True); label.setObjectName('sectionNote'); help_box.addWidget(label)
+        box.addStretch(1)
+        notice = QLabel('能力边界  ·  普通文件复制与候选定位，不等于已删除数据恢复。'); notice.setObjectName('sectionNote'); notice.setWordWrap(True); box.addWidget(notice)
+
+        box = self.page('连接 Android 设备', '先在手机上允许 USB 调试，再选择共享目录和需要采集的普通文件。')
         row = QHBoxLayout(); box.addLayout(row)
-        self.button(row, '自动发现备份', lambda: self.detect_backups(None))
-        self.button(row, '选择备份目录', self.choose_backup)
-        self.button(row, '读取选中备份索引', self.parse_backup)
-        self.backup_table = self.table(['设备', 'iOS 版本', '加密状态', '备份时间', '目录']); box.addWidget(self.backup_table)
-        box = self.page('文件扫描', '只读扫描本地普通文件或镜像中的连续 JPG/PNG 签名。记录偏移和结构检查结果，不提取文件、不分析文件系统或重组碎片，无法判断数据是否已删除。')
-        self.button(box, '选择本地镜像或文件', self.choose_scan_source)
-        self.scan_source_label = QLabel('尚未选择源文件。')
-        self.scan_source_label.setTextFormat(Qt.TextFormat.PlainText)
-        self.scan_source_label.setWordWrap(True)
-        box.addWidget(self.scan_source_label)
-        self.scan_start_button = self.button(box, '开始 JPG/PNG 签名扫描', self.start_scan)
-        self.scan_start_button.setEnabled(False)
-        self.button(box, '停止扫描', self.cancel_scan)
-        self.scan_progress = QProgressBar(); self.scan_progress.setRange(0, 1000); box.addWidget(self.scan_progress)
-        self.scan_status = QLabel('单个候选最多检查 64 MiB；PNG 解压检查最多 256 MiB；最多 10,000 个候选。\n结构检查不等于完整像素解码、可预览或恢复成功。')
-        self.scan_status.setWordWrap(True); box.addWidget(self.scan_status); box.addStretch()
-        box = self.page('恢复结果 / 候选索引', '分类依据类型元数据；普通文件复制不等于已删除数据恢复。预览仅支持 JPG/PNG；导出前检查来源，导出后核对 SHA-256，原始候选状态保持不变。')
-        self.result_source = QLabel('从任务记录选择任务回读结果。')
-        self.result_source.setWordWrap(True)
-        self.result_source.setTextFormat(Qt.TextFormat.PlainText)
-        self.result_source.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        box.addWidget(self.result_source)
+        self.button(row,'检测设备',self.detect_android,'primary','refresh'); self.button(row,'选择共享目录',self.list_android_files,'secondary','folder'); row.addStretch()
+        self.android_table = self.table(['设备序列号','设备型号','连接状态']); box.addWidget(self.android_table,1)
+        self.android_list_source = QLabel('尚未列出目录。选择已授权设备后，点击「选择共享目录」。'); self.android_list_source.setObjectName('sourceInfo')
+        self.android_list_source.setTextFormat(Qt.TextFormat.PlainText); self.android_list_source.setWordWrap(True); box.addWidget(self.android_list_source)
+        self.android_file_table = self.table(['普通文件路径 · Ctrl / Shift 可多选']); self.android_file_table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection); box.addWidget(self.android_file_table,2)
+        row = QHBoxLayout(); box.addLayout(row)
+        self.button(row,'采集选中文件',self.collect_android,'primary','export'); row.addStretch()
+        label = QLabel('仅使用只读 ADB pull，不执行 root、写入或删除设备文件。'); label.setObjectName('sectionNote'); label.setWordWrap(True); row.addWidget(label,1)
+
+        box = self.page('打开 iPhone 本地备份', '发现 Apple Devices / iTunes 备份，只读解析未加密且已完成的备份索引。')
+        row = QHBoxLayout(); box.addLayout(row)
+        self.button(row,'自动发现',lambda: self.detect_backups(None),'secondary','refresh')
+        self.button(row,'选择备份目录',self.choose_backup,'secondary','folder')
+        self.button(row,'读取选中索引',self.parse_backup,'primary','play'); row.addStretch()
+        self.backup_table = self.table(['设备名称','iOS 版本','加密状态','备份时间','来源目录']); box.addWidget(self.backup_table,1)
+        info = self.card(box,'保留原始备份，不改变源数据')
+        label = QLabel('支持稳定的未加密 Manifest.db；有未合并事务日志时会明确拒绝读取。来源目录和索引结果保存在本地，可在历史中回读。'); label.setObjectName('sectionNote'); label.setWordWrap(True); info.addWidget(label)
+
+        box = self.page('扫描本地镜像', '定位文件或镜像中的连续 JPG / PNG 签名，记录偏移与结构检查结果。')
+        source_box = self.card(box,'01   选择扫描源')
+        row = QHBoxLayout(); source_box.addLayout(row)
+        self.button(row,'选择镜像或文件',self.choose_scan_source,'secondary','folder'); row.addStretch()
+        self.scan_source_label = QLabel('尚未选择源文件'); self.scan_source_label.setObjectName('sourceInfo'); self.scan_source_label.setTextFormat(Qt.TextFormat.PlainText); self.scan_source_label.setWordWrap(True); source_box.addWidget(self.scan_source_label)
+        work = self.card(box,'02   开始只读扫描')
+        row = QHBoxLayout(); work.addLayout(row)
+        self.scan_start_button = self.button(row,'开始 JPG / PNG 扫描',self.start_scan,'primary','play'); self.scan_start_button.setEnabled(False)
+        self.button(row,'停止扫描',self.cancel_scan,'danger','stop'); row.addStretch()
+        self.scan_progress = QProgressBar(); self.scan_progress.setRange(0,1000); self.scan_progress.setValue(0); work.addWidget(self.scan_progress)
+        self.scan_status = QLabel('等待选择数据源。扫描结果将自动打开到候选索引。'); self.scan_status.setObjectName('sectionNote'); self.scan_status.setWordWrap(True); work.addWidget(self.scan_status)
+        limits = self.card(box,'检查范围')
+        label = QLabel('连续图片候选  ·  单项检查上限 64 MiB  ·  PNG 解压上限 256 MiB  ·  最多 10,000 项'); label.setObjectName('sectionNote'); label.setWordWrap(True); limits.addWidget(label)
+        label = QLabel('不分析文件系统或重组碎片；结构检查通过不代表完整解码，也不能判断文件是否已删除。'); label.setObjectName('sectionNote'); label.setWordWrap(True); limits.addWidget(label)
+        box.addStretch(1)
+
+        box = self.page('查看候选结果', '筛选与预览后，按需导出；来源记录、候选状态和导出记录分别保留。')
+        self.result_source = QLabel('从任务记录打开结果，或先完成一次采集 / 索引 / 扫描。'); self.result_source.setObjectName('sourceInfo')
+        self.result_source.setWordWrap(True); self.result_source.setMaximumHeight(64); self.result_source.setTextFormat(Qt.TextFormat.PlainText); self.result_source.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse); box.addWidget(self.result_source)
         row = QHBoxLayout(); box.addLayout(row)
         self.category_filter = QComboBox()
-        for label, value in [('全部类型','all'),('图片','image'),('视频','video'),('音频','audio'),('文档','document'),('其他','other')]:
-            self.category_filter.addItem(label,value)
+        for label,value in [('全部类型','all'),('图片','image'),('视频','video'),('音频','audio'),('文档','document'),('其他','other')]: self.category_filter.addItem(label,value)
         row.addWidget(self.category_filter)
         self.status_filter = QComboBox()
-        for label, value in [('全部状态','all'),('候选','candidate'),('部分/受限','partial'),('失败','failed')]:
-            self.status_filter.addItem(label,value)
-        row.addWidget(self.status_filter)
-        self.category_filter.currentIndexChanged.connect(self.filter_results)
-        self.status_filter.currentIndexChanged.connect(self.filter_results)
+        for label,value in [('全部状态','all'),('候选','candidate'),('部分 / 受限','partial'),('失败','failed')]: self.status_filter.addItem(label,value)
+        row.addWidget(self.status_filter); row.addStretch()
+        self.result_page_label = QLabel('0 条'); self.result_page_label.setObjectName('sectionNote'); row.addWidget(self.result_page_label)
+        self.category_filter.currentIndexChanged.connect(self.filter_results); self.status_filter.currentIndexChanged.connect(self.filter_results)
         splitter = QSplitter(); box.addWidget(splitter,1)
-        self.result_table = self.table(['文件名', '类型', '大小 / 字节', '完整性', '原始路径', '本地文件', '来源范围 SHA-256', '采集时间 / UTC', '源内偏移 / 字节', '候选状态'])
-        self.result_table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
-        splitter.addWidget(self.result_table)
-        preview = QWidget(); preview_box = QVBoxLayout(preview); splitter.addWidget(preview)
-        self.preview_label = QLabel('选择一张 JPG/PNG，再点击预览。')
-        self.preview_label.setWordWrap(True); self.preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.preview_label.setTextFormat(Qt.TextFormat.PlainText); self.preview_label.setMinimumWidth(240)
-        self.result_table.itemSelectionChanged.connect(self.clear_preview)
-        preview_box.addWidget(self.preview_label)
-        self.preview_button = self.button(preview_box, '预览选中图片', self.preview_selected)
-        splitter.setSizes([650,280])
+        self.result_table = self.table(['文件名','类型','大小 / 字节','完整性','原始路径','本地文件','来源范围 SHA-256','采集时间 / UTC','源内偏移 / 字节','候选状态'])
+        self.result_table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection); splitter.addWidget(self.result_table)
+        preview = QFrame(); preview.setObjectName('previewPanel'); preview_box = QVBoxLayout(preview); preview_box.setContentsMargins(14,14,14,14); splitter.addWidget(preview)
+        label = QLabel('图片预览'); label.setObjectName('sectionTitle'); preview_box.addWidget(label)
+        self.preview_label = QLabel('选择一张 JPG / PNG\n查看本地图片预览'); self.preview_label.setObjectName('previewCanvas')
+        self.preview_label.setWordWrap(True); self.preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter); self.preview_label.setTextFormat(Qt.TextFormat.PlainText); self.preview_label.setMinimumWidth(210)
+        self.result_table.itemSelectionChanged.connect(self.clear_preview); preview_box.addWidget(self.preview_label,1)
+        self.preview_button = self.button(preview_box,'预览选中图片',self.preview_selected,'secondary','image')
+        splitter.setSizes([720,260])
         self.result_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
-        for column in range(self.result_table.columnCount()):
-            self.result_table.setColumnWidth(column, 150)
+        for column in range(10): self.result_table.setColumnWidth(column,140)
+        self.result_table.setColumnWidth(0,220); self.result_table.setColumnWidth(1,70); self.result_table.setColumnWidth(2,100)
         row = QHBoxLayout(); box.addLayout(row)
-        self.previous_page = self.button(row, '上一页', lambda: self.change_result_page(-1))
-        self.result_page_label = QLabel('0 条'); row.addWidget(self.result_page_label)
-        self.next_page = self.button(row, '下一页', lambda: self.change_result_page(1))
-        self.previous_page.setEnabled(False); self.next_page.setEnabled(False)
+        self.previous_page = self.button(row,'上一页',lambda: self.change_result_page(-1),'secondary','arrow-left')
+        self.next_page = self.button(row,'下一页',lambda: self.change_result_page(1),'secondary','arrow-right')
+        self.previous_page.setEnabled(False); self.next_page.setEnabled(False); row.addStretch()
+        self.export_selected_button = self.button(row,'导出选中项',lambda: self.export_results(False),'secondary','export')
+        self.export_all_button = self.button(row,'导出全部筛选',lambda: self.export_results(True),'primary','check')
+        self.button(row,'停止导出',self.cancel_export,'danger','stop')
+        self.export_progress = QProgressBar(); self.export_progress.setRange(0,1000); self.export_progress.setValue(0); box.addWidget(self.export_progress)
+        self.export_status = QLabel('生成独立批次目录，不覆盖现有文件。导出后逐项核对源 / 目标 SHA-256。'); self.export_status.setObjectName('sectionNote'); self.export_status.setWordWrap(True); box.addWidget(self.export_status)
+
+        box = self.page('任务与处理记录', '最近 200 个非预览任务。双击一条记录，重新打开候选结果或导出校验记录。')
         row = QHBoxLayout(); box.addLayout(row)
-        self.export_selected_button = self.button(row,'导出选中项（本页）',lambda: self.export_results(False))
-        self.export_all_button = self.button(row,'导出全部筛选结果',lambda: self.export_results(True))
-        self.button(row,'停止当前导出',self.cancel_export)
-        self.export_progress = QProgressBar(); self.export_progress.setRange(0,1000); box.addWidget(self.export_progress)
-        self.export_status = QLabel('导出使用新批次目录和生成文件名，不覆盖现有文件。'); self.export_status.setWordWrap(True); box.addWidget(self.export_status)
-        box = self.page('任务记录', '显示最近 200 条任务。异常退出后的未完成任务标记为 interrupted；暂不支持断点续扫。')
-        self.button(box, '刷新任务记录', self.refresh_history)
-        self.button(box, '停止当前任务', self.cancel_task)
-        self.button(box, '回读选中任务的结果', self.open_history_result)
-        self.history_table = self.table(['任务类型', '状态', '更新时间 / UTC', '错误类型']); box.addWidget(self.history_table)
+        self.button(row,'刷新记录',self.refresh_history,'secondary','refresh'); self.button(row,'打开选中结果',self.open_history_result,'primary','folder'); row.addStretch(); self.button(row,'停止当前任务',self.cancel_task,'danger','stop')
+        self.history_table = self.table(['任务类型','状态','更新时间 / UTC','错误类型']); box.addWidget(self.history_table,1)
         self.history_table.cellDoubleClicked.connect(lambda *_: self.open_history_result())
-        box = self.page('设置', '当前版本使用环境变量配置，下次启动生效。')
-        label = QLabel(f'工作目录：{self.config.data_dir}\n\nDEEPRECOVER_DATA_DIR：工作数据目录\nDEEPRECOVER_ADB：ADB 可执行文件完整路径\n\n后台线程：2\n日志：按大小轮转，不记录文件内容或设备序列号\n数据：仅保存在本机')
-        label.setWordWrap(True); label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        box.addWidget(label); box.addStretch()
+        label = QLabel('中断或取消仅保留已提交的部分记录，不支持断点续扫。'); label.setObjectName('sectionNote'); box.addWidget(label)
+
+        box = self.page('工作空间设置', '配置保存在本机。环境变量修改后，下次启动生效。')
+        data = self.card(box,'本地工作目录')
+        label = QLabel(str(self.config.data_dir)); label.setObjectName('sourceInfo'); label.setTextFormat(Qt.TextFormat.PlainText); label.setWordWrap(True); label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse); data.addWidget(label)
+        label = QLabel('DEEPRECOVER_DATA_DIR  ·  将工作目录与原始备份、待恢复介质分开。'); label.setObjectName('sectionNote'); label.setWordWrap(True); data.addWidget(label)
+        devices = self.card(box,'设备与处理')
+        for text in ['DEEPRECOVER_ADB  ·  Android Platform Tools 中 adb 的完整路径','后台并发  ·  2 个任务线程','日志策略  ·  按大小轮转，不记录文件内容或完整设备序列号','数据策略  ·  本地处理，不上传备份或候选内容']:
+            label = QLabel(text); label.setObjectName('sectionNote'); label.setWordWrap(True); devices.addWidget(label)
+        about = self.card(box,'关于 DeepRecover')
+        label = QLabel(f'版本 {VERSION}  ·  Preview\n普通文件复制与候选导出，不等于已删除数据恢复成功。'); label.setObjectName('sectionNote'); label.setWordWrap(True); about.addWidget(label); box.addStretch(1)
 
     def run_task(self, kind, operation, on_success, *, persist_candidates=False, source=None, batch_size=100, with_task_id=False):
         if self.pending:
@@ -421,7 +463,8 @@ class MainWindow(QMainWindow):
                                       c.get('local_path', ''), c.get('sha256') or '', c.get('acquired_at') or '',
                                       c.get('offset') if c.get('offset') is not None else '', c['status']) for c in candidates])
         description = f"{source['kind']} · {source['label']} · {source['locator']}" if source else '旧记录：未保存独立数据源，见原始路径'
-        self.result_source.setText(f"任务 {task['id']} · {task['status']}\n来源：{description}\n取消、失败或中断任务仅展示已入库的部分结果。历史路径可能已失效，不自动重新采集。")
+        self.result_source.setText(f"来源：{description}\n任务状态：{task['status']} · 仅展示已入库记录，历史路径可能已失效。")
+        self.result_source.setToolTip(f"任务 {task['id']}\n来源：{description}\n取消、失败或中断任务仅展示部分结果，不自动重新采集。")
         self.result_page_label.setText(f'{self.result_offset + 1 if total else 0}–{self.result_offset + len(candidates)} / {total} 条')
         self.previous_page.setEnabled(self.result_offset > 0)
         self.next_page.setEnabled(self.result_offset + len(candidates) < total)

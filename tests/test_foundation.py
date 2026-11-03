@@ -1,4 +1,5 @@
 import hashlib
+from contextlib import closing
 import os
 from pathlib import Path
 import plistlib
@@ -27,7 +28,7 @@ class FoundationTests(unittest.TestCase):
         (root/'Info.plist').write_bytes(plistlib.dumps({'Device Name':'Test iPhone','Product Version':'18.0'}))
         fid = 'a'*40
         (root/'aa').mkdir(); (root/'aa'/fid).write_bytes(b'test-data')
-        with sqlite3.connect(root/'Manifest.db') as db:
+        with closing(sqlite3.connect(root/'Manifest.db')) as db, db:
             db.execute('CREATE TABLE Files(fileID TEXT,domain TEXT,relativePath TEXT,flags INTEGER)')
             db.executemany('INSERT INTO Files VALUES(?,?,?,?)',[(fid,'CameraRollDomain','Media/photo.jpg',1),('b'*40,'HomeDomain','missing.txt',1),('../../bad','HomeDomain','escape',1),('c'*40,'HomeDomain','folder',2)])
         return root
@@ -44,7 +45,7 @@ class FoundationTests(unittest.TestCase):
         self.assertEqual(repo.candidates(task)[0]['id'],candidate.id)
     def test_future_database_rejected(self):
         path=self.root/'index.db'
-        with sqlite3.connect(path) as db: db.execute('PRAGMA user_version=99')
+        with closing(sqlite3.connect(path)) as db, db: db.execute('PRAGMA user_version=99')
         with self.assertRaises(RuntimeError): Repository(path)
     def test_adb_states(self):
         result=parse_devices('List of devices attached\nA device model:Pixel_8\nB unauthorized\nC offline\nD no permissions (udev)\n')
