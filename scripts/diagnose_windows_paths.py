@@ -28,6 +28,11 @@ def main():
             observations['first_fstat_after_read'] = fields(os.fstat(first.fileno()))
             observations['resolved_stat_after_read'] = fields(resolved.stat())
         observations['path_stat_after_close'] = fields(source.stat())
+        initial = source.stat()
+        os.utime(source, ns=(initial.st_atime_ns, initial.st_mtime_ns + 1_000_000_000))
+        with resolved.open('rb') as updated:
+            observations['path_after_metadata_change'] = fields(source.stat())
+            observations['handle_after_metadata_change'] = fields(os.fstat(updated.fileno()))
         print(json.dumps(observations, ensure_ascii=True, indent=2))
 
 

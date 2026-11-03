@@ -12,7 +12,13 @@ class CandidateAccessError(RuntimeError):
 
 
 def snapshot(info):
-    return {key: getattr(info, 'st_' + key) for key in ('dev', 'ino', 'size', 'mtime_ns', 'ctime_ns')}
+    result = {key: getattr(info, 'st_' + key) for key in ('dev', 'ino', 'size', 'mtime_ns', 'ctime_ns')}
+    # CPython 3.12 Windows path stat exposes creation time as ctime, while
+    # descriptor fstat exposes ChangeTime. Both expose the same birthtime.
+    # Normalize that field while retaining volume, full file ID, size and mtime.
+    if os.name == 'nt':
+        result['ctime_ns'] = info.st_birthtime_ns
+    return result
 
 
 def range_chunks(stream, offset, size, token):
