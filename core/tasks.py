@@ -50,6 +50,7 @@ class TaskManager:
         self.repository = repository
         self.executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="deeprecover")
         self.handles = []
+        self._handles_lock = Lock()
 
     def submit(self, kind, operation, *, persist_candidates=False, source=None, batch_size=100, with_task_id=False):
         if not 1 <= batch_size <= 1000:
@@ -76,8 +77,16 @@ class TaskManager:
                 logging.getLogger("deeprecover").warning("task_failed type=%s", code)
                 raise
         handle = TaskHandle(task_id, token, self.executor.submit(run))
-        self.handles.append(handle)
+        with self._handles_lock:
+            self.handles.append(handle)
+        # Futures hold their results (including QImage pixel storage). Retain
+        # only in-flight jobs; the caller owns any completed result it needs.
+        handle.future.add_done_callback(self._forget_future)
         return handle
+
+    def _forget_future(self, future):
+        with self._handles_lock:
+            self.handles[:] = [handle for handle in self.handles if handle.future is not future]
 
     def persist(self, task_id, candidates, token, source, batch_size):
         iterator = iter(candidates)
@@ -103,6 +112,8 @@ class TaskManager:
                 iterator.close()
 
     def shutdown(self):
-        for handle in self.handles:
+        with self._handles_lock:
+            handles = list(self.handles)
+        for handle in handles:
             handle.cancel()
         self.executor.shutdown(wait=True)

@@ -1,0 +1,68 @@
+test_any_registered_backup_is_protected_from_unrelated_export (tests.test_qa_regressions.DetailedQaRegressions.test_any_registered_backup_is_protected_from_unrelated_export) ... FAIL
+test_closed_wal_database_creates_no_source_sidecars (tests.test_qa_regressions.DetailedQaRegressions.test_closed_wal_database_creates_no_source_sidecars) ... FAIL
+test_finished_preview_frames_are_not_retained_by_task_manager (tests.test_qa_regressions.DetailedQaRegressions.test_finished_preview_frames_are_not_retained_by_task_manager) ... FAIL
+test_manifest_identity_change_during_iteration_is_not_completed (tests.test_qa_regressions.DetailedQaRegressions.test_manifest_identity_change_during_iteration_is_not_completed) ... FAIL
+test_manifest_symlink_cannot_escape_selected_backup (tests.test_qa_regressions.DetailedQaRegressions.test_manifest_symlink_cannot_escape_selected_backup) ... FAIL
+test_nonempty_rollback_journal_is_rejected_without_source_writes (tests.test_qa_regressions.DetailedQaRegressions.test_nonempty_rollback_journal_is_rejected_without_source_writes) ... ok
+test_nonempty_wal_is_rejected_without_modifying_source_files (tests.test_qa_regressions.DetailedQaRegressions.test_nonempty_wal_is_rejected_without_modifying_source_files) ... FAIL
+
+======================================================================
+FAIL: test_any_registered_backup_is_protected_from_unrelated_export (tests.test_qa_regressions.DetailedQaRegressions.test_any_registered_backup_is_protected_from_unrelated_export)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/DeepRecover/tests/test_qa_regressions.py", line 63, in test_any_registered_backup_is_protected_from_unrelated_export
+    with self.assertRaises(ExportError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ExportError not raised
+
+======================================================================
+FAIL: test_closed_wal_database_creates_no_source_sidecars (tests.test_qa_regressions.DetailedQaRegressions.test_closed_wal_database_creates_no_source_sidecars)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/DeepRecover/tests/test_qa_regressions.py", line 99, in test_closed_wal_database_creates_no_source_sidecars
+    self.assertEqual(self.hashes(root),before)
+AssertionError: {'Manifest.db-shm': 'fd4c9fda9cd3f9ae7c962b0ddf3723229[284 chars]c8c'} != {'Manifest.db': '6b500b6ecaac4c3f2badc0c101b70341ca3ed[110 chars]c8c'}
+  {'Manifest.db': '6b500b6ecaac4c3f2badc0c101b70341ca3ed2c8062e98cfd8a158956bc0e506',
+-  'Manifest.db-shm': 'fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb',
+-  'Manifest.db-wal': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+   'Manifest.plist': 'fa9e6bb39d029363a512926a4caa2a7383232b2cfbf09e4a99e914e0de6cfc8c'}
+
+======================================================================
+FAIL: test_finished_preview_frames_are_not_retained_by_task_manager (tests.test_qa_regressions.DetailedQaRegressions.test_finished_preview_frames_are_not_retained_by_task_manager)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/DeepRecover/tests/test_qa_regressions.py", line 82, in test_finished_preview_frames_are_not_retained_by_task_manager
+    self.assertLessEqual(retained,1,f'{retained} completed preview frames are still retained')
+AssertionError: 12 not less than or equal to 1 : 12 completed preview frames are still retained
+
+======================================================================
+FAIL: test_manifest_identity_change_during_iteration_is_not_completed (tests.test_qa_regressions.DetailedQaRegressions.test_manifest_identity_change_during_iteration_is_not_completed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/DeepRecover/tests/test_qa_regressions.py", line 124, in test_manifest_identity_change_during_iteration_is_not_completed
+    with self.assertRaises(BackupError): list(iterator)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: BackupError not raised
+
+======================================================================
+FAIL: test_manifest_symlink_cannot_escape_selected_backup (tests.test_qa_regressions.DetailedQaRegressions.test_manifest_symlink_cannot_escape_selected_backup)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/DeepRecover/tests/test_qa_regressions.py", line 117, in test_manifest_symlink_cannot_escape_selected_backup
+    with self.assertRaises(BackupError): read_manifest(root)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: BackupError not raised
+
+======================================================================
+FAIL: test_nonempty_wal_is_rejected_without_modifying_source_files (tests.test_qa_regressions.DetailedQaRegressions.test_nonempty_wal_is_rejected_without_modifying_source_files)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/DeepRecover/tests/test_qa_regressions.py", line 88, in test_nonempty_wal_is_rejected_without_modifying_source_files
+    with self.assertRaises(BackupError): read_manifest(root)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: BackupError not raised
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.034s
+
+FAILED (failures=6)

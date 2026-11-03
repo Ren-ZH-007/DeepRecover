@@ -160,6 +160,10 @@ class Repository:
         with closing(self.connect()) as db:
             return db.execute('SELECT count(*) FROM exports WHERE task_id=?', (task_id,)).fetchone()[0]
 
+    def export_counts(self, task_id):
+        with closing(self.connect()) as db:
+            return dict(db.execute('SELECT status,count(*) FROM exports WHERE task_id=? GROUP BY status', (task_id,)))
+
     def task(self, task_id):
         with closing(self.connect()) as db:
             row = db.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
@@ -169,3 +173,7 @@ class Repository:
         with closing(self.connect()) as db:
             row = db.execute("SELECT * FROM sources WHERE id=?", (source_id,)).fetchone()
             return dict(row) if row else None
+
+    def source_locations(self, kind):
+        with closing(self.connect()) as db:
+            return [row[0] for row in db.execute('SELECT DISTINCT locator FROM sources WHERE kind=? ORDER BY locator', (kind,))]

@@ -231,7 +231,11 @@ class MainWindow(QMainWindow):
         if task['kind'] == 'image_preview' and task['status'] != 'completed' and self.preview_candidate_id is not None:
             self.preview_label.setText(self.statusBar().currentMessage())
         if task['kind'] == 'export':
-            self.export_status.setText(self.export_status.text() + f" · 任务状态：{task['status']}，详见导出记录")
+            outcome = {'completed':'导出完成','failed':'导出失败','cancelled':'导出已停止','interrupted':'导出中断'}.get(task['status'],task['status'])
+            counts = self.repository.export_counts(handle.id)
+            details = (f"已校验 {counts.get('exported',0)} 项，失败 {counts.get('failed',0)} 项，取消 {counts.get('cancelled',0)} 项。"
+                       if task['result_path'] else '准备阶段已停止，尚未生成导出文件；原因见状态栏。')
+            self.export_status.setText(f'{outcome} · {details}详见导出记录。')
             self.show_export_history(handle.id)
         self.refresh_history()
 
