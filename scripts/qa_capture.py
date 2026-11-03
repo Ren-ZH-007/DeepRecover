@@ -22,7 +22,7 @@ from unittest.mock import patch
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 os.environ.setdefault('QT_QPA_PLATFORM','offscreen')
-from PySide6.QtWidgets import QApplication, QMessageBox
+from PySide6.QtWidgets import QApplication, QMessageBox, QPushButton
 from app.app_config import AppConfig
 from app.main_window import MainWindow
 from core.candidate_io import CandidateAccessError
@@ -179,11 +179,18 @@ def run(output):
             capture('13-history-after-reopen.png')
             cases.append({'id':'QA-11','result':'passed','history_exports_after_reopen':102,'unfinished_task':'interrupted'})
             window.nav.setCurrentRow(6); capture('16-settings-local-paths.png')
-            window.open_results(scan_task); window.resize(880,620); app.processEvents()
+            window.resize(880,620); window.nav.setCurrentRow(0); app.processEvents()
             assert (window.width(),window.height()) == (880,620)
+            home_actions={button.text():button for button in window.stack.widget(0).findChildren(QPushButton)}
+            for text in ('打开本地备份','扫描本地镜像'):
+                button=home_actions[text]
+                assert button.height() >= button.minimumSizeHint().height()
+                assert not button.visibleRegion().isEmpty()
+            capture('14a-minimum-overview.png')
+            window.open_results(scan_task); app.processEvents()
             assert not window.export_all_button.visibleRegion().isEmpty()
             capture('14-minimum-window.png')
-            cases.append({'id':'QA-12','result':'passed','requested_size':[880,620],'actual_size':[window.width(),window.height()],'export_control_visible':True})
+            cases.append({'id':'QA-12','result':'passed','requested_size':[880,620],'actual_size':[window.width(),window.height()],'export_control_visible':True,'home_actions_readable':True})
 
             unicode_root=root/'中文 空格 # 路径'; unicode_root.mkdir()
             unicode_source=unicode_root/('长文件名'*12+'.img')
@@ -192,6 +199,10 @@ def run(output):
             window.nav.setCurrentRow(3)
             with patch('app.main_window.QFileDialog.getOpenFileName',return_value=(str(unicode_source),'')):
                 window.choose_scan_source()
+            app.processEvents()
+            assert window.scan_source_label.text() == window.scan_source_label.toolTip() == str(unicode_source)
+            assert window.scan_source_label.height() >= window.scan_source_label.heightForWidth(window.scan_source_label.width())
+            capture('17a-unicode-source-layout.png')
             window.start_scan(); unicode_task=finish()
             assert repo.candidate_count(unicode_task)==2
             window.result_table.selectRow(0); window.preview_selected(); finish()
