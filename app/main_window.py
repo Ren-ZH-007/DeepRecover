@@ -1,5 +1,6 @@
+import sys
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QPixmap, QColor
+from PySide6.QtGui import QPixmap, QColor, QAction, QKeySequence
 from PySide6.QtWidgets import (QAbstractItemView, QFileDialog, QHBoxLayout, QLabel,
     QListWidget, QMainWindow, QPushButton, QStackedWidget, QTableWidget,
     QTableWidgetItem, QVBoxLayout, QWidget, QHeaderView, QInputDialog, QMessageBox, QProgressBar, QComboBox, QSplitter, QFrame, QListWidgetItem)
@@ -17,6 +18,11 @@ from core.export.service import export_batch, ExportError
 from ui.recovery.export_history import ExportHistory
 from app.theme import STYLE, icon, brand_icon
 from app.version import VERSION
+
+
+def selection_modifier(platform=None):
+    return 'Command / Shift' if (platform or sys.platform) == 'darwin' else 'Ctrl / Shift'
+
 
 class MainWindow(QMainWindow):
     def __init__(self, config, repository):
@@ -72,6 +78,28 @@ class MainWindow(QMainWindow):
         self.timer.start(100)
         self.statusBar().setSizeGripEnabled(False)
         self.statusBar().showMessage('就绪  ·  数据仅在本机处理')
+        self.setup_application_menu()
+
+    def setup_application_menu(self):
+        self.quit_action = QAction('退出 DeepRecover', self)
+        self.quit_action.setObjectName('quitApplication')
+        self.quit_action.setMenuRole(QAction.MenuRole.QuitRole)
+        self.quit_action.setShortcuts(QKeySequence.StandardKey.Quit)
+        self.quit_action.setShortcutContext(Qt.ShortcutContext.ApplicationShortcut)
+        self.quit_action.triggered.connect(self.request_quit)
+        self.addAction(self.quit_action)
+        self.application_menu = None
+        if sys.platform == 'darwin':
+            # Cocoa relocates QuitRole into the native application menu. The
+            # action must remain ours so Command+Q respects closeEvent below.
+            self.menuBar().setNativeMenuBar(True)
+            self.application_menu = self.menuBar().addMenu('文件')
+            self.application_menu.addAction(self.quit_action)
+
+    def request_quit(self):
+        # Never bypass cancellation/wait protection with QApplication.quit().
+        # Accepted closure exits via Qt's default quitOnLastWindowClosed.
+        self.close()
 
     def page(self, title, subtitle):
         page = QWidget()
@@ -151,12 +179,12 @@ class MainWindow(QMainWindow):
         self.android_table = self.table(['设备序列号','设备型号','连接状态']); box.addWidget(self.android_table,1)
         self.android_list_source = QLabel('尚未列出目录。选择已授权设备后，点击「选择共享目录」。'); self.android_list_source.setObjectName('sourceInfo')
         self.android_list_source.setTextFormat(Qt.TextFormat.PlainText); self.android_list_source.setWordWrap(True); box.addWidget(self.android_list_source)
-        self.android_file_table = self.table(['普通文件路径 · Ctrl / Shift 可多选']); self.android_file_table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection); box.addWidget(self.android_file_table,2)
+        self.android_file_table = self.table([f'普通文件路径 · {selection_modifier()} 可多选']); self.android_file_table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection); box.addWidget(self.android_file_table,2)
         row = QHBoxLayout(); box.addLayout(row)
         self.button(row,'采集选中文件',self.collect_android,'primary','export'); row.addStretch()
         label = QLabel('仅使用只读 ADB pull，不执行 root、写入或删除设备文件。'); label.setObjectName('sectionNote'); label.setWordWrap(True); row.addWidget(label,1)
 
-        box = self.page('打开 iPhone 本地备份', '发现 Apple Devices / iTunes 备份，只读解析未加密且已完成的备份索引。')
+        box = self.page('打开 iPhone 本地备份', '发现 Finder / Apple Devices / iTunes 备份，只读解析未加密且已完成的备份索引。')
         row = QHBoxLayout(); box.addLayout(row)
         self.button(row,'自动发现',lambda: self.detect_backups(None),'secondary','refresh')
         self.button(row,'选择备份目录',self.choose_backup,'secondary','folder')
@@ -190,11 +218,14 @@ class MainWindow(QMainWindow):
         row.addWidget(self.category_filter)
         self.status_filter = QComboBox()
         for label,value in [('全部状态','all'),('候选','candidate'),('部分 / 受限','partial'),('失败','failed')]: self.status_filter.addItem(label,value)
-        row.addWidget(self.status_filter); row.addStretch()
+        row.addWidget(self.status_filter)
+        self.result_selection_hint = QLabel(f'{selection_modifier()} 多选'); self.result_selection_hint.setObjectName('sectionNote'); row.addWidget(self.result_selection_hint)
+        row.addStretch()
         self.result_page_label = QLabel('0 条'); self.result_page_label.setObjectName('sectionNote'); row.addWidget(self.result_page_label)
         self.category_filter.currentIndexChanged.connect(self.filter_results); self.status_filter.currentIndexChanged.connect(self.filter_results)
         splitter = QSplitter(); box.addWidget(splitter,1)
         self.result_table = self.table(['文件名','类型','大小 / 字节','完整性','原始路径','本地文件','来源范围 SHA-256','采集时间 / UTC','源内偏移 / 字节','候选状态'])
+        self.result_table.setToolTip(f'{selection_modifier()} 可多选本页记录；分页或筛选会重置当前选择。')
         self.result_table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection); splitter.addWidget(self.result_table)
         preview = QFrame(); preview.setObjectName('previewPanel'); preview_box = QVBoxLayout(preview); preview_box.setContentsMargins(14,14,14,14); splitter.addWidget(preview)
         label = QLabel('图片预览'); label.setObjectName('sectionTitle'); preview_box.addWidget(label)
@@ -503,6 +534,10 @@ class MainWindow(QMainWindow):
             self.cancel_task()
             self.statusBar().showMessage('正在停止任务，请在任务结束后再次关闭窗口。')
             event.ignore(); return
+        # A parented QDialog is still a top-level window and can outlive a
+        # hidden main window. Close it only after the task guard accepts exit.
+        if self.export_dialog:
+            self.export_dialog.close()
         self.timer.stop()
         self.manager.shutdown()
         event.accept()

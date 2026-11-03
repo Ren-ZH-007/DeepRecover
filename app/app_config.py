@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 import os
+import sys
 
 @dataclass(frozen=True)
 class AppConfig:
@@ -9,8 +10,12 @@ class AppConfig:
     @classmethod
     def default(cls):
         override = os.environ.get("DEEPRECOVER_DATA_DIR")
+        if override:
+            return cls(Path(override).expanduser().resolve())
+        if sys.platform == "darwin":
+            return cls(Path.home() / "Library/Application Support/DeepRecover")
         base = Path(os.environ.get("LOCALAPPDATA", Path.home()))
-        return cls(Path(override).expanduser().resolve() if override else base / "DeepRecover_Data")
+        return cls(base / "DeepRecover_Data")
 
     @property
     def database(self):

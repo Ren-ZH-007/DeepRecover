@@ -3,6 +3,7 @@ import os
 import shutil
 import subprocess
 import shlex
+import sys
 from pathlib import PurePosixPath
 
 class AdbError(RuntimeError):
@@ -35,6 +36,11 @@ def parse_devices(output):
 class AndroidAdapter:
     def __init__(self, executable=None, runner=subprocess.run):
         self.executable = executable or os.environ.get("DEEPRECOVER_ADB") or shutil.which("adb")
+        if not self.executable and sys.platform == "darwin":
+            # Finder-launched apps do not inherit the user's shell PATH.
+            # Respect configured tools and PATH before trying Homebrew prefixes.
+            self.executable = next((path for path in ("/opt/homebrew/bin/adb", "/usr/local/bin/adb")
+                                    if os.path.isfile(path) and os.access(path, os.X_OK)), None)
         self.runner = runner
 
     def devices(self):

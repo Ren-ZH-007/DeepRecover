@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import os
 import plistlib
+import sys
 
 @dataclass(frozen=True)
 class Backup:
@@ -17,7 +18,11 @@ def default_roots():
     roots = [home / "Apple/MobileSync/Backup"]
     if os.environ.get("APPDATA"):
         roots.append(Path(os.environ["APPDATA"]) / "Apple Computer/MobileSync/Backup")
-    roots.append(Path.home() / "Library/Application Support/MobileSync/Backup")
+    finder_root = Path.home() / "Library/Application Support/MobileSync/Backup"
+    if sys.platform == "darwin":
+        roots.insert(0, finder_root)
+    else:
+        roots.append(finder_root)
     return roots
 
 def inspect_backup(path):

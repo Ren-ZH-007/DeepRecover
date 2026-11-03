@@ -4,14 +4,22 @@ Set STYLE on a window. Object names describe surfaces and text hierarchy; button
 use ``setProperty('kind', 'primary' | 'secondary' | 'danger')``. ``icon`` creates
 retina-ready painter icons without SVG plugins, font icons or external assets.
 """
+import sys
 from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QColor, QIcon, QLinearGradient, QPainter, QPainterPath, QPen, QPixmap
+
+
+def font_family(platform=None):
+    """Use macOS system/CJK fonts without changing other platforms' fallbacks."""
+    if (platform or sys.platform) == 'darwin':
+        return '"Helvetica Neue", "PingFang SC", "Noto Sans CJK SC"'
+    return '"Segoe UI", "Microsoft YaHei", "Noto Sans CJK SC"'
 
 
 STYLE = '''
 QWidget {
     color: #24364f;
-    font-family: "Segoe UI", "Microsoft YaHei", "Noto Sans CJK SC";
+    font-family: __APP_FONT_FAMILY__;
     font-size: 14px;
 }
 QMainWindow, QDialog { background: #f4f7fb; }
@@ -114,7 +122,7 @@ QScrollBar::handle:horizontal:hover { background: #b2c4dc; }
 QScrollBar::add-line, QScrollBar::sub-line { width: 0; height: 0; }
 QScrollBar::add-page, QScrollBar::sub-page { background: transparent; }
 QLineEdit, QTextEdit, QPlainTextEdit { background: #ffffff; border: 1px solid #dce5f0; border-radius: 7px; padding: 7px 10px; selection-background-color: #dceafe; }
-'''
+'''.replace('__APP_FONT_FAMILY__', font_family())
 
 
 def icon(name, size=20, color='#96afcf'):

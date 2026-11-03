@@ -13,13 +13,14 @@ def main():
         parser = argparse.ArgumentParser(description='DeepRecover packaged application verification')
         parser.add_argument('--smoke-test', action='store_true')
         parser.add_argument('--smoke-report', required=True)
+        parser.add_argument('--smoke-screenshot')
         args = parser.parse_args()
         previous = os.environ.get('DEEPRECOVER_DATA_DIR')
         try:
             with tempfile.TemporaryDirectory(prefix='deeprecover-packaged-') as directory:
                 os.environ['DEEPRECOVER_DATA_DIR'] = directory
                 try:
-                    return _run_gui(args.smoke_report)
+                    return _run_gui(args.smoke_report, args.smoke_screenshot)
                 finally:
                     # Windows cannot delete an open log file when cleaning the
                     # isolated smoke directory. Only the smoke process exits here.
@@ -30,7 +31,7 @@ def main():
     return _run_gui()
 
 
-def _run_gui(smoke_report=None):
+def _run_gui(smoke_report=None, smoke_screenshot=None):
     try:
         from PySide6.QtWidgets import QApplication, QMessageBox
         from app.main_window import MainWindow
@@ -55,11 +56,11 @@ def _run_gui(smoke_report=None):
     window.show()
     if smoke_report:
         from PySide6.QtCore import QTimer
-        QTimer.singleShot(250, lambda: _verify_packaged(app, window, smoke_report))
+        QTimer.singleShot(250, lambda: _verify_packaged(app, window, smoke_report, smoke_screenshot))
     return app.exec()
 
 
-def _verify_packaged(app, window, report_path):
+def _verify_packaged(app, window, report_path, screenshot_path=None):
     """Exercise the real packaged Qt plugins and file pipeline, then exit."""
     import hashlib
     import json
@@ -73,7 +74,7 @@ def _verify_packaged(app, window, report_path):
     from storage.models.source import DataSource
     from storage.database.repository import SCHEMA_VERSION
     result = {'success': False, 'version': VERSION, 'schema_version': SCHEMA_VERSION,
-              'navigation_pages': window.stack.count()}
+              'navigation_pages': window.stack.count(), 'qt_platform': app.platformName()}
     exit_code = 1
     try:
         assert window.isVisible() and window.stack.count() == 7
@@ -106,6 +107,13 @@ def _verify_packaged(app, window, report_path):
             assert record['status'] == 'exported' and record['source_sha256'] == record['target_sha256']
             assert Path(record['output_path']).read_bytes() == payload
         assert hashlib.sha256(source.read_bytes()).digest() == hashlib.sha256(original).digest()
+        if screenshot_path:
+            window.nav.setCurrentRow(0)
+            app.processEvents()
+            screenshot = Path(screenshot_path).resolve()
+            screenshot.parent.mkdir(parents=True, exist_ok=True)
+            if not window.grab().save(str(screenshot), 'PNG'):
+                raise RuntimeError('Cannot save application verification screenshot')
         result.update(success=True, verified_exports=2, decoded_formats=['PNG', 'JPEG'])
         exit_code = 0
     except Exception as error:

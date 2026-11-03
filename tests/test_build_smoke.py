@@ -15,14 +15,18 @@ class PackagedEntryTests(unittest.TestCase):
             root = Path(directory); user_data = root / 'user-data'; user_data.mkdir()
             sentinel = user_data / 'original.txt'; sentinel.write_bytes(b'keep original data')
             report = root / 'smoke.json'
+            screenshot = root / 'overview.png'
             environment = dict(os.environ, QT_QPA_PLATFORM='offscreen', DEEPRECOVER_DATA_DIR=str(user_data))
-            result = subprocess.run([sys.executable, 'main.py', '--smoke-test', '--smoke-report', str(report)],
+            result = subprocess.run([sys.executable, 'main.py', '--smoke-test', '--smoke-report', str(report),
+                '--smoke-screenshot', str(screenshot)],
                 cwd=Path(__file__).resolve().parents[1], env=environment, capture_output=True, text=True, timeout=40)
             self.assertEqual(result.returncode, 0, result.stderr)
             data = json.loads(report.read_text())
             self.assertTrue(data['success'])
             self.assertEqual(data['navigation_pages'], 7)
             self.assertEqual(data['verified_exports'], 2)
+            self.assertEqual(data['qt_platform'], 'offscreen')
             self.assertEqual(set(data['decoded_formats']), {'PNG','JPEG'})
+            self.assertEqual(screenshot.read_bytes()[:8], b'\x89PNG\r\n\x1a\n')
             self.assertEqual(list(user_data.iterdir()), [sentinel])
             self.assertEqual(sentinel.read_bytes(), b'keep original data')
