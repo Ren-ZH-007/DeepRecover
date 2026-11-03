@@ -69,7 +69,7 @@
 - [Apple Silicon ZIP + SHA256SUMS](https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41593713229/artifacts/13210249610)
 - [Intel ZIP + SHA256SUMS](https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41593713229/artifacts/13210619403)
 
-两个下载包均重新校验 SHA-256、ZIP CRC、Mach-O CPU 类型、执行权限、版本、ICNS 容器及框架链接保留情况。原生 runner 已对 ZIP 解压后的 `.app` 再做签名完整性和 Cocoa 启动检查。当前为 PR 分支制品，不代表 v0.3.0 Release 已发布；制品访问需仓库权限并受 Actions 保留期限限制。
+两个下载包均重新校验 SHA-256、ZIP CRC、Mach-O CPU 类型、执行权限、版本、ICNS 容器及框架链接保留情况。原生 runner 已对 ZIP 解压后的 `.app` 再做签名完整性和 Cocoa 启动检查。以上链接与摘要保留为发布前 QA 的 PR 分支快照；[正式 v0.3.0 预览版](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.3.0)已从合并提交 `6757a29` 重新构建并发布，请以正式附件及该次 SHA256SUMS.txt 为准。PR 制品访问需仓库权限并受 Actions 保留期限限制。
 
 ## 未验收范围
 

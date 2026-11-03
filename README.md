@@ -2,7 +2,7 @@
 
 个人自用、本地运行的手机数据恢复工作台。目标平台：Windows 10/11 x64、macOS 13+（Apple Silicon / Intel），Python 3.12 + PySide6 + SQLite。
 
-**当前开发版本：0.3.0，增加 macOS 适配。尚不是完整恢复软件。** 最新已发布的 Windows 便携版为 v0.2.0；macOS 构建与使用说明见 [macOS 适配](docs/MACOS.md)。
+**当前版本：0.3.0，Windows 与 macOS 适配预览版。尚不是完整恢复软件。** [发布页与下载](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.3.0)；macOS 使用说明见 [macOS 适配](docs/MACOS.md)。
 依据《DeepRecover_当前对话归档与研发方案_20261102.md》创建。
 
 ## 已实现
@@ -22,11 +22,16 @@
 - macOS 独立工作目录、Finder 备份发现、Homebrew ADB 发现与原生退出菜单；Apple Silicon / Intel 分别原生构建 `.app`。
 - 完整自动化回归与原生平台构建门禁；打包后的程序需实际启动并完成扫描→预览→校验导出的合成数据流程。
 
-## 下载 Windows 便携包
+## 下载预览包
 
-在 [GitHub Releases](https://github.com/Ren-ZH-007/DeepRecover/releases) 下载 `DeepRecover-v0.2.0-windows-x64.zip`，解压后运行目录中的 `DeepRecover.exe`。保留整个 `DeepRecover` 文件夹及 `_internal` 文件，不能只复制 EXE。便携包无需另外安装 Python，不是安装程序；源码归档则按下方步骤配置 Python。
+- [Windows x64](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.3.0/DeepRecover-v0.3.0-windows-x64.zip)
+- [macOS Apple Silicon](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.3.0/DeepRecover-v0.3.0-macos-arm64.zip)
+- [macOS Intel](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.3.0/DeepRecover-v0.3.0-macos-x86_64.zip)
+- [SHA256SUMS.txt](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.3.0/SHA256SUMS.txt)
 
-新版界面截图：[总览](docs/releases/0.2.0/screenshots/02-overview.png)、[结果与预览](docs/releases/0.2.0/screenshots/07-preview-and-filter.png)、[导出记录](docs/releases/0.2.0/screenshots/08-verified-export-page-2.png)。
+Windows 解压后运行目录中的 `DeepRecover.exe`，保留整个 `DeepRecover` 文件夹及 `_internal` 文件，不能只复制 EXE。macOS 按芯片类型下载，解压后将整个 `DeepRecover.app` 拖入“应用程序”。预览包无需另外安装 Python，Windows 包不是安装程序；源码归档则按下方步骤配置 Python。macOS 包未提供 Developer ID 签名或 Apple 公证，详见 [macOS 说明](docs/MACOS.md)。
+
+新版 macOS 界面截图：[总览](docs/qa/macos-20261103/arm64/02-overview.png)、[结果与预览](docs/qa/macos-20261103/arm64/07-preview-and-filter.png)、[导出记录](docs/qa/macos-20261103/arm64/08-verified-export-page-2.png)。
 
 ## Windows 启动
 

@@ -1,0 +1,65 @@
+{
+  "success": true,
+  "tag": "v0.3.0",
+  "source_commit": "6757a2935cb61d4a4fa72bb0dd4940c397b22f82",
+  "release_url": "https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.3.0",
+  "build_url": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41597144125",
+  "published_at_utc": "2026-11-03T07:36:23Z",
+  "pre_release": true,
+  "assets": [
+    {
+      "name": "DeepRecover-v0.3.0-macos-arm64.zip",
+      "bytes": 38339150,
+      "sha256": "bc4130ba4cd7e1a7cb59dbdfedf32d8b856b8b2de430e5a710c5cb1573cfbd47",
+      "zip_crc": "passed",
+      "entries": 420,
+      "architecture": "arm64",
+      "preserved_symlinks": 94,
+      "mach_o": "passed"
+    },
+    {
+      "name": "DeepRecover-v0.3.0-macos-x86_64.zip",
+      "bytes": 42087627,
+      "sha256": "9618ae0d45fe74fbd6912fde32f9e552f584c3d0d9190a4b6a8e63b12149e298",
+      "zip_crc": "passed",
+      "entries": 420,
+      "architecture": "x86_64",
+      "preserved_symlinks": 94,
+      "mach_o": "passed"
+    },
+    {
+      "name": "DeepRecover-v0.3.0-windows-x64.zip",
+      "bytes": 51493893,
+      "sha256": "5c522afe9f33e871b63dc12b55feb1ac12e0ba2677250bd2db46213470909dd3",
+      "zip_crc": "passed",
+      "entries": 216,
+      "architecture": "x64",
+      "pe_machine": "0x8664",
+      "qt_platform_and_jpeg_plugins": true
+    }
+  ],
+  "native_validation": {
+    "arm64": {
+      "tests_passed": 161,
+      "skipped": 0,
+      "cocoa_workflows_passed": 14,
+      "screenshots": 20,
+      "source_hashes_unchanged": true,
+      "packaged_cocoa_smoke": true
+    },
+    "x86_64": {
+      "tests_passed": 161,
+      "skipped": 0,
+      "cocoa_workflows_passed": 14,
+      "screenshots": 20,
+      "source_hashes_unchanged": true,
+      "packaged_cocoa_smoke": true
+    },
+    "windows": {
+      "tests_passed": 159,
+      "skipped": 2,
+      "executable_smoke": true
+    }
+  },
+  "macos_signing": "local ad-hoc; no Developer ID certificate; not notarized"
+}
