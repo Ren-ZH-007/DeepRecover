@@ -17,12 +17,14 @@ import sqlite3
 import subprocess
 import sys
 import tempfile
+from time import monotonic
 from threading import Event
 from unittest.mock import patch
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 os.environ.setdefault('QT_QPA_PLATFORM','offscreen')
 from PySide6.QtWidgets import QApplication, QMessageBox, QPushButton
+from PySide6.QtTest import QTest
 from app.app_config import AppConfig
 from app.main_window import MainWindow
 from core.candidate_io import CandidateAccessError
@@ -50,6 +52,16 @@ def run(output):
             target=output/name
             assert (widget or window).grab().save(str(target))
             screenshots.append(name)
+        def wait_for_layout(condition):
+            # Word-wrapped labels inside QScrollArea settle through posted
+            # layout requests. Observe the final geometry, not its first frame.
+            deadline=monotonic()+2
+            while True:
+                app.processEvents()
+                if condition(): return
+                if monotonic() >= deadline:
+                    raise AssertionError('Qt layout did not become readable within 2 seconds')
+                QTest.qWait(10)
         def finish(error=None):
             handle=window.pending[0]
             if error:
@@ -199,7 +211,7 @@ def run(output):
             window.nav.setCurrentRow(3)
             with patch('app.main_window.QFileDialog.getOpenFileName',return_value=(str(unicode_source),'')):
                 window.choose_scan_source()
-            app.processEvents()
+            wait_for_layout(lambda: window.scan_source_label.height() >= window.scan_source_label.heightForWidth(window.scan_source_label.width()))
             assert window.scan_source_label.text() == window.scan_source_label.toolTip() == str(unicode_source)
             assert window.scan_source_label.height() >= window.scan_source_label.heightForWidth(window.scan_source_label.width())
             capture('17a-unicode-source-layout.png')
