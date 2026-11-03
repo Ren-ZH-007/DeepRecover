@@ -1,0 +1,29 @@
+{
+  "source_commit": "7277f4ae3fdbc7064492272d1b299c8ac989eb0a",
+  "macos_run": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41589567579",
+  "windows_run": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41589567347",
+  "platforms": {
+    "arm64": {
+      "success": true,
+      "asset": "DeepRecover-v0.3.0-macos-arm64.zip",
+      "sha256": "42c9d362a449c99e24a2374bdf71ca77bee8f7dae2229f6332514ada5b837154",
+      "bytes": 38337203,
+      "zip_crc": "passed",
+      "entries": 420,
+      "preserved_symlinks": 94,
+      "mach_o_cpu_type": "arm64",
+      "screenshot_sha256": "3f3b34471be118e359c3beb4a27e7b7f497cd6fef490eccfc928e506367a0bef"
+    },
+    "x86_64": {
+      "success": true,
+      "asset": "DeepRecover-v0.3.0-macos-x86_64.zip",
+      "sha256": "c2e69fa144f5d8a12904d1f2e58b67a6abbbb61571daba48e4527894762a07b5",
+      "bytes": 42085181,
+      "zip_crc": "passed",
+      "entries": 420,
+      "preserved_symlinks": 94,
+      "mach_o_cpu_type": "x86_64",
+      "screenshot_sha256": "82b8bc841d9159d4c5096d27abef297f68f6f75d2defbfe818309d3f0c69178f"
+    }
+  }
+}

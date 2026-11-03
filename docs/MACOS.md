@@ -2,6 +2,8 @@
 
 开发版本 0.3.0，目标 macOS 13 或更高版本，分别提供 Apple Silicon（arm64）和 Intel（x86_64）原生应用。现有 v0.2.0 Release 仅包含 Windows 包；本分支的 macOS 包先由 GitHub Actions 提供构建制品，合并并发布新版本标签后才会成为正式 Release 附件。
 
+原生双架构构建已通过；[验证报告、截图与制品链接](releases/0.3.0/VALIDATION.md)记录实际测试环境与未验收范围。
+
 ## 使用应用包
 
 在“关于本机”确认芯片类型，下载对应的 `DeepRecover-v0.3.0-macos-arm64.zip` 或 `DeepRecover-v0.3.0-macos-x86_64.zip`。解压后把整个 `DeepRecover.app` 拖到“应用程序”，再从 Finder 打开；不需要另装 Python。不要单独复制 `Contents/MacOS` 中的可执行文件。
