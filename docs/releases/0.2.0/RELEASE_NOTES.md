@@ -14,6 +14,8 @@
 
 合入 v0.1.0 发布后发现的六项缺陷修复：SQLite WAL/SHM 源副作用、跨来源备份目录写保护、已完成预览结果留存、Manifest 身份变化检测、索引路径越界，以及导出失败文案仍显示运行。
 
+新增原生 Windows 兼容修复：统一 CPython 3.12 的路径/句柄时间字段语义，保留卷与文件 ID 检查；启动验证关闭日志句柄后再清理临时目录；测试显式关闭 SQLite 连接，并正确识别 Windows 短路径与完整路径。
+
 ## Windows x64 下载与运行
 
 下载 `DeepRecover-v0.2.0-windows-x64.zip`，解压后进入 **DeepRecover** 文件夹运行 **DeepRecover.exe**。必须保留并分发整个文件夹（包括 `_internal`），不能只复制 EXE。该 ZIP 为便携目录包，不是安装程序，不需要另装 Python。`SHA256SUMS.txt` 提供 ZIP 下载校验值。

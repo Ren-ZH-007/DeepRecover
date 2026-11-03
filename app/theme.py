@@ -28,9 +28,9 @@ QListWidget {
     border: none;
     outline: none;
     color: #a7bad3;
-    padding: 2px 12px;
+    padding: 2px 6px;
 }
-QListWidget::item { padding: 11px 12px; margin: 3px 0; border-radius: 8px; }
+QListWidget::item { padding: 8px 12px; margin: 3px 0; border-radius: 8px; }
 QListWidget::item:hover { background: #192f50; color: #ffffff; }
 QListWidget::item:selected { background: #244879; color: #ffffff; font-weight: 600; }
 QLabel#pageEyebrow { color: #647d9c; font-size: 11px; font-weight: 600; }

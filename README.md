@@ -2,12 +2,13 @@
 
 个人自用、本地运行的手机数据恢复工作台。首期目标：Windows 10/11 x64，Python 3.12 + PySide6 + SQLite。
 
-**当前版本：0.1.0，第一阶段 M4 图片预览与校验导出。尚不是完整恢复软件。**
+**当前版本：0.2.0，界面更新预览版。尚不是完整恢复软件。**
 依据《DeepRecover_当前对话归档与研发方案_20261102.md》创建。
 
 ## 已实现
 
-- 分层工程、虚拟环境依赖清单、入口和深色主窗口，7 个导航页面。
+- 分层工程、虚拟环境依赖清单、入口和 7 个导航页面。
+- 深蓝导航、浅色工作区、三步总览入口、卡片分区与统一图标；结果预览、分页工具栏和导出历史使用同一视觉主题。
 - 工作目录初始化、轮转日志、SQLite v3 迁移、数据源/候选/导出记录（兼容 v1/v2 历史记录）。
 - 后台任务执行、协作式取消、成功/失败/中断状态及任务历史。
 - ADB 可用性检测、已授权/未授权/offline/no permissions 状态解析。
@@ -18,7 +19,13 @@
 - 本地文件/镜像的 JPG、PNG 连续签名扫描，记录源内偏移、长度和结构检查结果；支持后台进度与取消。
 - 类型与状态筛选、JPG/PNG 本地图片预览；本页选中项或跨页全部筛选结果的批量导出。
 - 防覆盖导出、源范围与目标 SHA-256 对照、可回读的导出记录及本地 JSON 清单。
-- 100 项自动化测试，包含离屏 Qt 采集、扫描→预览→导出、分页、取消、来源保护和历史回读。
+- 完整自动化回归与原生 Windows 构建门禁；打包后 EXE 需实际启动并完成扫描→预览→校验导出的合成数据流程。
+
+## 下载 Windows 便携包
+
+在 [GitHub Releases](https://github.com/Ren-ZH-007/DeepRecover/releases) 下载 `windows-x64.zip`，解压后运行目录中的 `DeepRecover.exe`。保留整个 `DeepRecover` 文件夹及 `_internal` 文件，不能只复制 EXE。便携包无需另外安装 Python，不是安装程序；源码归档则按下方步骤配置 Python。
+
+新版界面截图：[总览](docs/releases/0.2.0/screenshots/02-overview.png)、[结果与预览](docs/releases/0.2.0/screenshots/07-preview-and-filter.png)、[导出记录](docs/releases/0.2.0/screenshots/08-verified-export-page-2.png)。
 
 ## Windows 启动
 
@@ -105,13 +112,14 @@ Android SHA-256 仅是本地副本的摘要，不是源端哈希比对或文件�
 无 Qt 环境可用标准 Python 运行核心测试；UI 测试会明确跳过。
 2026-11-03 详细 QA：100 项自动化及 12 项独立 Qt 流程通过，修复源保护、任务完成结果留存和终态文案等 6 个缺陷。修复前复现、18 张节点截图、执行指标及未验收边界见 [详细 QA 报告](docs/DETAILED_QA_20261103.md)。截图复现：`QT_QPA_PLATFORM=offscreen .venv/bin/python scripts/qa_capture.py`（Linux）。
 可选界面检查：`python scripts/check_ui.py`，输出 `docs/interface-preview.png`。
-Windows 构建脚本：`scripts/build-windows.ps1`，先运行测试，再用 PyInstaller 生成目录式 EXE。
-这是构建入口，**本次未生成或验证 Windows EXE，也未生成安装包**。
-运行脚本需要安装相应依赖并遵循组织的 PowerShell 策略。
+Windows 构建脚本：`scripts/build-windows.ps1`，必须在原生 Windows + Python 3.12 x64 上运行。脚本先运行发布测试门禁，再用 PyInstaller 6.12.0 生成目录式 EXE，实际启动 EXE 的 `--smoke-test --smoke-report` 隔离验证流程，通过后才生成 Windows ZIP 和 SHA256SUMS.txt。Linux 不能直接交叉生成 Windows EXE。
+
+`.github/workflows/windows-release.yml` 在功能分支构建验证，版本标签 `v*` 触发时只有 Windows 编译和 EXE 检查通过才会发布预发布版本。验证覆盖 7 页导航、SQLite v3、PNG/JPEG 插件、扫描、预览与两项校验导出。测试报告与 EXE 报告由 CI 保存；仅允许 Windows 上两个已声明的文件替换/符号链接权限测试跳过，其他失败或跳过均阻止发布。原生 Windows runner 的自动检查不代表真实手机、Windows DPI/桌面体验或安装包验收已经完成。
 
 ## 工程结构
 
 - `app/`：启动、配置、日志、主窗口和路由。
+- `app/theme.py`、`app/version.py`：统一配色/矢量图标与应用版本。
 - `ui/`：页面拆分预留包，当前页面组装位于 app/main_window.py。
 - `core/device/`：Android 与 iPhone 适配。
 - `core/acquisition/android.py`：用户选择的普通文件采集与本地副本摘要。
