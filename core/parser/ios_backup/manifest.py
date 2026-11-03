@@ -30,7 +30,15 @@ def iter_manifest(path, token=None, limit=None):
     if not database.is_file():
         raise BackupError("未找到 Manifest.db。")
     try:
-        with closing(sqlite3.connect(database.as_uri() + "?mode=ro", uri=True)) as db:
+        canonical = database.resolve(strict=True)
+        if not canonical.is_relative_to(backup.path):
+            raise BackupError('Manifest.db 指向源备份目录以外，已拒绝读取。')
+        _require_stable_index(database, canonical)
+        initial = snapshot(canonical.stat())
+        # Plain mode=ro still creates/updates WAL shared-memory sidecars.
+        # immutable avoids journal/locking writes; refuse pending journals
+        # rather than silently ignoring data that exists only in those files.
+        with closing(sqlite3.connect(canonical.as_uri() + "?mode=ro&immutable=1", uri=True)) as db:
             db.execute("PRAGMA query_only=ON")
             if token:
                 db.set_progress_handler(lambda: _progress(token), 1000)
@@ -52,10 +60,23 @@ def iter_manifest(path, token=None, limit=None):
                     original_path=f"{domain}/{relative_path}", local_path=str(blob) if exists else "",
                     source_stat=snapshot(info) if info else None,
                     integrity="not_checked" if exists else "missing")
+        _require_stable_index(database, canonical)
+        if database.resolve(strict=True) != canonical or snapshot(canonical.stat()) != initial:
+            raise BackupError('Manifest.db 在读取期间已变化，索引结果不完整，请使用稳定备份重试。')
     except sqlite3.Error as error:
         if token:
             token.checkpoint()
         raise BackupError("Manifest.db 无法读取或索引结构不受支持。") from error
+    except OSError as error:
+        raise BackupError('备份索引路径不可用或在读取期间变化，请检查稳定备份。') from error
+
+
+def _require_stable_index(database, canonical):
+    for base in {database, canonical}:
+        for suffix in ('-wal', '-journal'):
+            sidecar = Path(str(base) + suffix)
+            if sidecar.exists() and sidecar.stat().st_size:
+                raise BackupError('备份包含未合并的 WAL/事务日志，已拒绝索引；请在备份工具中完成备份后重试。')
 
 def _progress(token):
     try:

@@ -54,14 +54,12 @@ def export_batch(repository, task_id, candidate_ids, destination, data_dir, toke
         raise ExportError('请选择 1 至 10,000 个候选。')
     destination = Path(destination).resolve()
     protected = [(Path(data_dir) / 'Acquisitions').resolve()]
+    # Protect every known backup, even when this batch exports unrelated files.
+    protected.extend(Path(path).resolve() for path in repository.source_locations('ios_backup'))
     for candidate_id in ids:
         candidate = repository.candidate(candidate_id)
         if candidate is None:
             raise ExportError('选中的候选不存在，请刷新结果。')
-        source_task = repository.task(candidate['task_id'])
-        source = repository.source(source_task['source_id']) if source_task['source_id'] else None
-        if source and source['kind'] == 'ios_backup':
-            protected.append(Path(source['locator']).resolve())
     if any(destination.is_relative_to(root) for root in protected):
         raise ExportError('导出目录不能位于源备份或采集副本目录中。')
     token.checkpoint()
