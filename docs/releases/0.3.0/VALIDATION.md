@@ -1,5 +1,7 @@
 # macOS 适配验证
 
+后续详细测试发现并修复了 8 处问题，自动化增至 161 项；最新原生截图、报告与修复后下载包见 [详细 QA 报告](../../MACOS_TEST_REPORT_20261103.md)。下方为首次适配提交的历史记录，不代表最新修复包。
+
 日期：2026-11-03。源代码提交：`7277f4ae3fdbc7064492272d1b299c8ac989eb0a`。本目录的 JSON 和截图记录该提交的原生构建，不会因后续文档提交而改写；[证据清单](validation/evidence.json)包含下载 ZIP 和截图的摘要。
 
 ## 平台结果
@@ -34,7 +36,7 @@ PySide6 6.8.3 / PyInstaller 6.12.0，分别在官方 `macos-15` 和 `macos-15-in
 
 均由解压后的应用窗口自身抓取，不是 Linux 截图或设计稿，不包含真实用户备份。系统菜单栏不在窗口截图范围内。
 
-## 下载当前分支的已验证制品
+## 初次适配制品（7277f4a 历史记录）
 
 - [Apple Silicon ZIP + SHA256SUMS](https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41589567579/artifacts/13209387916)
 - [Intel ZIP + SHA256SUMS](https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41589567579/artifacts/13209188457)

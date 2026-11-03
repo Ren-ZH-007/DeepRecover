@@ -1,0 +1,192 @@
+{
+  "date": "2026-11-03",
+  "platform": "darwin",
+  "architecture": "x86_64",
+  "qt_platform": "cocoa",
+  "backend": "Qt cocoa; synthetic files and mocked ADB transport; real core services/SQLite",
+  "cases": [
+    {
+      "id": "QA-01",
+      "result": "passed",
+      "observed": "Unauthorized device made no shell/pull request"
+    },
+    {
+      "id": "QA-02",
+      "result": "passed",
+      "copied": 2,
+      "source_phone_hashes_unchanged": true
+    },
+    {
+      "id": "QA-03",
+      "result": "passed",
+      "indexed": 2,
+      "closed_wal_sidecars_created": false,
+      "backup_hashes_unchanged": true
+    },
+    {
+      "id": "QA-04",
+      "result": "passed",
+      "total_candidates": 103,
+      "cross_block_first_offset": 1048571,
+      "last_page_integrity": [
+        "structure_checked",
+        "structure_checked",
+        "truncated"
+      ]
+    },
+    {
+      "id": "QA-05",
+      "result": "passed",
+      "filtered_candidates": 102,
+      "decoded_preview": true
+    },
+    {
+      "id": "QA-06",
+      "result": "passed",
+      "verified_exports": 102,
+      "manifest_exported": 102
+    },
+    {
+      "id": "QA-07",
+      "result": "passed",
+      "changed_copy_preview_rejected": true,
+      "source_phone_unchanged": true
+    },
+    {
+      "id": "QA-08",
+      "result": "passed",
+      "unrelated_backup_destination_rejected": true,
+      "source_backup_unchanged": true
+    },
+    {
+      "id": "QA-09",
+      "result": "passed",
+      "live_wal_rejected": true,
+      "source_and_shm_hashes_unchanged": true
+    },
+    {
+      "id": "QA-10",
+      "result": "passed",
+      "exported_before_cancel": 1,
+      "not_attempted": 101,
+      "gate": "Worker paused after the first real audit commit; UI stop invoked"
+    },
+    {
+      "id": "QA-11",
+      "result": "passed",
+      "history_exports_after_reopen": 102,
+      "unfinished_task": "interrupted"
+    },
+    {
+      "id": "QA-12",
+      "result": "passed",
+      "requested_size": [
+        880,
+        620
+      ],
+      "actual_size": [
+        880,
+        620
+      ],
+      "export_control_visible": true,
+      "home_actions_readable": true
+    },
+    {
+      "id": "QA-13",
+      "result": "passed",
+      "unicode_and_spaces_in_source_and_destination": true,
+      "verified_exports": 2,
+      "source_unchanged": true
+    },
+    {
+      "id": "QA-14",
+      "result": "passed",
+      "quit_cancels_then_waits": true,
+      "history_closes_after_job_finishes": true
+    }
+  ],
+  "source_phone_backup_image_hashes_unchanged": true,
+  "fault_injection": "Only a working acquisition copy was deliberately changed; live WAL writer closed after the no-write assertion",
+  "screenshots": [
+    {
+      "file": "02-overview.png",
+      "sha256": "28641eaf87e0e54ea14d16286d51f0e6400171e9d6b18196e1761ad3cc0ad062"
+    },
+    {
+      "file": "03-android-unauthorized.png",
+      "sha256": "00472fef9154261754a38a677c755a2c6b071cf107d46667b6f1d4296cb2abe1"
+    },
+    {
+      "file": "04-android-selected-files.png",
+      "sha256": "4a73bb8de0d882da2d7f3c5aa1c939641874fbfa8040c0d8d51207fdaae338a0"
+    },
+    {
+      "file": "05-ios-index-readonly.png",
+      "sha256": "2bb4634659f461cb54258c6ff39751fc006359adf4b5ad0fea6ee83be2817181"
+    },
+    {
+      "file": "05b-scan-source-selected.png",
+      "sha256": "035d878c1b222b31ace48a6f23cf26a6d50491d4930657c4d461d892e87d5c98"
+    },
+    {
+      "file": "06-scan-page-2.png",
+      "sha256": "05b5330a2a0f1b1ce334b0f4a3807dc3234c6d1f8bc70a94868c892010217a74"
+    },
+    {
+      "file": "07-preview-and-filter.png",
+      "sha256": "a8b37b43bbc775e794332e2147e27397ea25e74652d0b63562cd5a5ed72a18de"
+    },
+    {
+      "file": "08-verified-export-page-2.png",
+      "sha256": "e0505c6ce9bc4cece9f2499f386378eea8319165fde3f0e3f3f83a9373dd4367"
+    },
+    {
+      "file": "09-source-change-blocked.png",
+      "sha256": "9fae25083fe4f0ce1ba57ab3b26cd9ee10c7c8b05093d47eeef5ff45d414a951"
+    },
+    {
+      "file": "10-after-backup-write-blocked.png",
+      "sha256": "62a480a5cee125f518f62d0132696ab5ddbee1187ebf621a860aaebe758d6c64"
+    },
+    {
+      "file": "11-wal-index-rejected.png",
+      "sha256": "a56d43e33e7f152adf1ecb3e9ad3fcd806989ce1921a0f7e1483657b17565d56"
+    },
+    {
+      "file": "12-cancelled-export-audit.png",
+      "sha256": "3369640f6fbf7ca1962dca46c9f5bcfabcd831d31e8ad8d06cc6abdacd5efe97"
+    },
+    {
+      "file": "13-history-after-reopen.png",
+      "sha256": "692b1744de87e5d39af28ce9716442edc12c8ce94338de448537676c3bbfc4ad"
+    },
+    {
+      "file": "16-settings-local-paths.png",
+      "sha256": "a09773fd6e8fe71c2432365358514ee472327f7392ac897f0598b143adb92619"
+    },
+    {
+      "file": "14a-minimum-overview.png",
+      "sha256": "d98839ce8f8ae0336fd94982118233840f2b5cab2d907cef0ff5cad48520b592"
+    },
+    {
+      "file": "14-minimum-window.png",
+      "sha256": "b4f1bc677c759f2a6a9d25b89b961828836c47b149b42e6fbe2d145fec6f5e01"
+    },
+    {
+      "file": "17a-unicode-source-layout.png",
+      "sha256": "957d57763ab2d4c61911d2ef2dd737d36c49d9c6da7ce79833bc7cecb4fc2a49"
+    },
+    {
+      "file": "17-unicode-source-preview.png",
+      "sha256": "5e871cb4eba08fd540360b70866f0e84ab2f5da2818e51b2fafa542074c94d3e"
+    },
+    {
+      "file": "18-unicode-export-history.png",
+      "sha256": "121314348d1d251d838a98f8b0a86776f36194aba82a77847d3019dfaecd24e9"
+    },
+    {
+      "file": "19-exit-waits-for-task.png",
+      "sha256": "84dfdbcfd813c84bbac8e3dce6e536a702c7558d110d10a09d34e0f21cae6933"
+    }
+  ]
+}

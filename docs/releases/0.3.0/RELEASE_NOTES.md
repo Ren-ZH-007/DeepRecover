@@ -7,6 +7,7 @@
 - Finder 启动时补充 Homebrew ADB 发现；显式工具路径和环境配置优先，设备仍须授权。
 - macOS 中文字体、多选提示和 Command+Q 原生菜单适配，退出遵守后台任务停止检查。
 - 原生平台测试及打包后应用检查成为发布前置条件，macOS 另验证实际 Cocoa 插件并保存窗口截图。
+- 详细 QA 修复损坏/无权限备份的发现、元数据链接越界、最小窗口/长路径裁剪，以及 PNG/ICNS 构建检查遗漏；双架构各 161 项自动化、14 项 Cocoa 流程通过。
 
 下载与你的芯片一致的 `DeepRecover-v0.3.0-macos-arm64.zip` 或 `DeepRecover-v0.3.0-macos-x86_64.zip`，解压后把整个 `.app` 拖入“应用程序”。Windows 用户使用 `DeepRecover-v0.3.0-windows-x64.zip`，解压后保留整个目录运行 EXE。均无需另装 Python。具体操作与源码运行见 [macOS 文档](https://github.com/Ren-ZH-007/DeepRecover/blob/main/docs/MACOS.md)。
 

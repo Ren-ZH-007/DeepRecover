@@ -1,0 +1,13 @@
+{
+  "success": true,
+  "version": "0.3.0",
+  "schema_version": 3,
+  "navigation_pages": 7,
+  "qt_platform": "cocoa",
+  "native_quit_verified": true,
+  "verified_exports": 2,
+  "decoded_formats": [
+    "PNG",
+    "JPEG"
+  ]
+}

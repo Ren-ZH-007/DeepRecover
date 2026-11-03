@@ -116,6 +116,7 @@ macOS 使用 Command/Shift 多选；应用菜单的 Command+Q 经过任务停止
 
 无 Qt 环境可用标准 Python 运行核心测试；UI 测试会明确跳过。
 2026-11-03 详细 QA：100 项自动化及 12 项独立 Qt 流程通过，修复源保护、任务完成结果留存和终态文案等 6 个缺陷。修复前复现、18 张节点截图、执行指标及未验收边界见 [详细 QA 报告](docs/DETAILED_QA_20261103.md)。截图复现：`QT_QPA_PLATFORM=offscreen .venv/bin/python scripts/qa_capture.py`（Linux）。
+macOS 适配后追加详细测试：161 项自动化，两种架构各 14 项 Cocoa 流程与 20 张流程截图，修复 Finder 发现、最小窗口、长路径及构建验证等 8 处问题；[最新报告与修复后下载包](docs/MACOS_TEST_REPORT_20261103.md)。Windows 回归为 159 通过、2 项既有平台跳过。
 可选界面检查：`python scripts/check_ui.py`，输出 `docs/interface-preview.png`。
 Windows 构建脚本：`scripts/build-windows.ps1`，必须在原生 Windows + Python 3.12 x64 上运行。脚本先运行发布测试门禁，再用 PyInstaller 6.12.0 生成目录式 EXE，实际启动 EXE 的 `--smoke-test --smoke-report` 隔离验证流程，通过后才生成 Windows ZIP 和 SHA256SUMS.txt。Linux 不能直接交叉生成 Windows EXE。
 
