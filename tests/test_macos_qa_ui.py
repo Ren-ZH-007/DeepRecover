@@ -220,8 +220,10 @@ class MacosQaUiTests(unittest.TestCase):
         for _ in range(3):
             self.app.processEvents()
         label = self.window.scan_source_label
-        self.assertEqual(label.text(), str(source))
+        # The application deliberately displays the canonical path, including
+        # macOS /private/var aliases and Windows short-name expansion.
+        self.assertEqual(label.text(), str(source.resolve()))
         self.assertGreaterEqual(label.height(), label.heightForWidth(label.width()))
-        self.assertEqual(label.toolTip(), str(source))
+        self.assertEqual(label.toolTip(), str(source.resolve()))
         self.assertGreaterEqual(self.window.scan_start_button.height(), self.window.scan_start_button.minimumSizeHint().height())
         self.assertEqual(source.read_bytes(), png_image())
