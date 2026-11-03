@@ -2,6 +2,7 @@ import sys
 import argparse
 import os
 import tempfile
+import logging
 from app.app_config import AppConfig
 from app.logging_config import configure_logging
 from storage.database.repository import Repository
@@ -17,7 +18,12 @@ def main():
         try:
             with tempfile.TemporaryDirectory(prefix='deeprecover-packaged-') as directory:
                 os.environ['DEEPRECOVER_DATA_DIR'] = directory
-                return _run_gui(args.smoke_report)
+                try:
+                    return _run_gui(args.smoke_report)
+                finally:
+                    # Windows cannot delete an open log file when cleaning the
+                    # isolated smoke directory. Only the smoke process exits here.
+                    logging.shutdown()
         finally:
             if previous is None: os.environ.pop('DEEPRECOVER_DATA_DIR', None)
             else: os.environ['DEEPRECOVER_DATA_DIR'] = previous
