@@ -1,8 +1,10 @@
 # macOS 适配
 
-开发版本 0.3.0，目标 macOS 13 或更高版本，分别提供 Apple Silicon（arm64）和 Intel（x86_64）原生应用。现有 v0.2.0 Release 仅包含 Windows 包；本分支的 macOS 包先由 GitHub Actions 提供构建制品，合并并发布新版本标签后才会成为正式 Release 附件。
+[v0.3.0 预览版已发布](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.3.0)，目标 macOS 13 或更高版本，分别提供 Apple Silicon（arm64）和 Intel（x86_64）原生应用。请从 Release 下载与你的芯片一致的 ZIP；实际原生验证环境为 macOS 15。
 
-原生双架构构建及详细回归已通过；[最新测试报告、截图与修复后制品](MACOS_TEST_REPORT_20261103.md)记录 161 项自动化、14 项 Cocoa 工作流及本轮缺陷修复。[初次适配验证](releases/0.3.0/VALIDATION.md)保留历史证据。
+原生双架构构建及详细回归已通过；[详细测试报告与截图](MACOS_TEST_REPORT_20261103.md)记录 161 项自动化、14 项 Cocoa 工作流及本轮缺陷修复。[初次适配验证](releases/0.3.0/VALIDATION.md)保留历史证据。
+
+正式附件的下载后校验结果及发布构建见 [发布校验记录](releases/0.3.0/PUBLISHED.json)。
 
 ## 使用应用包
 
