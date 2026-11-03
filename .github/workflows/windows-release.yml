@@ -1,14 +1,18 @@
-name: Windows x64 build and release
+name: Windows and macOS build and release
 
 on:
   push:
-    branches: [feature/ui-refresh-release]
+    branches: [feature/ui-refresh-release, feature/macos-support]
     tags: ['v*']
     paths-ignore: ['docs/**', 'README.md']
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: windows-release-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 
 jobs:
   windows:
@@ -56,9 +60,13 @@ jobs:
           if-no-files-found: error
           compression-level: 0
 
+  macos:
+    if: startsWith(github.ref, 'refs/tags/v')
+    uses: ./.github/workflows/macos-build.yml
+
   publish:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: windows
+    needs: [windows, macos]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -68,7 +76,15 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: windows-x64-distribution
-          path: release-assets
+          path: release-assets/windows
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: macos-arm64-distribution
+          path: release-assets/macos-arm64
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: macos-x86_64-distribution
+          path: release-assets/macos-x86_64
       - name: Verify assets and publish the exact tested tag commit
         env:
           GH_TOKEN: ${{ github.token }}
@@ -77,16 +93,20 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cd release-assets
-          sha256sum --check SHA256SUMS.txt
-          cd ..
-          cp docs/releases/0.2.0/RELEASE_NOTES.md release-notes.md
+          mkdir publish-assets
+          for platform in windows macos-arm64 macos-x86_64; do
+            (cd "release-assets/$platform" && sha256sum --check SHA256SUMS.txt)
+            cp release-assets/"$platform"/*.zip publish-assets/
+            cat "release-assets/$platform/SHA256SUMS.txt" >> publish-assets/SHA256SUMS.txt
+          done
+          (cd publish-assets && sha256sum --check SHA256SUMS.txt)
+          cp "docs/releases/${RELEASE_TAG#v}/RELEASE_NOTES.md" release-notes.md
           printf '\nBuild commit: `%s`\n' "$RELEASE_COMMIT" >> release-notes.md
           if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo 'A release already exists for this tag. Refusing to overwrite its assets.' >&2
             exit 1
           fi
-          gh release create "$RELEASE_TAG" release-assets/*.zip release-assets/SHA256SUMS.txt \
+          gh release create "$RELEASE_TAG" publish-assets/*.zip publish-assets/SHA256SUMS.txt \
             --repo "$GITHUB_REPOSITORY" --target "$RELEASE_COMMIT" \
-            --title "DeepRecover $RELEASE_TAG · Windows x64 preview" \
+            --title "DeepRecover $RELEASE_TAG · Windows and macOS preview" \
             --notes-file release-notes.md --prerelease --verify-tag

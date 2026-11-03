@@ -127,16 +127,20 @@ class ExportTests(unittest.TestCase):
     def test_replaced_target_is_neither_verified_nor_deleted_as_owned_output(self):
         candidate,_,_=self.android(b'source')
         original_open=Path.open
+        output_root=(self.root/'output').resolve()
+        replaced_paths=[]
         def replacing_open(path,mode='r',*args,**kwargs):
             stream=original_open(path,mode,*args,**kwargs)
-            if mode=='rb' and path.parent.parent==self.root/'output':
+            if mode=='rb' and path.parent.parent.resolve()==output_root:
                 alternate=path.with_suffix('.replacement')
                 with original_open(alternate,'wb') as replacement: replacement.write(b'other!')
                 alternate.replace(path)
+                replaced_paths.append(path.resolve())
             return stream
         with patch.object(Path,'open',replacing_open):
             task=self.export([candidate.id],expected_error=ExportError)
         record=self.repo.exports(task.id)[0]
+        self.assertEqual(replaced_paths,[Path(record['output_path']).resolve()])
         self.assertEqual(record['status'],'failed')
         self.assertEqual(Path(record['output_path']).read_bytes(),b'other!')
 

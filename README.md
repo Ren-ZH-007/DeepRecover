@@ -1,8 +1,8 @@
 # DeepRecover
 
-个人自用、本地运行的手机数据恢复工作台。首期目标：Windows 10/11 x64，Python 3.12 + PySide6 + SQLite。
+个人自用、本地运行的手机数据恢复工作台。目标平台：Windows 10/11 x64、macOS 13+（Apple Silicon / Intel），Python 3.12 + PySide6 + SQLite。
 
-**当前版本：0.2.0，界面更新预览版。尚不是完整恢复软件。**
+**当前开发版本：0.3.0，增加 macOS 适配。尚不是完整恢复软件。** 最新已发布的 Windows 便携版为 v0.2.0；macOS 构建与使用说明见 [macOS 适配](docs/MACOS.md)。
 依据《DeepRecover_当前对话归档与研发方案_20261102.md》创建。
 
 ## 已实现
@@ -19,11 +19,12 @@
 - 本地文件/镜像的 JPG、PNG 连续签名扫描，记录源内偏移、长度和结构检查结果；支持后台进度与取消。
 - 类型与状态筛选、JPG/PNG 本地图片预览；本页选中项或跨页全部筛选结果的批量导出。
 - 防覆盖导出、源范围与目标 SHA-256 对照、可回读的导出记录及本地 JSON 清单。
-- 完整自动化回归与原生 Windows 构建门禁；打包后 EXE 需实际启动并完成扫描→预览→校验导出的合成数据流程。
+- macOS 独立工作目录、Finder 备份发现、Homebrew ADB 发现与原生退出菜单；Apple Silicon / Intel 分别原生构建 `.app`。
+- 完整自动化回归与原生平台构建门禁；打包后的程序需实际启动并完成扫描→预览→校验导出的合成数据流程。
 
 ## 下载 Windows 便携包
 
-在 [GitHub Releases](https://github.com/Ren-ZH-007/DeepRecover/releases) 下载 `windows-x64.zip`，解压后运行目录中的 `DeepRecover.exe`。保留整个 `DeepRecover` 文件夹及 `_internal` 文件，不能只复制 EXE。便携包无需另外安装 Python，不是安装程序；源码归档则按下方步骤配置 Python。
+在 [GitHub Releases](https://github.com/Ren-ZH-007/DeepRecover/releases) 下载 `DeepRecover-v0.2.0-windows-x64.zip`，解压后运行目录中的 `DeepRecover.exe`。保留整个 `DeepRecover` 文件夹及 `_internal` 文件，不能只复制 EXE。便携包无需另外安装 Python，不是安装程序；源码归档则按下方步骤配置 Python。
 
 新版界面截图：[总览](docs/releases/0.2.0/screenshots/02-overview.png)、[结果与预览](docs/releases/0.2.0/screenshots/07-preview-and-filter.png)、[导出记录](docs/releases/0.2.0/screenshots/08-verified-export-page-2.png)。
 
@@ -55,11 +56,13 @@ $env:DEEPRECOVER_ADB = 'C:\Android\platform-tools\adb.exe'
 ## 工作数据
 
 默认 `%LOCALAPPDATA%\DeepRecover_Data`，未设置 LOCALAPPDATA 时使用用户主目录。
+macOS 默认使用 `~/Library/Application Support/DeepRecover`，不会在 `.app` 或原始备份中创建工作数据库。
 可设置 `DEEPRECOVER_DATA_DIR` 指向独立工作目录；不要指向原始备份目录或待恢复介质。
 目录包括 Devices、Backups、Acquisitions、ScanCache、Recovered、Reports、Logs 和 index.db。
 设备序列号、备份/镜像来源、候选原始路径、本地路径、采集时间、文件身份及来源范围 SHA-256 保存在本地数据库，可在结果页查看。日志不记录文件内容、完整设备序列号或异常明文。导出清单也包含来源路径等本地敏感元数据，请保护工作目录及导出目录。
 
 备份入口自动检查 `%USERPROFILE%\Apple\MobileSync\Backup` 和 `%APPDATA%\Apple Computer\MobileSync\Backup`。
+macOS 优先发现 Finder/iTunes 的 `~/Library/Application Support/MobileSync/Backup`。
 用户可选择 Backup 根目录或单份备份目录。加密备份只识别，不解密。
 索引只读取稳定的 Manifest.db：不会创建或更新源目录的 WAL/SHM 伴随文件，遇到非空 WAL/事务日志会拒绝索引，提示先在备份工具中完成备份；应用不会替用户 checkpoint、删除或合并源日志。已正常 checkpoint、关闭且无待合并日志的 WAL 模式库可只读访问。Manifest 链接不得逃出所选备份根目录，读取期间索引文件身份/大小/时间变化会使任务失败，不冒称完整索引。
 界面使用只读流式遍历全部普通文件记录（丢弃无效 fileID），每 100 项提交一次，不再受旧界面 10,000 条上限限制。结果页从本地数据库分页查询，不一次载入完整历史结果。底层兼容函数 `read_manifest(..., limit=10000)` 保留旧调用上限，新界面使用 `iter_manifest`。
@@ -88,6 +91,8 @@ Android SHA-256 仅是本地副本的摘要，不是源端哈希比对或文件�
 
 选择单张 JPG/PNG 后点击预览。程序从本地来源读出有界数据、检查来源后，在后台用 Qt 根据内容格式解码，只在内存显示，不生成预览文件、不更改原候选状态。预览输入上限 32 MiB、1,600 万像素、Qt 解码分配上限 64 MiB，显示最多 1024×768。取消在读取期间及原生解码前后检查，不能中断正在执行的 Qt 原生解码。其他图片格式和视频预览尚未实现，解码失败不显示旧图，也不标记恢复成功。
 
+macOS 使用 Command/Shift 多选；应用菜单的 Command+Q 经过任务停止检查，正在执行的任务需先结束再退出。
+
 预览和导出共同检查来源绑定、读取边界、文件身份/大小/时间及已知摘要：
 
 - Android：只访问工作目录 Acquisitions 中的副本，核对采集时 SHA-256；有文件身份信息时也核对身份。保留有效摘要的 M2 旧副本可使用，不会重新读取手机。
@@ -111,10 +116,13 @@ Android SHA-256 仅是本地副本的摘要，不是源端哈希比对或文件�
 
 无 Qt 环境可用标准 Python 运行核心测试；UI 测试会明确跳过。
 2026-11-03 详细 QA：100 项自动化及 12 项独立 Qt 流程通过，修复源保护、任务完成结果留存和终态文案等 6 个缺陷。修复前复现、18 张节点截图、执行指标及未验收边界见 [详细 QA 报告](docs/DETAILED_QA_20261103.md)。截图复现：`QT_QPA_PLATFORM=offscreen .venv/bin/python scripts/qa_capture.py`（Linux）。
+macOS 适配后追加详细测试：161 项自动化，两种架构各 14 项 Cocoa 流程与 20 张流程截图，修复 Finder 发现、最小窗口、长路径及构建验证等 8 处问题；[最新报告与修复后下载包](docs/MACOS_TEST_REPORT_20261103.md)。Windows 回归为 159 通过、2 项既有平台跳过。
 可选界面检查：`python scripts/check_ui.py`，输出 `docs/interface-preview.png`。
 Windows 构建脚本：`scripts/build-windows.ps1`，必须在原生 Windows + Python 3.12 x64 上运行。脚本先运行发布测试门禁，再用 PyInstaller 6.12.0 生成目录式 EXE，实际启动 EXE 的 `--smoke-test --smoke-report` 隔离验证流程，通过后才生成 Windows ZIP 和 SHA256SUMS.txt。Linux 不能直接交叉生成 Windows EXE。
 
-`.github/workflows/windows-release.yml` 在功能分支构建验证，版本标签 `v*` 触发时只有 Windows 编译和 EXE 检查通过才会发布预发布版本。验证覆盖 7 页导航、SQLite v3、PNG/JPEG 插件、扫描、预览与两项校验导出。测试报告与 EXE 报告由 CI 保存；仅允许 Windows 上两个已声明的文件替换/符号链接权限测试跳过，其他失败或跳过均阻止发布。原生 Windows runner 的自动检查不代表真实手机、Windows DPI/桌面体验或安装包验收已经完成。
+macOS 构建脚本：`scripts/build-macos.sh`，必须在原生 macOS + 对应架构的 Python 3.12 上运行；先测试再构建，并验证 `.app` 内 Mach-O 架构、元数据及实际运行。CI 分别保存 Apple Silicon / Intel ZIP、校验值、离屏与 Cocoa 验证报告及真实窗口截图，见 [macOS 文档](docs/MACOS.md)。
+
+`.github/workflows/windows-release.yml` 在功能分支构建验证；版本标签 `v*` 触发时同时要求 Windows 与 macOS 双架构构建和打包后检查通过，才会发布预发布版本。验证覆盖 7 页导航、SQLite v3、PNG/JPEG 插件、扫描、预览与两项校验导出。测试报告与应用报告由 CI 保存；仅允许 Windows 上两个已声明的文件替换/符号链接权限测试跳过，其他失败或跳过均阻止发布。原生 runner 的自动检查不代表真实手机、高 DPI/桌面体验、签名公证或安装包验收已经完成。
 
 ## 工程结构
 
@@ -138,7 +146,7 @@ Windows 构建脚本：`scripts/build-windows.ps1`，必须在原生 Windows + P
 
 ## 下一步
 
-1. M5：Windows 10/11 x64 实机、真实 Android/iPhone 备份、打包与安装包验收。
+1. M5：Windows 10/11 x64 与 macOS 实机、真实 Android/iPhone 备份、打包与安装包验收。macOS 双架构适配是本次新增的平台范围，原生构建与自动化证据单独保存。
 2. 后续扩展视频预览、视频/文档扫描及结构校验。
 
 源文件默认只读。索引读取、普通文件采集不等同于已删除数据恢复。

@@ -1,0 +1,16 @@
+{
+  "platform": "linux",
+  "qt_platform": "offscreen",
+  "source_commit": "99d5d1c2b3ec5a6add8ed186e7d8ff5854671877",
+  "purpose": "pre-fix synthetic layout reproduction, not native macOS",
+  "screenshots": [
+    {
+      "file": "overview-buttons-clipped.png",
+      "sha256": "a4937f604246d8635fe2f66d3c1ddc519a91a56d31fa0b437ed42a32ae5607e6"
+    },
+    {
+      "file": "long-source-path-clipped.png",
+      "sha256": "15ba4f53ac7f020e96706b2cde907a668083e01ad5c022a01458db9c3c461d75"
+    }
+  ]
+}

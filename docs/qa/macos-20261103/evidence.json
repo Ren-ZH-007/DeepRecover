@@ -1,0 +1,47 @@
+{
+  "source_commit": "91f5f760747b9751fda64ba68c07d15fee9b6a46",
+  "macos_checkout_commit": "d983f3c7ed0413608ad8132093ea17bb99bfb16c",
+  "macos_run": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41593713229",
+  "windows_run": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41593708890",
+  "architectures": {
+    "arm64": {
+      "tests_passed": 161,
+      "workflow_cases_passed": 14,
+      "workflow_screenshots": 20,
+      "qt_platform": "cocoa",
+      "runner_macos": "15.8.2",
+      "asset": "DeepRecover-v0.3.0-macos-arm64.zip",
+      "asset_url": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41593713229/artifacts/13210249610",
+      "sha256": "12b64d4147a9efab6414e3d10c8e90d7ff319cd3777083af01398e46b21ed7b0",
+      "bytes": 38339327,
+      "zip_crc": "passed",
+      "entries": 420,
+      "preserved_symlinks": 94,
+      "mach_o_cpu_type": "arm64",
+      "source_hashes_unchanged": true
+    },
+    "x86_64": {
+      "tests_passed": 161,
+      "workflow_cases_passed": 14,
+      "workflow_screenshots": 20,
+      "qt_platform": "cocoa",
+      "runner_macos": "15.7.9",
+      "asset": "DeepRecover-v0.3.0-macos-x86_64.zip",
+      "asset_url": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41593713229/artifacts/13210619403",
+      "sha256": "30c81df650b72484f2d1678a83ac77e5073ea0f93f5a771cb1da80fee37a3a44",
+      "bytes": 42086588,
+      "zip_crc": "passed",
+      "entries": 420,
+      "preserved_symlinks": 94,
+      "mach_o_cpu_type": "x86_64",
+      "source_hashes_unchanged": true
+    }
+  },
+  "windows": {
+    "tests_passed": 159,
+    "skipped": 2,
+    "failures": 0,
+    "errors": 0,
+    "executable_smoke": true
+  }
+}

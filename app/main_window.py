@@ -1,8 +1,9 @@
+import sys
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QPixmap, QColor
+from PySide6.QtGui import QPixmap, QColor, QAction, QKeySequence
 from PySide6.QtWidgets import (QAbstractItemView, QFileDialog, QHBoxLayout, QLabel,
     QListWidget, QMainWindow, QPushButton, QStackedWidget, QTableWidget,
-    QTableWidgetItem, QVBoxLayout, QWidget, QHeaderView, QInputDialog, QMessageBox, QProgressBar, QComboBox, QSplitter, QFrame, QListWidgetItem)
+    QTableWidgetItem, QVBoxLayout, QWidget, QHeaderView, QInputDialog, QMessageBox, QProgressBar, QComboBox, QSplitter, QFrame, QListWidgetItem, QScrollArea)
 from app.navigation import PAGES
 from core.tasks import TaskManager, TaskCancelled
 from core.device.android.adapter import AndroidAdapter, AdbError
@@ -17,6 +18,11 @@ from core.export.service import export_batch, ExportError
 from ui.recovery.export_history import ExportHistory
 from app.theme import STYLE, icon, brand_icon
 from app.version import VERSION
+
+
+def selection_modifier(platform=None):
+    return 'Command / Shift' if (platform or sys.platform) == 'darwin' else 'Ctrl / Shift'
+
 
 class MainWindow(QMainWindow):
     def __init__(self, config, repository):
@@ -72,8 +78,30 @@ class MainWindow(QMainWindow):
         self.timer.start(100)
         self.statusBar().setSizeGripEnabled(False)
         self.statusBar().showMessage('就绪  ·  数据仅在本机处理')
+        self.setup_application_menu()
 
-    def page(self, title, subtitle):
+    def setup_application_menu(self):
+        self.quit_action = QAction('退出 DeepRecover', self)
+        self.quit_action.setObjectName('quitApplication')
+        self.quit_action.setMenuRole(QAction.MenuRole.QuitRole)
+        self.quit_action.setShortcuts(QKeySequence.StandardKey.Quit)
+        self.quit_action.setShortcutContext(Qt.ShortcutContext.ApplicationShortcut)
+        self.quit_action.triggered.connect(self.request_quit)
+        self.addAction(self.quit_action)
+        self.application_menu = None
+        if sys.platform == 'darwin':
+            # Cocoa relocates QuitRole into the native application menu. The
+            # action must remain ours so Command+Q respects closeEvent below.
+            self.menuBar().setNativeMenuBar(True)
+            self.application_menu = self.menuBar().addMenu('文件')
+            self.application_menu.addAction(self.quit_action)
+
+    def request_quit(self):
+        # Never bypass cancellation/wait protection with QApplication.quit().
+        # Accepted closure exits via Qt's default quitOnLastWindowClosed.
+        self.close()
+
+    def page(self, title, subtitle, *, scrollable=False):
         page = QWidget()
         page.setObjectName('page')
         box = QVBoxLayout(page)
@@ -82,7 +110,18 @@ class MainWindow(QMainWindow):
         eyebrow = QLabel('DEEPRECOVER  /  WORKSPACE'); eyebrow.setObjectName('pageEyebrow'); box.addWidget(eyebrow)
         label = QLabel(title); label.setObjectName('title'); box.addWidget(label)
         label = QLabel(subtitle); label.setWordWrap(True); label.setObjectName('subtitle'); box.addWidget(label)
-        self.stack.addWidget(page)
+        if scrollable:
+            # Text-heavy pages must retain readable controls at 880×620 and
+            # when source paths wrap onto several lines.
+            scroll = QScrollArea()
+            scroll.setObjectName('pageScroll')
+            scroll.setFrameShape(QFrame.Shape.NoFrame)
+            scroll.setWidgetResizable(True)
+            scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+            scroll.setWidget(page)
+            self.stack.addWidget(scroll)
+        else:
+            self.stack.addWidget(page)
         return box
 
     def table(self, headers):
@@ -123,7 +162,7 @@ class MainWindow(QMainWindow):
         return inner
 
     def build_pages(self):
-        box = self.page('让数据处理，更有条理', '连接授权设备或打开本地备份，从来源记录到校验导出，全程在本机完成。')
+        box = self.page('让数据处理，更有条理', '连接授权设备或打开本地备份，从来源记录到校验导出，全程在本机完成。', scrollable=True)
         hero = QFrame(); hero.setObjectName('heroCard'); box.addWidget(hero)
         hero_box = QVBoxLayout(hero); hero_box.setContentsMargins(26,24,26,24); hero_box.setSpacing(12)
         badge = QLabel('●  LOCAL FIRST   /   本地优先'); badge.setObjectName('badge'); badge.setMaximumWidth(240); hero_box.addWidget(badge)
@@ -151,12 +190,12 @@ class MainWindow(QMainWindow):
         self.android_table = self.table(['设备序列号','设备型号','连接状态']); box.addWidget(self.android_table,1)
         self.android_list_source = QLabel('尚未列出目录。选择已授权设备后，点击「选择共享目录」。'); self.android_list_source.setObjectName('sourceInfo')
         self.android_list_source.setTextFormat(Qt.TextFormat.PlainText); self.android_list_source.setWordWrap(True); box.addWidget(self.android_list_source)
-        self.android_file_table = self.table(['普通文件路径 · Ctrl / Shift 可多选']); self.android_file_table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection); box.addWidget(self.android_file_table,2)
+        self.android_file_table = self.table([f'普通文件路径 · {selection_modifier()} 可多选']); self.android_file_table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection); box.addWidget(self.android_file_table,2)
         row = QHBoxLayout(); box.addLayout(row)
         self.button(row,'采集选中文件',self.collect_android,'primary','export'); row.addStretch()
         label = QLabel('仅使用只读 ADB pull，不执行 root、写入或删除设备文件。'); label.setObjectName('sectionNote'); label.setWordWrap(True); row.addWidget(label,1)
 
-        box = self.page('打开 iPhone 本地备份', '发现 Apple Devices / iTunes 备份，只读解析未加密且已完成的备份索引。')
+        box = self.page('打开 iPhone 本地备份', '发现 Finder / Apple Devices / iTunes 备份，只读解析未加密且已完成的备份索引。')
         row = QHBoxLayout(); box.addLayout(row)
         self.button(row,'自动发现',lambda: self.detect_backups(None),'secondary','refresh')
         self.button(row,'选择备份目录',self.choose_backup,'secondary','folder')
@@ -165,11 +204,11 @@ class MainWindow(QMainWindow):
         info = self.card(box,'保留原始备份，不改变源数据')
         label = QLabel('支持稳定的未加密 Manifest.db；有未合并事务日志时会明确拒绝读取。来源目录和索引结果保存在本地，可在历史中回读。'); label.setObjectName('sectionNote'); label.setWordWrap(True); info.addWidget(label)
 
-        box = self.page('扫描本地镜像', '定位文件或镜像中的连续 JPG / PNG 签名，记录偏移与结构检查结果。')
+        box = self.page('扫描本地镜像', '定位文件或镜像中的连续 JPG / PNG 签名，记录偏移与结构检查结果。', scrollable=True)
         source_box = self.card(box,'01   选择扫描源')
         row = QHBoxLayout(); source_box.addLayout(row)
         self.button(row,'选择镜像或文件',self.choose_scan_source,'secondary','folder'); row.addStretch()
-        self.scan_source_label = QLabel('尚未选择源文件'); self.scan_source_label.setObjectName('sourceInfo'); self.scan_source_label.setTextFormat(Qt.TextFormat.PlainText); self.scan_source_label.setWordWrap(True); source_box.addWidget(self.scan_source_label)
+        self.scan_source_label = QLabel('尚未选择源文件'); self.scan_source_label.setObjectName('sourceInfo'); self.scan_source_label.setTextFormat(Qt.TextFormat.PlainText); self.scan_source_label.setWordWrap(True); self.scan_source_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse); source_box.addWidget(self.scan_source_label)
         work = self.card(box,'02   开始只读扫描')
         row = QHBoxLayout(); work.addLayout(row)
         self.scan_start_button = self.button(row,'开始 JPG / PNG 扫描',self.start_scan,'primary','play'); self.scan_start_button.setEnabled(False)
@@ -190,11 +229,14 @@ class MainWindow(QMainWindow):
         row.addWidget(self.category_filter)
         self.status_filter = QComboBox()
         for label,value in [('全部状态','all'),('候选','candidate'),('部分 / 受限','partial'),('失败','failed')]: self.status_filter.addItem(label,value)
-        row.addWidget(self.status_filter); row.addStretch()
+        row.addWidget(self.status_filter)
+        self.result_selection_hint = QLabel(f'{selection_modifier()} 多选'); self.result_selection_hint.setObjectName('sectionNote'); row.addWidget(self.result_selection_hint)
+        row.addStretch()
         self.result_page_label = QLabel('0 条'); self.result_page_label.setObjectName('sectionNote'); row.addWidget(self.result_page_label)
         self.category_filter.currentIndexChanged.connect(self.filter_results); self.status_filter.currentIndexChanged.connect(self.filter_results)
         splitter = QSplitter(); box.addWidget(splitter,1)
         self.result_table = self.table(['文件名','类型','大小 / 字节','完整性','原始路径','本地文件','来源范围 SHA-256','采集时间 / UTC','源内偏移 / 字节','候选状态'])
+        self.result_table.setToolTip(f'{selection_modifier()} 可多选本页记录；分页或筛选会重置当前选择。')
         self.result_table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection); splitter.addWidget(self.result_table)
         preview = QFrame(); preview.setObjectName('previewPanel'); preview_box = QVBoxLayout(preview); preview_box.setContentsMargins(14,14,14,14); splitter.addWidget(preview)
         label = QLabel('图片预览'); label.setObjectName('sectionTitle'); preview_box.addWidget(label)
@@ -350,6 +392,7 @@ class MainWindow(QMainWindow):
                 self.statusBar().showMessage('请选择稳定的普通文件；不能扫描程序工作数据库或日志。'); return
             self.scan_source = source
             self.scan_source_label.setText(str(source))
+            self.scan_source_label.setToolTip(str(source))
             self.scan_start_button.setEnabled(True)
 
     def start_scan(self):
@@ -503,6 +546,10 @@ class MainWindow(QMainWindow):
             self.cancel_task()
             self.statusBar().showMessage('正在停止任务，请在任务结束后再次关闭窗口。')
             event.ignore(); return
+        # A parented QDialog is still a top-level window and can outlive a
+        # hidden main window. Close it only after the task guard accepts exit.
+        if self.export_dialog:
+            self.export_dialog.close()
         self.timer.stop()
         self.manager.shutdown()
         event.accept()

@@ -1,13 +1,15 @@
 """Reproducible synthetic Qt workflows and unedited widget screenshots.
 
-Run from the repository root with QT_QPA_PLATFORM=offscreen. Android transport
+Run from the repository root with QT_QPA_PLATFORM=offscreen or native cocoa. Android transport
 and modal user choices are injected; acquisition, indexing, scanning, preview,
 export, SQLite, cancellation, hashes and Qt widgets execute normally.
 """
 import argparse
+from datetime import datetime, timezone
 import hashlib
 import json
 import os
+import platform
 from pathlib import Path
 import plistlib
 import shlex
@@ -15,12 +17,14 @@ import sqlite3
 import subprocess
 import sys
 import tempfile
+from time import monotonic
 from threading import Event
 from unittest.mock import patch
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 os.environ.setdefault('QT_QPA_PLATFORM','offscreen')
-from PySide6.QtWidgets import QApplication, QMessageBox
+from PySide6.QtWidgets import QApplication, QMessageBox, QPushButton
+from PySide6.QtTest import QTest
 from app.app_config import AppConfig
 from app.main_window import MainWindow
 from core.candidate_io import CandidateAccessError
@@ -41,13 +45,23 @@ def run(output):
     app=QApplication.instance() or QApplication([])
     cases=[]; screenshots=[]
     with tempfile.TemporaryDirectory(prefix='DeepRecover-QA-') as directory:
-        root=Path(directory); config=AppConfig(root/'work'); config.initialize()
+        root=Path(directory).resolve(); config=AppConfig(root/'work'); config.initialize()
         repo=Repository(config.database); window=MainWindow(config,repo); window.show()
         def capture(name,widget=None):
             app.processEvents()
             target=output/name
             assert (widget or window).grab().save(str(target))
             screenshots.append(name)
+        def wait_for_layout(condition):
+            # Word-wrapped labels inside QScrollArea settle through posted
+            # layout requests. Observe the final geometry, not its first frame.
+            deadline=monotonic()+2
+            while True:
+                app.processEvents()
+                if condition(): return
+                if monotonic() >= deadline:
+                    raise AssertionError('Qt layout did not become readable within 2 seconds')
+                QTest.qWait(10)
         def finish(error=None):
             handle=window.pending[0]
             if error:
@@ -177,10 +191,59 @@ def run(output):
             capture('13-history-after-reopen.png')
             cases.append({'id':'QA-11','result':'passed','history_exports_after_reopen':102,'unfinished_task':'interrupted'})
             window.nav.setCurrentRow(6); capture('16-settings-local-paths.png')
-            window.open_results(scan_task); window.resize(880,620); app.processEvents()
+            window.resize(880,620); window.nav.setCurrentRow(0); app.processEvents()
+            assert (window.width(),window.height()) == (880,620)
+            home_actions={button.text():button for button in window.stack.widget(0).findChildren(QPushButton)}
+            for text in ('打开本地备份','扫描本地镜像'):
+                button=home_actions[text]
+                assert button.height() >= button.minimumSizeHint().height()
+                assert not button.visibleRegion().isEmpty()
+            capture('14a-minimum-overview.png')
+            window.open_results(scan_task); app.processEvents()
             assert not window.export_all_button.visibleRegion().isEmpty()
             capture('14-minimum-window.png')
-            cases.append({'id':'QA-12','result':'passed','requested_size':[880,620],'actual_size':[window.width(),window.height()],'export_control_visible':True})
+            cases.append({'id':'QA-12','result':'passed','requested_size':[880,620],'actual_size':[window.width(),window.height()],'export_control_visible':True,'home_actions_readable':True})
+
+            unicode_root=root/'中文 空格 # 路径'; unicode_root.mkdir()
+            unicode_source=unicode_root/('长文件名'*12+'.img')
+            unicode_original=b'prefix'+png+JPEG
+            unicode_source.write_bytes(unicode_original)
+            window.nav.setCurrentRow(3)
+            with patch('app.main_window.QFileDialog.getOpenFileName',return_value=(str(unicode_source),'')):
+                window.choose_scan_source()
+            wait_for_layout(lambda: window.scan_source_label.height() >= window.scan_source_label.heightForWidth(window.scan_source_label.width()))
+            assert window.scan_source_label.text() == window.scan_source_label.toolTip() == str(unicode_source)
+            assert window.scan_source_label.height() >= window.scan_source_label.heightForWidth(window.scan_source_label.width())
+            capture('17a-unicode-source-layout.png')
+            window.start_scan(); unicode_task=finish()
+            assert repo.candidate_count(unicode_task)==2
+            window.result_table.selectRow(0); window.preview_selected(); finish()
+            assert not window.preview_label.pixmap().isNull()
+            capture('17-unicode-source-preview.png')
+            start_export(unicode_root/'校验 导出 #'); unicode_export=finish()
+            unicode_records=repo.exports(unicode_export)
+            assert len(unicode_records)==2 and all(r['status']=='exported' and r['source_sha256']==r['target_sha256'] for r in unicode_records)
+            assert unicode_source.read_bytes()==unicode_original
+            capture('18-unicode-export-history.png',window.export_dialog)
+            cases.append({'id':'QA-13','result':'passed','unicode_and_spaces_in_source_and_destination':True,'verified_exports':2,'source_unchanged':True})
+
+            ready,release=Event(),Event()
+            def exit_probe(token):
+                ready.set()
+                if not release.wait(20): raise RuntimeError('exit probe was not released')
+                token.checkpoint()
+            try:
+                window.run_task('qa_exit_probe',exit_probe,lambda *_:None)
+                assert ready.wait(15)
+                window.quit_action.trigger(); app.processEvents()
+                assert window.isVisible() and window.export_dialog.isVisible()
+                capture('19-exit-waits-for-task.png')
+                release.set(); finish(TaskCancelled)
+                history=window.export_dialog
+                window.quit_action.trigger(); app.processEvents()
+                assert not window.isVisible() and not history.isVisible()
+                cases.append({'id':'QA-14','result':'passed','quit_cancels_then_waits':True,'history_closes_after_job_finishes':True})
+            finally: release.set()
             assert hashes(phone)==phone_before and hashes(normal)==normal_before
             assert hashlib.sha256(image.read_bytes()).hexdigest()==image_before
         finally:
@@ -190,7 +253,8 @@ def run(output):
                 except Exception: pass
                 window.poll()
             window.close()
-    result={'date':'2026-11-03','backend':'Qt offscreen; synthetic files and mocked ADB transport; real core services/SQLite',
+    result={'date':datetime.now(timezone.utc).date().isoformat(),'platform':sys.platform,'architecture':platform.machine(),'qt_platform':app.platformName(),
+            'backend':f'Qt {app.platformName()}; synthetic files and mocked ADB transport; real core services/SQLite',
             'cases':cases,'source_phone_backup_image_hashes_unchanged':True,
             'fault_injection':'Only a working acquisition copy was deliberately changed; live WAL writer closed after the no-write assertion',
             'screenshots':[{'file':name,'sha256':hashlib.sha256((output/name).read_bytes()).hexdigest()} for name in screenshots]}
