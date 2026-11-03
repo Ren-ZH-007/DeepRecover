@@ -1,4 +1,5 @@
 import hashlib
+import os
 from contextlib import closing
 import json
 import plistlib
@@ -222,7 +223,9 @@ class M2Tests(unittest.TestCase):
         before = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in backup.iterdir()}
         source = DataSource('ios_backup', str(backup), 'Backup')
         handle = self.manager().submit('ios_manifest', lambda token: iter_manifest(backup, token), source=source, persist_candidates=True)
-        self.assertEqual(handle.future.result(20), 10005)
+        # This is a correctness fixture, not a 20-second indexing SLA. Native
+        # Windows CI incurs more SQLite/file-inspection I/O than Linux.
+        self.assertEqual(handle.future.result(90 if os.name == 'nt' else 20), 10005)
         self.assertEqual(self.repo.candidate_count(handle.id), 10005)
         self.assertEqual(len(self.repo.candidate_page(handle.id, offset=10000)), 5)
         self.assertEqual(self.repo.candidate_page(handle.id)[0]['source_id'], source.id)

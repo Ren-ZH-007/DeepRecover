@@ -4,6 +4,7 @@ on:
   push:
     branches: [feature/ui-refresh-release]
     tags: ['v*']
+    paths-ignore: ['docs/**', 'README.md']
   workflow_dispatch:
 
 permissions:
