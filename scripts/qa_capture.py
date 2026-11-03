@@ -1,13 +1,15 @@
 """Reproducible synthetic Qt workflows and unedited widget screenshots.
 
-Run from the repository root with QT_QPA_PLATFORM=offscreen. Android transport
+Run from the repository root with QT_QPA_PLATFORM=offscreen or native cocoa. Android transport
 and modal user choices are injected; acquisition, indexing, scanning, preview,
 export, SQLite, cancellation, hashes and Qt widgets execute normally.
 """
 import argparse
+from datetime import datetime, timezone
 import hashlib
 import json
 import os
+import platform
 from pathlib import Path
 import plistlib
 import shlex
@@ -41,7 +43,7 @@ def run(output):
     app=QApplication.instance() or QApplication([])
     cases=[]; screenshots=[]
     with tempfile.TemporaryDirectory(prefix='DeepRecover-QA-') as directory:
-        root=Path(directory); config=AppConfig(root/'work'); config.initialize()
+        root=Path(directory).resolve(); config=AppConfig(root/'work'); config.initialize()
         repo=Repository(config.database); window=MainWindow(config,repo); window.show()
         def capture(name,widget=None):
             app.processEvents()
@@ -178,9 +180,47 @@ def run(output):
             cases.append({'id':'QA-11','result':'passed','history_exports_after_reopen':102,'unfinished_task':'interrupted'})
             window.nav.setCurrentRow(6); capture('16-settings-local-paths.png')
             window.open_results(scan_task); window.resize(880,620); app.processEvents()
+            assert (window.width(),window.height()) == (880,620)
             assert not window.export_all_button.visibleRegion().isEmpty()
             capture('14-minimum-window.png')
             cases.append({'id':'QA-12','result':'passed','requested_size':[880,620],'actual_size':[window.width(),window.height()],'export_control_visible':True})
+
+            unicode_root=root/'中文 空格 # 路径'; unicode_root.mkdir()
+            unicode_source=unicode_root/('长文件名'*12+'.img')
+            unicode_original=b'prefix'+png+JPEG
+            unicode_source.write_bytes(unicode_original)
+            window.nav.setCurrentRow(3)
+            with patch('app.main_window.QFileDialog.getOpenFileName',return_value=(str(unicode_source),'')):
+                window.choose_scan_source()
+            window.start_scan(); unicode_task=finish()
+            assert repo.candidate_count(unicode_task)==2
+            window.result_table.selectRow(0); window.preview_selected(); finish()
+            assert not window.preview_label.pixmap().isNull()
+            capture('17-unicode-source-preview.png')
+            start_export(unicode_root/'校验 导出 #'); unicode_export=finish()
+            unicode_records=repo.exports(unicode_export)
+            assert len(unicode_records)==2 and all(r['status']=='exported' and r['source_sha256']==r['target_sha256'] for r in unicode_records)
+            assert unicode_source.read_bytes()==unicode_original
+            capture('18-unicode-export-history.png',window.export_dialog)
+            cases.append({'id':'QA-13','result':'passed','unicode_and_spaces_in_source_and_destination':True,'verified_exports':2,'source_unchanged':True})
+
+            ready,release=Event(),Event()
+            def exit_probe(token):
+                ready.set()
+                if not release.wait(20): raise RuntimeError('exit probe was not released')
+                token.checkpoint()
+            try:
+                window.run_task('qa_exit_probe',exit_probe,lambda *_:None)
+                assert ready.wait(15)
+                window.quit_action.trigger(); app.processEvents()
+                assert window.isVisible() and window.export_dialog.isVisible()
+                capture('19-exit-waits-for-task.png')
+                release.set(); finish(TaskCancelled)
+                history=window.export_dialog
+                window.quit_action.trigger(); app.processEvents()
+                assert not window.isVisible() and not history.isVisible()
+                cases.append({'id':'QA-14','result':'passed','quit_cancels_then_waits':True,'history_closes_after_job_finishes':True})
+            finally: release.set()
             assert hashes(phone)==phone_before and hashes(normal)==normal_before
             assert hashlib.sha256(image.read_bytes()).hexdigest()==image_before
         finally:
@@ -190,7 +230,8 @@ def run(output):
                 except Exception: pass
                 window.poll()
             window.close()
-    result={'date':'2026-11-03','backend':'Qt offscreen; synthetic files and mocked ADB transport; real core services/SQLite',
+    result={'date':datetime.now(timezone.utc).date().isoformat(),'platform':sys.platform,'architecture':platform.machine(),'qt_platform':app.platformName(),
+            'backend':f'Qt {app.platformName()}; synthetic files and mocked ADB transport; real core services/SQLite',
             'cases':cases,'source_phone_backup_image_hashes_unchanged':True,
             'fault_injection':'Only a working acquisition copy was deliberately changed; live WAL writer closed after the no-write assertion',
             'screenshots':[{'file':name,'sha256':hashlib.sha256((output/name).read_bytes()).hexdigest()} for name in screenshots]}

@@ -53,6 +53,11 @@ class MacosUiTests(unittest.TestCase):
         self.app.processEvents()
         self.app.sendEvent(target, QKeyEvent(QEvent.Type.KeyPress, combination.key(), combination.keyboardModifiers()))
         self.app.sendEvent(target, QKeyEvent(QEvent.Type.KeyRelease, combination.key(), combination.keyboardModifiers()))
+        # Synthetic release events keep their modifier mask in Qt. Reset the
+        # test-only keyboard state so later row-selection tests stay isolated.
+        self.app.sendEvent(target, QKeyEvent(QEvent.Type.KeyPress, Qt.Key.Key_unknown, Qt.KeyboardModifier.NoModifier))
+        self.app.sendEvent(target, QKeyEvent(QEvent.Type.KeyRelease, Qt.Key.Key_unknown, Qt.KeyboardModifier.NoModifier))
+        self.assertEqual(self.app.keyboardModifiers(), Qt.KeyboardModifier.NoModifier)
 
     def test_macos_fonts_and_modifiers_preserve_other_platform_defaults(self):
         self.assertIn('Helvetica Neue', font_family('darwin'))

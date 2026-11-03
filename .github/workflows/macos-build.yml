@@ -2,7 +2,8 @@ name: macOS native app build
 
 on:
   push:
-    branches: [feature/macos-support]
+    branches: [main]
+    paths-ignore: ['docs/**', 'README.md']
   pull_request:
     branches: [main]
     paths:
@@ -24,7 +25,7 @@ permissions:
 
 concurrency:
   group: macos-build-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 
 jobs:
   macos:
@@ -52,6 +53,11 @@ jobs:
       - name: Native test, bundle, offscreen and Cocoa verification
         shell: bash
         run: bash scripts/build-macos.sh '${{ matrix.arch }}'
+      - name: Detailed native Cocoa workflows and screenshots
+        shell: bash
+        env:
+          QT_QPA_PLATFORM: cocoa
+        run: .venv/bin/python scripts/qa_capture.py --output 'build/macos-${{ matrix.arch }}/qa'
       - name: Preserve native validation evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -65,6 +71,7 @@ jobs:
             build/macos-${{ matrix.arch }}/cocoa-overview.png
             build/macos-${{ matrix.arch }}/codesign-*.log
             build/macos-${{ matrix.arch }}/bundle-validation.json
+            build/macos-${{ matrix.arch }}/qa/
           if-no-files-found: warn
       - name: Preserve complete native app distribution
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

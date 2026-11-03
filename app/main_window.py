@@ -3,7 +3,7 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QPixmap, QColor, QAction, QKeySequence
 from PySide6.QtWidgets import (QAbstractItemView, QFileDialog, QHBoxLayout, QLabel,
     QListWidget, QMainWindow, QPushButton, QStackedWidget, QTableWidget,
-    QTableWidgetItem, QVBoxLayout, QWidget, QHeaderView, QInputDialog, QMessageBox, QProgressBar, QComboBox, QSplitter, QFrame, QListWidgetItem)
+    QTableWidgetItem, QVBoxLayout, QWidget, QHeaderView, QInputDialog, QMessageBox, QProgressBar, QComboBox, QSplitter, QFrame, QListWidgetItem, QScrollArea)
 from app.navigation import PAGES
 from core.tasks import TaskManager, TaskCancelled
 from core.device.android.adapter import AndroidAdapter, AdbError
@@ -101,7 +101,7 @@ class MainWindow(QMainWindow):
         # Accepted closure exits via Qt's default quitOnLastWindowClosed.
         self.close()
 
-    def page(self, title, subtitle):
+    def page(self, title, subtitle, *, scrollable=False):
         page = QWidget()
         page.setObjectName('page')
         box = QVBoxLayout(page)
@@ -110,7 +110,18 @@ class MainWindow(QMainWindow):
         eyebrow = QLabel('DEEPRECOVER  /  WORKSPACE'); eyebrow.setObjectName('pageEyebrow'); box.addWidget(eyebrow)
         label = QLabel(title); label.setObjectName('title'); box.addWidget(label)
         label = QLabel(subtitle); label.setWordWrap(True); label.setObjectName('subtitle'); box.addWidget(label)
-        self.stack.addWidget(page)
+        if scrollable:
+            # Text-heavy pages must retain readable controls at 880×620 and
+            # when source paths wrap onto several lines.
+            scroll = QScrollArea()
+            scroll.setObjectName('pageScroll')
+            scroll.setFrameShape(QFrame.Shape.NoFrame)
+            scroll.setWidgetResizable(True)
+            scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+            scroll.setWidget(page)
+            self.stack.addWidget(scroll)
+        else:
+            self.stack.addWidget(page)
         return box
 
     def table(self, headers):
@@ -151,7 +162,7 @@ class MainWindow(QMainWindow):
         return inner
 
     def build_pages(self):
-        box = self.page('让数据处理，更有条理', '连接授权设备或打开本地备份，从来源记录到校验导出，全程在本机完成。')
+        box = self.page('让数据处理，更有条理', '连接授权设备或打开本地备份，从来源记录到校验导出，全程在本机完成。', scrollable=True)
         hero = QFrame(); hero.setObjectName('heroCard'); box.addWidget(hero)
         hero_box = QVBoxLayout(hero); hero_box.setContentsMargins(26,24,26,24); hero_box.setSpacing(12)
         badge = QLabel('●  LOCAL FIRST   /   本地优先'); badge.setObjectName('badge'); badge.setMaximumWidth(240); hero_box.addWidget(badge)
@@ -193,11 +204,11 @@ class MainWindow(QMainWindow):
         info = self.card(box,'保留原始备份，不改变源数据')
         label = QLabel('支持稳定的未加密 Manifest.db；有未合并事务日志时会明确拒绝读取。来源目录和索引结果保存在本地，可在历史中回读。'); label.setObjectName('sectionNote'); label.setWordWrap(True); info.addWidget(label)
 
-        box = self.page('扫描本地镜像', '定位文件或镜像中的连续 JPG / PNG 签名，记录偏移与结构检查结果。')
+        box = self.page('扫描本地镜像', '定位文件或镜像中的连续 JPG / PNG 签名，记录偏移与结构检查结果。', scrollable=True)
         source_box = self.card(box,'01   选择扫描源')
         row = QHBoxLayout(); source_box.addLayout(row)
         self.button(row,'选择镜像或文件',self.choose_scan_source,'secondary','folder'); row.addStretch()
-        self.scan_source_label = QLabel('尚未选择源文件'); self.scan_source_label.setObjectName('sourceInfo'); self.scan_source_label.setTextFormat(Qt.TextFormat.PlainText); self.scan_source_label.setWordWrap(True); source_box.addWidget(self.scan_source_label)
+        self.scan_source_label = QLabel('尚未选择源文件'); self.scan_source_label.setObjectName('sourceInfo'); self.scan_source_label.setTextFormat(Qt.TextFormat.PlainText); self.scan_source_label.setWordWrap(True); self.scan_source_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse); source_box.addWidget(self.scan_source_label)
         work = self.card(box,'02   开始只读扫描')
         row = QHBoxLayout(); work.addLayout(row)
         self.scan_start_button = self.button(row,'开始 JPG / PNG 扫描',self.start_scan,'primary','play'); self.scan_start_button.setEnabled(False)
@@ -381,6 +392,7 @@ class MainWindow(QMainWindow):
                 self.statusBar().showMessage('请选择稳定的普通文件；不能扫描程序工作数据库或日志。'); return
             self.scan_source = source
             self.scan_source_label.setText(str(source))
+            self.scan_source_label.setToolTip(str(source))
             self.scan_start_button.setEnabled(True)
 
     def start_scan(self):

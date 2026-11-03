@@ -5,8 +5,10 @@ import os
 from pathlib import Path
 import platform
 import plistlib
+import struct
 import subprocess
 import tempfile
+import zlib
 
 
 BUNDLE_ID = 'com.deeprecover.workbench'
@@ -66,13 +68,63 @@ def validate_bundle(bundle, expected_version, expected_arch, runner=subprocess.r
     return executable, info
 
 
+def verify_decoded_image(path, image_format, label):
+    # Reading through Qt verifies pixels, not merely an extension or file header.
+    from PySide6.QtGui import QImageReader
+    reader = QImageReader(str(path), image_format)
+    image = reader.read()
+    if image.isNull() or image.width() <= 0 or image.height() <= 0:
+        raise RuntimeError(f'{label} cannot be decoded: {reader.errorString()}')
+
+
+def verify_icon(path):
+    path = Path(path)
+    size = path.stat().st_size
+    with path.open('rb') as stream:
+        header = stream.read(8)
+        if len(header) != 8 or header[:4] != b'icns' or struct.unpack('>I', header[4:])[0] != size:
+            raise RuntimeError('Bundle icon has an invalid ICNS container')
+        while stream.tell() < size:
+            header = stream.read(8)
+            if len(header) != 8:
+                raise RuntimeError('Bundle icon has an incomplete ICNS element')
+            length = struct.unpack('>I', header[4:])[0]
+            if length < 8 or stream.tell() + length - 8 > size:
+                raise RuntimeError('Bundle icon has an invalid ICNS element length')
+            stream.seek(length - 8, os.SEEK_CUR)
+    verify_decoded_image(path, b'icns', 'Bundle icon')
+
+
 def verify_screenshot(path):
     path = Path(path)
+    size = path.stat().st_size
     with path.open('rb') as stream:
         if stream.read(8) != b'\x89PNG\r\n\x1a\n':
             raise RuntimeError('Cocoa window screenshot is not PNG')
-    if path.stat().st_size < 100:
-        raise RuntimeError('Cocoa window screenshot is empty or incomplete')
+        # libpng can decode some damaged containers with warnings (including a
+        # bad IEND checksum). Verify every chunk before accepting decoded pixels.
+        while True:
+            header = stream.read(8)
+            if len(header) != 8:
+                raise RuntimeError('Cocoa window screenshot is an incomplete PNG')
+            length, kind = struct.unpack('>I4s', header)
+            if length > 0x7fffffff or stream.tell() + length + 4 > size:
+                raise RuntimeError('Cocoa window screenshot has an invalid PNG chunk length')
+            remaining, checksum = length, zlib.crc32(kind)
+            while remaining:
+                data = stream.read(min(remaining, 65536))
+                if not data:
+                    raise RuntimeError('Cocoa window screenshot is an incomplete PNG')
+                remaining -= len(data)
+                checksum = zlib.crc32(data, checksum)
+            stored = stream.read(4)
+            if len(stored) != 4 or checksum != struct.unpack('>I', stored)[0]:
+                raise RuntimeError('Cocoa window screenshot has an invalid PNG checksum')
+            if kind == b'IEND':
+                if length or stream.read(1):
+                    raise RuntimeError('Cocoa window screenshot has an invalid PNG ending')
+                break
+    verify_decoded_image(path, b'png', 'Cocoa window screenshot')
 
 
 def run_smoke(bundle, report, expected_version, expected_arch, qt_platform, screenshot=None):
@@ -82,7 +134,8 @@ def run_smoke(bundle, report, expected_version, expected_arch, qt_platform, scre
                                 capture_output=True, text=True, timeout=10)
     if translated.returncode == 0 and translated.stdout.strip() == '1':
         raise RuntimeError('Rosetta execution is not accepted as a native architecture build')
-    executable, _ = validate_bundle(bundle, expected_version, expected_arch)
+    executable, info = validate_bundle(bundle, expected_version, expected_arch)
+    verify_icon(Path(bundle) / 'Contents/Resources' / info['CFBundleIconFile'])
     report = Path(report).resolve()
     report.parent.mkdir(parents=True, exist_ok=True)
     if report.exists():

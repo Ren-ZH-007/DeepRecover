@@ -24,6 +24,7 @@ QWidget {
 }
 QMainWindow, QDialog { background: #f4f7fb; }
 QWidget#page { background: #f4f7fb; }
+QScrollArea#pageScroll { background: #f4f7fb; border: none; }
 QLabel { background: transparent; }
 QWidget#sideBar { background: #10213b; border: none; }
 QWidget#sideBar QLabel { color: #dce7f7; }
