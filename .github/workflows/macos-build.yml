@@ -53,6 +53,9 @@ jobs:
       - name: Native test, bundle, offscreen and Cocoa verification
         shell: bash
         run: bash scripts/build-macos.sh '${{ matrix.arch }}'
+      - name: Validate native APFS metadata and same-disk rejection without raw reads
+        shell: bash
+        run: .venv/bin/python scripts/verify_macos_disk_metadata.py --report 'build/macos-${{ matrix.arch }}/disk-metadata-validation.json'
       - name: Detailed native Cocoa workflows and screenshots
         shell: bash
         env:
@@ -76,6 +79,7 @@ jobs:
             build/macos-${{ matrix.arch }}/cocoa-overview.png
             build/macos-${{ matrix.arch }}/codesign-*.log
             build/macos-${{ matrix.arch }}/bundle-validation.json
+            build/macos-${{ matrix.arch }}/disk-metadata-validation.json
             build/macos-${{ matrix.arch }}/qa/
             build/macos-${{ matrix.arch }}/computer-qa/
           if-no-files-found: warn

@@ -78,6 +78,7 @@ class ComputerPage(QWidget):
         scroll = QScrollArea(); scroll.setObjectName('pageScroll')
         scroll.setFrameShape(QFrame.Shape.NoFrame); scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.page_scroll = scroll
         outer.addWidget(scroll)
         content = QWidget(); content.setObjectName('page'); scroll.setWidget(content)
         box = QVBoxLayout(content); box.setContentsMargins(24, 22, 24, 18); box.setSpacing(10)
@@ -125,10 +126,14 @@ class ComputerPage(QWidget):
         self.progress = QProgressBar(); self.progress.setRange(0, 1000); self.progress.setValue(0)
         work.addWidget(self.progress)
         self.status = QLabel('等待选择来源。候选保存在本地，可分页查看、按类型筛选并校验导出。')
-        self.status.setObjectName('sectionNote'); self.status.setWordWrap(True); work.addWidget(self.status)
+        self.status.setObjectName('sectionNote'); self.status.setWordWrap(True)
+        self.status.setTextFormat(Qt.TextFormat.PlainText); work.addWidget(self.status)
+        self.directory_help_button = window.button(work, '查看工作目录设置', self.show_work_directory,
+                                                   'secondary', 'folder')
 
         paths = window.card(box, '工作目录必须与源磁盘分开')
         directory = QLabel(str(window.config.data_dir)); directory.setObjectName('sourceInfo')
+        self.work_directory_label = directory
         directory.setTextFormat(Qt.TextFormat.PlainText); directory.setWordWrap(True)
         directory.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse); paths.addWidget(directory)
         note = QLabel('扫描原始磁盘前会检查工作目录是否位于其他物理磁盘。请先将 DEEPRECOVER_DATA_DIR 指向其他磁盘并重启；导出目标也必须与原始来源分开。')
@@ -145,6 +150,9 @@ class ComputerPage(QWidget):
         self.partition_combo.currentIndexChanged.connect(self.partition_changed)
         self.mode_combo.currentIndexChanged.connect(self.refresh_controls)
         self.refresh_controls()
+
+    def show_work_directory(self):
+        self.page_scroll.ensureWidgetVisible(self.work_directory_label)
 
     @property
     def busy(self):
@@ -314,7 +322,12 @@ class ComputerPage(QWidget):
                     self.status.setText('只读预检已停止，未建立恢复任务。')
                     if on_error: on_error(self.status.text())
                 else:
-                    self.status.setText(f'只读预检未完成：{error}')
+                    message = f'只读预检未完成：{error}'
+                    if self.source_kind == 'device':
+                        message += ('\n当前工作目录：' + str(self.window.config.data_dir) +
+                            '\n扫描原始盘时，工作目录必须位于另一块物理磁盘；同盘其他分区也不满足要求。'
+                            '请查看工作目录设置，修改后重启，或改选已有的稳定镜像。')
+                    self.status.setText(message)
                     self.window.statusBar().showMessage(self.status.text())
                     if on_error: on_error(self.status.text())
             self.refresh_controls()
