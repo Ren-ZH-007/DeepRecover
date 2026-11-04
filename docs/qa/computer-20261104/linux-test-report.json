@@ -1,0 +1,12 @@
+{
+  "success": true,
+  "platform": "linux",
+  "run": 270,
+  "passed": 270,
+  "failures": 0,
+  "errors": 0,
+  "skipped": [],
+  "unexpected_skips": [],
+  "expected_failures": 0,
+  "unexpected_successes": 0
+}

@@ -1,0 +1,99 @@
+{
+  "date": "2026-11-04",
+  "version": "0.4.0",
+  "status": "PR development build; not a published release",
+  "source_commit": "11420f188d951e2954c2dd3c6be598ea3b3984a8",
+  "macos_pr_merge_checkout": "f978b39f37e62cfa96e2e02c7336cc4f9b2408c1",
+  "linux_unit_source_commit": "13b116282424dd968d2dd3ecc3d9b5cde816a47a",
+  "linux_test_report": "linux-test-report.json",
+  "linux_computer_workflows": {
+    "source_commit": "11420f188d951e2954c2dd3c6be598ea3b3984a8",
+    "passed": 9,
+    "screenshots_generated": 12,
+    "qt_platform": "offscreen",
+    "screenshot_files_in_repository": false
+  },
+  "platforms": {
+    "windows": {
+      "workflow_run": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41751765063",
+      "validation_artifact": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41751765063/artifacts/13287085706",
+      "distribution_artifact": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41751765063/artifacts/13287140610",
+      "test_report": "windows/test-report.json",
+      "computer_qa": "windows/evidence.json",
+      "unit_tests": 270,
+      "passed": 268,
+      "skipped": 2,
+      "computer_workflows": 9,
+      "screenshots": 12,
+      "qt_platform": "offscreen",
+      "screenshot_sha256_png_crc_decode_verified": true
+    },
+    "arm64": {
+      "workflow_run": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41751771153",
+      "validation_artifact": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41751771153/artifacts/13286335958",
+      "distribution_artifact": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41751771153/artifacts/13286915696",
+      "test_report": "arm64/test-report.json",
+      "computer_qa": "arm64/evidence.json",
+      "unit_tests": 270,
+      "passed": 270,
+      "skipped": 0,
+      "computer_workflows": 9,
+      "screenshots": 12,
+      "qt_platform": "cocoa",
+      "screenshot_sha256_png_crc_decode_verified": true
+    },
+    "x86_64": {
+      "workflow_run": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41751771153",
+      "validation_artifact": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41751771153/artifacts/13287085544",
+      "distribution_artifact": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41751771153/artifacts/13287195298",
+      "test_report": "x86_64/test-report.json",
+      "computer_qa": "x86_64/evidence.json",
+      "unit_tests": 270,
+      "passed": 270,
+      "skipped": 0,
+      "computer_workflows": 9,
+      "screenshots": 12,
+      "qt_platform": "cocoa",
+      "screenshot_sha256_png_crc_decode_verified": true
+    }
+  },
+  "distributions": [
+    {
+      "name": "DeepRecover-v0.4.0-macos-x86_64.zip",
+      "sha256": "03ff42cad78621db271cb0997b6bb05af780d7a6f9f5b15b2ae59913cb6ec97a",
+      "size_bytes": 42179929,
+      "zip_crc_verified": true,
+      "executable_header_verified": true
+    },
+    {
+      "name": "DeepRecover-v0.4.0-macos-arm64.zip",
+      "sha256": "941557d4da277cbd9ae46b8d0404c825d894aa635462e32ac76304b62a9c60e1",
+      "size_bytes": 38432119,
+      "zip_crc_verified": true,
+      "executable_header_verified": true
+    },
+    {
+      "name": "DeepRecover-v0.4.0-windows-x64.zip",
+      "sha256": "1779ad8ee883d1614b2d2d3924b77cd8c73e9dcf3d44f551260f8bd90a74a099",
+      "size_bytes": 51586037,
+      "zip_crc_verified": true,
+      "executable_header_verified": true
+    }
+  ],
+  "source_images_sha256_unchanged": true,
+  "real_disks_enumerated_or_opened": false,
+  "physical_device_api_and_isolation_tests": "controlled mocks; no real hardware acceptance",
+  "apfs_fixture": "NXSB marker stub with PNG, for signature routing only; not a full APFS volume",
+  "windows_offscreen_font": {
+    "family": "Noto Sans CJK SC",
+    "upstream_commit": "f8d157532fbfaeda587e826d4cd5b21a49186f7c",
+    "sha256": "2c76254f6fc379fddfce0a7e84fb5385bb135d3e399294f6eeb6680d0365b74b",
+    "included_in_application_distribution": false
+  },
+  "before_font_fix": {
+    "file": "before-windows/11-minimum-computer-source-controls.png",
+    "sha256": "a344b631fe076af35fd723e19bd8a79747e2748c8420dc0c8fdbad7fed215945",
+    "valid_readability_evidence": false,
+    "source_commit": "13b116282424dd968d2dd3ecc3d9b5cde816a47a"
+  }
+}

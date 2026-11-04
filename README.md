@@ -125,13 +125,13 @@ macOS 使用 Command/Shift 多选；应用菜单的 Command+Q 经过任务停止
 
 无 Qt 环境可用标准 Python 运行核心测试；UI 测试会明确跳过。
 2026-11-03 详细 QA：100 项自动化及 12 项独立 Qt 流程通过，修复源保护、任务完成结果留存和终态文案等 6 个缺陷。修复前复现、18 张节点截图、执行指标及未验收边界见 [详细 QA 报告](docs/DETAILED_QA_20261103.md)。截图复现：`QT_QPA_PLATFORM=offscreen .venv/bin/python scripts/qa_capture.py`（Linux）。
-macOS 适配后追加详细测试：161 项自动化，两种架构各 14 项 Cocoa 流程与 20 张流程截图，修复 Finder 发现、最小窗口、长路径及构建验证等 8 处问题；[最新报告与修复后下载包](docs/MACOS_TEST_REPORT_20261103.md)。Windows 回归为 159 通过、2 项既有平台跳过。
+macOS 适配后追加详细测试：161 项自动化，两种架构各 14 项 Cocoa 流程与 20 张流程截图，修复 Finder 发现、最小窗口、长路径及构建验证等 8 处问题；[v0.3.0 报告与下载包](docs/MACOS_TEST_REPORT_20261103.md)。电脑恢复开发版增加至 270 项，Windows 为 268 通过、2 项既有平台跳过，macOS 双架构各 270 通过；每个平台另有 9 项电脑流程、12 张截图，见[电脑恢复测试报告](docs/COMPUTER_TEST_REPORT_20261104.md)。真实原始盘与 USB 仍待验收。
 可选界面检查：`python scripts/check_ui.py`，输出 `docs/interface-preview.png`。
 Windows 构建脚本：`scripts/build-windows.ps1`，必须在原生 Windows + Python 3.12 x64 上运行。脚本先运行发布测试门禁，再用 PyInstaller 6.12.0 生成目录式 EXE，实际启动 EXE 的 `--smoke-test --smoke-report` 隔离验证流程，通过后才生成 Windows ZIP 和 SHA256SUMS.txt。Linux 不能直接交叉生成 Windows EXE。
 
 macOS 构建脚本：`scripts/build-macos.sh`，必须在原生 macOS + 对应架构的 Python 3.12 上运行；先测试再构建，并验证 `.app` 内 Mach-O 架构、元数据及实际运行。CI 分别保存 Apple Silicon / Intel ZIP、校验值、离屏与 Cocoa 验证报告及真实窗口截图，见 [macOS 文档](docs/MACOS.md)。
 
-`.github/workflows/windows-release.yml` 在功能分支构建验证；版本标签 `v*` 触发时同时要求 Windows 与 macOS 双架构构建和打包后检查通过，才会发布预发布版本。验证覆盖 7 页导航、SQLite v3、PNG/JPEG 插件、扫描、预览与两项校验导出。测试报告与应用报告由 CI 保存；仅允许 Windows 上两个已声明的文件替换/符号链接权限测试跳过，其他失败或跳过均阻止发布。原生 runner 的自动检查不代表真实手机、高 DPI/桌面体验、签名公证或安装包验收已经完成。
+`.github/workflows/windows-release.yml` 在功能分支构建验证；版本标签 `v*` 触发时同时要求 Windows 与 macOS 双架构构建和打包后检查通过，才会发布预发布版本。验证覆盖 8 页导航、SQLite v3、PNG/JPEG 插件、扫描、预览、原有两项及电脑两项校验导出。测试报告与应用报告由 CI 保存；仅允许 Windows 上两个已声明的文件替换/符号链接权限测试跳过，其他失败或跳过均阻止发布。原生 runner 的自动检查不代表真实手机、高 DPI/桌面体验、签名公证或安装包验收已经完成。
 
 ## 工程结构
 
