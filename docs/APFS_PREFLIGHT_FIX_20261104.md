@@ -1,6 +1,6 @@
 # macOS APFS 只读预检修复
 
-日期：2026-11-04。0.4.1 修复候选；已发布的 v0.4.0 不包含此修复。[PR #10](https://github.com/Ren-ZH-007/DeepRecover/pull/10)。
+日期：2026-11-04。本报告保存 0.4.1 发布前的 PR 验证快照；该修复已随 [v0.4.1 预览版](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.4.1)发布，v0.4.0 不包含此修复。[PR #10](https://github.com/Ren-ZH-007/DeepRecover/pull/10)。
 
 ## 问题和处理
 
@@ -20,6 +20,8 @@
 原生元数据通过仅证明对应 runner 的字段兼容及同盘拒绝逻辑，不等于实际硬盘/U 盘数据恢复、权限或文件系统兼容性验收。APFS/HFS+ 仍仅连续 JPG/PNG 签名候选，不解析其删除记录。
 
 两种 macOS runner 均实际返回了 `APFSPhysicalStore`，完成来源/工作卷映射和同盘拒绝，报告：[Apple Silicon](qa/apfs-preflight-20261104/arm64/disk-metadata-validation.json)、[Intel](qa/apfs-preflight-20261104/x86_64/disk-metadata-validation.json)。新增模拟测试不会替代这项原生检查。
+
+发布更新：v0.4.1 从合并提交 `2c0b3243c386189959d29aceb6808678bbb8ae1a` 重新构建。[正式发布流水线](https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41780403227)、[正式附件下载后校验记录](releases/0.4.1/PUBLISHED.json)与[仓库发布状态核查](releases/0.4.1/REPOSITORY_STATUS.md)分别记录该标签结果。下方及证据目录中的 PR 制品继续保留原来源和摘要；下载以正式 Release 附件及 SHA256SUMS.txt 为准。
 
 关键界面截图来自 Qt 与实际服务、合成镜像和受控 APFS 元数据替身；没有打开真实 raw 来源：[Apple Silicon 工作目录说明](qa/apfs-preflight-20261104/arm64/10a-work-directory-guidance.png)、[Intel](qa/apfs-preflight-20261104/x86_64/10a-work-directory-guidance.png)、[Windows](qa/apfs-preflight-20261104/windows/10a-work-directory-guidance.png)。原生检查与模拟界面证据分开记录。
 

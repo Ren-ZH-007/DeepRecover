@@ -1,5 +1,7 @@
 # 第一阶段进度 — M4 图片预览与校验导出
 
+2026-11-04 macOS APFS 预检修复（[v0.4.1 预览版已发布](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.4.1)）：兼容 `APFSPhysicalStore` 与系统快照卷引用，预检失败时提示工作目录设置，见[修复报告](APFS_PREFLIGHT_FIX_20261104.md)。
+
 2026-11-04 电脑恢复扩展（[v0.4.0 预览版已发布](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.4.0)）：新增 Windows/macOS 原始盘、U 盘及镜像入口，NTFS/FAT32/exFAT 的受支持删除布局与 APFS/HFS+ 签名候选，见[支持矩阵](COMPUTER_RECOVERY.md)。270 项自动化、原生双平台编译及电脑界面证据见[测试报告](COMPUTER_TEST_REPORT_20261104.md)。真实盘/USB 仍未验收；本次不改变下方历史里程碑的验收状态。
 
 平台扩展更新（[v0.3.0 预览版已发布](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.3.0)）：Windows 原生编译、EXE 冒烟与便携 ZIP 已完成；本次新增 macOS 双架构 `.app`、平台目录/设备工具发现与 Cocoa 验证，见 [macOS 说明](MACOS.md)。追加详细测试为 161 项自动化、双架构各 14 项 Cocoa 流程，8 处问题已修复，见 [报告](MACOS_TEST_REPORT_20261103.md)。下方旧版测试数字保留为 M2–M4 历史记录。M5 的真实设备、真实备份、桌面体验及安装包验收仍未完成。
