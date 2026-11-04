@@ -2,10 +2,10 @@
 
 个人自用、本地运行的手机与电脑数据恢复工作台。目标平台：Windows 10/11 x64、macOS 13+（Apple Silicon / Intel），Python 3.12 + PySide6 + SQLite。
 
-**当前预览版本：[v0.4.1](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.4.1)，已发布 Windows 和 macOS 双架构包，在 v0.4.0 电脑磁盘与镜像恢复基础上修复 macOS APFS 预检。** 电脑功能的范围与使用方法见 [电脑恢复](docs/COMPUTER_RECOVERY.md)，macOS 启动说明见 [macOS 适配](docs/MACOS.md)。
+**当前预览版本：[v0.5.0](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.5.0)，已发布 Windows 和 macOS 双架构包，新增引导式来源选择、图形化工作目录和中文结果依据。** 电脑功能的范围与使用方法见 [电脑恢复](docs/COMPUTER_RECOVERY.md)，macOS 启动说明见 [macOS 适配](docs/MACOS.md)。
 依据《DeepRecover_当前对话归档与研发方案_20261102.md》创建。
 
-0.5.0 开发升级：新增图形化工作目录选择、物理磁盘来源树、三步预检及中文结果依据；尚未纳入上方 v0.4.1 发布。见[使用与验证说明](docs/GUIDED_RECOVERY.md)。
+0.5.0 的图形化工作目录、物理磁盘来源树、三步预检及中文结果依据见[使用与验证说明](docs/GUIDED_RECOVERY.md)，正式附件下载后校验见[发布记录](docs/releases/0.5.0/PUBLISHED.json)。
 
 ## 已实现
 
@@ -28,14 +28,14 @@
 
 ## 下载预览包
 
-- [Windows x64](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.4.1/DeepRecover-v0.4.1-windows-x64.zip)
-- [macOS Apple Silicon](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.4.1/DeepRecover-v0.4.1-macos-arm64.zip)
-- [macOS Intel](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.4.1/DeepRecover-v0.4.1-macos-x86_64.zip)
-- [SHA256SUMS.txt](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.4.1/SHA256SUMS.txt)
+- [Windows x64](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.5.0/DeepRecover-v0.5.0-windows-x64.zip)
+- [macOS Apple Silicon](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.5.0/DeepRecover-v0.5.0-macos-arm64.zip)
+- [macOS Intel](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.5.0/DeepRecover-v0.5.0-macos-x86_64.zip)
+- [SHA256SUMS.txt](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.5.0/SHA256SUMS.txt)
 
 Windows 解压后运行目录中的 `DeepRecover.exe`，保留整个 `DeepRecover` 文件夹及 `_internal` 文件，不能只复制 EXE。macOS 按芯片类型下载，解压后将整个 `DeepRecover.app` 拖入“应用程序”。预览包无需另外安装 Python，Windows 包不是安装程序；源码归档则按下方步骤配置 Python。macOS 包未提供 Developer ID 签名或 Apple 公证，详见 [macOS 说明](docs/MACOS.md)。
 
-新版 macOS 界面截图：[总览](docs/qa/macos-20261103/arm64/02-overview.png)、[结果与预览](docs/qa/macos-20261103/arm64/07-preview-and-filter.png)、[导出记录](docs/qa/macos-20261103/arm64/08-verified-export-page-2.png)。
+v0.5.0 界面截图：[选择工作目录](docs/qa/guided-20261104/arm64/01-workspace-before-initialization.png)、[物理磁盘分组](docs/qa/guided-20261104/arm64/14-grouped-physical-sources.png)、[结果依据](docs/qa/guided-20261104/arm64/02a-deleted-record-evidence.png)。
 
 ## Windows 启动
 

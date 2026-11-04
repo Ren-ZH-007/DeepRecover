@@ -1,6 +1,6 @@
 # 电脑磁盘与镜像恢复
 
-[v0.4.1 预览版已发布](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.4.1)，提供 Windows 和 macOS 双架构包。新增“电脑恢复”导航与概览入口，保留手机采集和备份流程。Windows/macOS 均能读取原始 `.img/.dd/.raw/.bin` 文件；原始磁盘入口按本机权限读取 Windows PhysicalDrive/盘符卷、macOS disk/rdisk 设备，包含可枚举的 U 盘。
+[v0.5.0 预览版已发布](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.5.0)，提供 Windows 和 macOS 双架构包。提供“电脑恢复”导航与概览入口，保留手机采集和备份流程。Windows/macOS 均能读取原始 `.img/.dd/.raw/.bin` 文件；原始磁盘入口按本机权限读取 Windows PhysicalDrive/盘符卷、macOS disk/rdisk 设备，包含可枚举的 U 盘。
 
 ## 支持范围
 
@@ -16,6 +16,8 @@
 删除记录模式支持任意扩展名，分类来自名称元数据；图片预览仅 JPG/PNG。签名模式只检查连续 JPG/PNG 容器。NTFS 暂以 `[$MFT record N]/文件名` 标识位置，不推测完整父目录；FAT32 短名称丢失的首字符显示 `_`，不伪造原字符。FAT32/exFAT 仅遍历现存目录，不追猜已删除目录的失效簇链。
 
 ## 使用步骤
+
+0.5.0 启动时可图形化选择工作目录，也可继续使用 `DEEPRECOVER_DATA_DIR`。扫描原始盘前请选择另一块物理磁盘上的工作目录；设置页和电脑页可在任务结束后切换，旧历史不自动迁移。来源树及结果依据说明见[引导式操作说明](GUIDED_RECOVERY.md)。
 
 1. 打开“电脑恢复”，选择镜像，或检测后明确选择本机磁盘/U 盘；检测不会自动开始扫描。
 2. 等待只读分区预检，选择范围及“解析删除记录”或“签名候选”。不支持的文件系统会说明限制。
