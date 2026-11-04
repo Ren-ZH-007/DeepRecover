@@ -139,9 +139,8 @@ class ComputerUiTests(unittest.TestCase):
 
     def test_device_preflight_failure_never_creates_database_task(self):
         device = SimpleNamespace(path='/dev/disk99', size=4096, label='合成设备', system_disk=False)
-        self.page.devices = [device]
-        self.window.fill(self.page.device_table, [(device.path, device.size, device.label)])
-        self.page.device_table.selectRow(0)
+        self.page.set_devices([device])
+        self.page.device_tree.setCurrentItem(self.page.device_item(device.path))
         with patch('ui.computer.page.inspect_computer_source', side_effect=RuntimeError('工作目录位于源盘')):
             self.page.choose_device()
             with self.assertRaises(RuntimeError): self.page._future.result(5)
@@ -165,10 +164,9 @@ class ComputerUiTests(unittest.TestCase):
         self.window.nav.setCurrentRow(7)
         self.prepare_source(file_system='APFS')
         self.assertIn('APFS', self.page.capability_label.text())
-        self.page.devices = [SimpleNamespace(path='/dev/disk3s1', size=4096,
-            label='Macintosh HD', system_disk=True)]
-        self.window.fill(self.page.device_table, [('/dev/disk3s1', 4096, 'Macintosh HD')])
-        self.page.device_table.selectRow(0)
+        self.page.set_devices([SimpleNamespace(path='/dev/disk3s1', size=4096,
+            label='Macintosh HD', system_disk=True)])
+        self.page.device_tree.setCurrentItem(self.page.device_item('/dev/disk3s1'))
         def info(path):
             return {'DeviceIdentifier': path.removeprefix('/dev/'),
                     'APFSContainerReference': 'disk3',
@@ -282,7 +280,7 @@ class ComputerUiTests(unittest.TestCase):
         self.assertTrue(self.page.results_button.isEnabled())
         self.page.results_button.click()
         self.assertEqual(self.window.result_table.rowCount(), 1)
-        self.assertIn('cancelled', self.window.result_source.text())
+        self.assertIn('已停止', self.window.result_source.text())
         self.assertEqual(self.image.read_bytes(), before)
 
     def test_raw_history_preview_guard_failure_does_not_create_task(self):

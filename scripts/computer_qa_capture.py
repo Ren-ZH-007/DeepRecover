@@ -19,12 +19,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 from PySide6.QtTest import QTest
 from PySide6.QtGui import QTextLayout
-from PySide6.QtWidgets import QApplication, QMessageBox, QScrollArea
+from PySide6.QtWidgets import QApplication, QLabel, QMessageBox, QScrollArea
 from app.app_config import AppConfig
 from app.main_window import MainWindow
 from core.candidate_io import CandidateAccessError
 from core.computer.io import DiskError
 from core.computer import devices as disk_devices
+from core.computer.devices import DiskDevice
 from core.export.service import ExportError
 from storage.database.repository import Repository
 from tests.fixtures_ntfs import NTFSFixture, file_name, resident_attr, nonresident_attr
@@ -127,7 +128,17 @@ def run(output):
             assert len(fragmented['extents']) == 2
             capture('02-ntfs-deleted-records.png')
             record('CQA-02', deleted_records=3, ready=2, restricted=1, fragmented_extents=2)
-            select('已删除 图片.png'); window.preview_selected(); finish()
+            select('已删除 图片.png')
+            stored_candidate = repo.candidate(window.selected_candidate_ids()[0])
+            window.evidence_button.click(); app.processEvents()
+            assert window.evidence_dialog.findChild(QLabel, 'evidence-deletion-label').text() == '文件系统删除记录'
+            assert window.evidence_dialog.findChild(QLabel, 'evidence-content-label').text() == '布局检查通过'
+            assert '不表示已删除数据恢复成功' in window.evidence_dialog.findChild(QLabel, 'evidence-export-explanation').text()
+            window.evidence_dialog.resize(680, 680)
+            capture('02a-deleted-record-evidence.png', window.evidence_dialog)
+            window.evidence_dialog.close()
+            assert repo.candidate(window.selected_candidate_ids()[0]) == stored_candidate
+            window.preview_selected(); finish()
             assert not window.preview_label.pixmap().isNull()
             capture('03-resident-png-preview.png'); record('CQA-03', resident_png_decoded=True)
             window.status_filter.setCurrentIndex(window.status_filter.findData('candidate'))
@@ -164,9 +175,17 @@ def run(output):
             assert len(apfs_rows) == 1 and apfs_rows[0]['deletion_state'] == 'unknown'
             capture('09-apfs-unknown-deletion-state.png')
             record('CQA-07', filesystem='APFS', mode='signature', deletion_state='unknown')
+            window.result_table.selectRow(0); window.evidence_button.click(); app.processEvents()
+            assert window.evidence_dialog.findChild(QLabel, 'evidence-deletion-label').text() == '未知（签名候选）'
+            assert '不能判断是否曾被删除' in window.evidence_dialog.findChild(QLabel, 'evidence-deletion-explanation').text()
+            window.evidence_dialog.resize(680, 680)
+            capture('09a-signature-unknown-evidence.png', window.evidence_dialog)
+            window.evidence_dialog.close()
+            record('CQA-11', deleted_record_explained=True, signature_deletion_state_unknown=True,
+                content_check_separate=True, export_evidence_separate=True, stored_candidate_unchanged=True)
             count = len(repo.tasks()); window.nav.setCurrentRow(7)
-            page.devices = [SimpleNamespace(path='/dev/disk99', size=1024, label='QA mock disk', system_disk=False)]
-            window.fill(page.device_table, [('/dev/disk99', 1024, 'QA mock disk')]); page.device_table.selectRow(0)
+            page.set_devices([SimpleNamespace(path='/dev/disk99', size=1024, label='QA mock disk', system_disk=False)])
+            page.device_tree.setCurrentItem(page.device_item('/dev/disk99'))
             def apfs_info(path):
                 return {'DeviceIdentifier': path.removeprefix('/dev/'),
                     'APFSPhysicalStores': [{'APFSPhysicalStore': 'disk0s2'}]}
@@ -197,6 +216,45 @@ def run(output):
             scroll.ensureWidgetVisible(page.start_button); capture('12-minimum-computer-scan-controls.png')
             assert page.start_button.height() >= page.start_button.minimumSizeHint().height()
             record('CQA-09', minimum_window=[880, 620], source_controls_readable=True, scan_control_readable=True)
+            inventory = [
+                DiskDevice('/dev/disk0', '合成内置磁盘 QA', 256 * 1024**3, True,
+                    physical_disks=('/dev/disk0',), device_kind='physical', internal=True),
+                DiskDevice('/dev/disk3s1', '合成系统卷 QA', 200 * 1024**3, True,
+                    physical_disks=('/dev/disk0',), device_kind='apfs_volume', file_system='APFS', roles=('System',)),
+                DiskDevice('/dev/disk3s5', '合成数据卷 QA', 200 * 1024**3, True,
+                    physical_disks=('/dev/disk0',), device_kind='apfs_volume', file_system='APFS', roles=('Data',)),
+                DiskDevice('/dev/disk3s2', '合成启动辅助 QA', 1024**3, True,
+                    physical_disks=('/dev/disk0',), device_kind='auxiliary', roles=('Preboot',)),
+                DiskDevice('/dev/disk3s1s1', '合成系统快照 QA', 200 * 1024**3, True,
+                    physical_disks=('/dev/disk0',), device_kind='snapshot'),
+                DiskDevice('/dev/disk2', '合成外置磁盘 QA', 64 * 1024**3,
+                    physical_disks=('/dev/disk2',), device_kind='physical', internal=False, removable=True),
+                DiskDevice('/dev/disk2s1', '合成外置数据卷 QA', 60 * 1024**3,
+                    physical_disks=('/dev/disk2',), device_kind='partition', file_system='exFAT'),
+                DiskDevice('/dev/disk88s1', '归属待确认 QA', 1024**3),
+            ]
+            window.resize(1280, 820); page.set_devices(inventory)
+            scroll.verticalScrollBar().setValue(0); QTest.qWait(40)
+            assert page.device_item('/dev/disk3s2') is None and page.device_item('/dev/disk3s1s1') is None
+            assert page.device_item('/dev/disk88s1') is not None and page.selected_device() is None
+            assert page.device_item('/dev/disk3s5').parent() is page.device_item('/dev/disk0')
+            capture('14-grouped-physical-sources.png')
+            page.show_auxiliary.setChecked(True)
+            assert page.device_item('/dev/disk3s2') is not None and page.device_item('/dev/disk3s1s1') is not None
+            capture('15-explicit-auxiliary-sources.png')
+            page.device_tree.setCurrentItem(page.device_item('/dev/disk2s1'))
+            from core.computer.partitions import Partition
+            with patch('ui.computer.page.inspect_computer_source', return_value=[Partition(0, 1024, 'exFAT', '合成范围')]) as inspect:
+                page.choose_device(); probe()
+            inspect.assert_called_once_with('/dev/disk2s1', 'device', config.data_dir)
+            assert page.source_path == '/dev/disk2s1' and page.start_button.isEnabled()
+            page.show_auxiliary.setChecked(False)
+            assert page.source_path is None and page.selected_device() is None and not page.start_button.isEnabled()
+            assert len(repo.tasks()) == count
+            scroll.ensureWidgetVisible(page.start_button); capture('16-filter-invalidates-old-source.png')
+            record('CQA-10', physical_groups=True, auxiliary_and_snapshots_hidden_by_metadata=True,
+                unknown_source_visible=True, selected_source_bound_by_path=True,
+                filter_invalidates_preflight=True, inventory='synthetic', task_count_unchanged=True)
             after = {path.name: hashlib.sha256(path.read_bytes()).hexdigest() for path in (ntfs, apfs)}
             assert after == before
         finally:

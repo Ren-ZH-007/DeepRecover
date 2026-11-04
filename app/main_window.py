@@ -3,7 +3,7 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QPixmap, QColor, QAction, QKeySequence
 from PySide6.QtWidgets import (QAbstractItemView, QFileDialog, QHBoxLayout, QLabel,
     QListWidget, QMainWindow, QPushButton, QStackedWidget, QTableWidget,
-    QTableWidgetItem, QVBoxLayout, QWidget, QHeaderView, QInputDialog, QMessageBox, QProgressBar, QComboBox, QSplitter, QFrame, QListWidgetItem, QScrollArea)
+    QTableWidgetItem, QVBoxLayout, QWidget, QHeaderView, QInputDialog, QMessageBox, QProgressBar, QComboBox, QSplitter, QFrame, QListWidgetItem, QScrollArea, QDialog)
 from app.navigation import PAGES
 from core.tasks import TaskManager, TaskCancelled
 from core.device.android.adapter import AndroidAdapter, AdbError
@@ -16,6 +16,8 @@ from core.candidate_io import CandidateAccessError
 from core.preview.images import preview_image
 from core.export.service import export_batch, ExportError
 from ui.recovery.export_history import ExportHistory
+from ui.recovery.presentation import (candidate_status, content_check, deletion_evidence,
+    export_guidance, task_status, task_kind, source_kind, error_text)
 from ui.computer.page import ComputerPage, check_computer_access, computer_error_types
 from app.theme import STYLE, icon, brand_icon
 from app.version import VERSION
@@ -26,6 +28,10 @@ def selection_modifier(platform=None):
 
 
 class MainWindow(QMainWindow):
+    def choose_work_directory(self):
+        from app.workspace import request_workspace_change
+        return request_workspace_change(self)
+
     def __init__(self, config, repository):
         super().__init__()
         self.config, self.repository = config, repository
@@ -43,6 +49,7 @@ class MainWindow(QMainWindow):
         self.current_candidates = []
         self.preview_candidate_id = None
         self.export_dialog = None
+        self.evidence_dialog = None
         self.setWindowTitle(f'DeepRecover · 本地数据工作台 · {VERSION}')
         self.setWindowIcon(brand_icon())
         self.resize(1280, 820)
@@ -149,6 +156,13 @@ class MainWindow(QMainWindow):
                 elif value in ('partial','truncated','validation_limit','cancelled','interrupted'): item.setForeground(QColor('#a86608'))
                 table.setItem(i, j, item)
 
+    @staticmethod
+    def explain_item(item, display):
+        item.setText(display.label)
+        item.setToolTip(display.tooltip)
+        item.setForeground(QColor({'info':'#356fbd','warning':'#a86608',
+            'danger':'#c53f53','neutral':'#536d8d'}.get(display.tone, '#536d8d')))
+
     def button(self, box, label, callback, kind='secondary', symbol=None):
         button = QPushButton(label); button.setProperty('kind',kind)
         if symbol: button.setIcon(icon(symbol,color='#ffffff' if kind=='primary' else '#52708e'))
@@ -237,7 +251,7 @@ class MainWindow(QMainWindow):
         self.result_page_label = QLabel('0 条'); self.result_page_label.setObjectName('sectionNote'); row.addWidget(self.result_page_label)
         self.category_filter.currentIndexChanged.connect(self.filter_results); self.status_filter.currentIndexChanged.connect(self.filter_results)
         splitter = QSplitter(); box.addWidget(splitter,1)
-        self.result_table = self.table(['文件名','类型','大小 / 字节','完整性','原始路径','本地文件','来源范围 SHA-256','采集时间 / UTC','源内偏移 / 字节','候选状态','文件系统','删除依据','来源范围数'])
+        self.result_table = self.table(['文件名','类型','大小 / 字节','内容检查','原始路径','本地文件','来源范围 SHA-256','采集时间 / UTC','源内偏移 / 字节','候选状态','文件系统','删除依据','来源范围数'])
         self.result_table.setToolTip(f'{selection_modifier()} 可多选本页记录；分页或筛选会重置当前选择。')
         self.result_table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection); splitter.addWidget(self.result_table)
         preview = QFrame(); preview.setObjectName('previewPanel'); preview_box = QVBoxLayout(preview); preview_box.setContentsMargins(14,14,14,14); splitter.addWidget(preview)
@@ -246,6 +260,9 @@ class MainWindow(QMainWindow):
         self.preview_label.setWordWrap(True); self.preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter); self.preview_label.setTextFormat(Qt.TextFormat.PlainText); self.preview_label.setMinimumWidth(210)
         self.result_table.itemSelectionChanged.connect(self.clear_preview); preview_box.addWidget(self.preview_label,1)
         self.preview_button = self.button(preview_box,'预览选中图片',self.preview_selected,'secondary','image')
+        self.evidence_button = self.button(preview_box,'查看删除与检查依据',self.show_candidate_evidence,'secondary','shield')
+        self.evidence_button.setEnabled(False)
+        self.evidence_button.setToolTip('选中一项，分别查看删除依据、内容检查和独立导出记录说明。')
         splitter.setSizes([720,260])
         self.result_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         for column in range(13): self.result_table.setColumnWidth(column,140)
@@ -267,10 +284,11 @@ class MainWindow(QMainWindow):
         self.history_table.cellDoubleClicked.connect(lambda *_: self.open_history_result())
         label = QLabel('中断或取消仅保留已提交的部分记录，不支持断点续扫。'); label.setObjectName('sectionNote'); box.addWidget(label)
 
-        box = self.page('工作空间设置', '配置保存在本机。环境变量修改后，下次启动生效。')
+        box = self.page('工作空间设置', '选择本地工作目录，每个目录独立保留历史；正在处理任务时不能切换。')
         data = self.card(box,'本地工作目录')
         label = QLabel(str(self.config.data_dir)); label.setObjectName('sourceInfo'); label.setTextFormat(Qt.TextFormat.PlainText); label.setWordWrap(True); label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse); data.addWidget(label)
-        label = QLabel('DEEPRECOVER_DATA_DIR  ·  将工作目录与原始备份、待恢复介质分开。'); label.setObjectName('sectionNote'); label.setWordWrap(True); data.addWidget(label)
+        self.workspace_button = self.button(data,'选择工作目录',self.choose_work_directory,'primary','folder')
+        label = QLabel('选择另一个工作目录不会迁移或删除原数据。工作目录须与原始备份、待恢复介质分开。'); label.setObjectName('sectionNote'); label.setWordWrap(True); data.addWidget(label)
         devices = self.card(box,'设备与处理')
         for text in ['DEEPRECOVER_ADB  ·  Android Platform Tools 中 adb 的完整路径','后台并发  ·  2 个任务线程','日志策略  ·  按大小轮转，不记录文件内容或完整设备序列号','数据策略  ·  本地处理，不上传备份或候选内容']:
             label = QLabel(text); label.setObjectName('sectionNote'); label.setWordWrap(True); devices.addWidget(label)
@@ -286,10 +304,12 @@ class MainWindow(QMainWindow):
         self.pending = (self.manager.submit(kind, operation, persist_candidates=persist_candidates,
                                             source=source, batch_size=batch_size, with_task_id=with_task_id), on_success)
         self.computer_page.refresh_controls()
+        self.workspace_button.setEnabled(False)
         self.statusBar().showMessage('任务执行中…')
 
     def poll(self):
         self.computer_page.poll()
+        self.workspace_button.setEnabled(not self.pending and not self.computer_page.readonly_pending)
         if self.pending is None:
             return
         progress = self.pending[0].token.progress
@@ -315,7 +335,9 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage(f'操作未完成（{type(error).__name__}），请检查数据源和目录权限。')
         if progress is not None and progress.phase == 'scan':
             task = self.repository.task(handle.id)
-            self.scan_status.setText(self.scan_status.text() + f" · 任务状态：{task['status']}，已入库 {self.repository.candidate_count(handle.id)} 条")
+            display = task_status(task['status'])
+            self.scan_status.setText(self.scan_status.text() + f" · 任务状态：{display.label}，已入库 {self.repository.candidate_count(handle.id)} 条")
+            self.scan_status.setToolTip(display.tooltip)
             if task['status'] == 'completed':
                 self.scan_progress.setValue(1000)
         task = self.repository.task(handle.id)
@@ -330,6 +352,7 @@ class MainWindow(QMainWindow):
             self.show_export_history(handle.id)
         self.refresh_history()
         self.computer_page.refresh_controls()
+        self.workspace_button.setEnabled(not self.pending and not self.computer_page.readonly_pending)
 
     def filter_results(self, *_):
         self.result_offset = 0
@@ -337,12 +360,48 @@ class MainWindow(QMainWindow):
             self.load_result_page()
 
     def selected_candidate_ids(self):
-        return [self.current_candidates[index.row()]['id'] for index in self.result_table.selectionModel().selectedRows()]
+        return [self.current_candidates[index.row()]['id'] for index in self.result_table.selectionModel().selectedRows()
+                if 0 <= index.row() < len(self.current_candidates)]
 
     def clear_preview(self):
+        if self.evidence_dialog:
+            self.evidence_dialog.close()
+            self.evidence_dialog.deleteLater()
+            self.evidence_dialog = None
         self.preview_candidate_id = None
         self.preview_label.clear()
         self.preview_label.setText('选择一张 JPG/PNG，再点击预览。')
+        self.evidence_button.setEnabled(len(self.selected_candidate_ids()) == 1)
+
+    def show_candidate_evidence(self):
+        rows = self.result_table.selectionModel().selectedRows()
+        if len(rows) != 1 or not 0 <= rows[0].row() < len(self.current_candidates):
+            self.statusBar().showMessage('请选择一项候选以查看依据。'); return
+        candidate = self.current_candidates[rows[0].row()]
+        if self.evidence_dialog:
+            self.evidence_dialog.close(); self.evidence_dialog.deleteLater()
+        dialog = QDialog(self); dialog.setWindowTitle('候选依据与检查'); dialog.setStyleSheet(STYLE); dialog.resize(640, 500)
+        dialog.setMinimumSize(420, 300)
+        box = QVBoxLayout(dialog); box.setContentsMargins(18,18,18,18)
+        heading = QLabel(candidate['name']); heading.setObjectName('sectionTitle')
+        heading.setTextFormat(Qt.TextFormat.PlainText); heading.setWordWrap(True); box.addWidget(heading)
+        scroll = QScrollArea(); scroll.setWidgetResizable(True); scroll.setFrameShape(QFrame.Shape.NoFrame)
+        content = QWidget(); layout = QVBoxLayout(content); layout.setSpacing(14)
+        for key, title, display in (
+            ('deletion', '删除依据', deletion_evidence(candidate)),
+            ('content', '内容检查', content_check(candidate.get('integrity'))),
+            ('export', '导出校验', export_guidance()),
+        ):
+            section = self.card(layout, title)
+            label = QLabel(display.label); label.setObjectName(f'evidence-{key}-label')
+            label.setTextFormat(Qt.TextFormat.PlainText); label.setWordWrap(True)
+            label.setToolTip(display.tooltip); section.addWidget(label)
+            note = QLabel(display.explanation); note.setObjectName(f'evidence-{key}-explanation')
+            note.setTextFormat(Qt.TextFormat.PlainText); note.setWordWrap(True)
+            note.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse); section.addWidget(note)
+        layout.addStretch(1); scroll.setWidget(content); box.addWidget(scroll,1)
+        close = QPushButton('关闭'); close.clicked.connect(dialog.close); box.addWidget(close)
+        self.evidence_dialog = dialog; dialog.show()
 
     def preview_selected(self):
         ids = self.selected_candidate_ids()
@@ -530,27 +589,37 @@ class MainWindow(QMainWindow):
     def load_result_page(self):
         task = self.repository.task(self.result_task_id)
         if task is None:
+            self.current_candidates = []
+            self.result_table.setRowCount(0)
+            self.clear_preview()
+            self.result_source.setText('任务记录已不存在，请刷新任务记录。')
+            self.result_page_label.setText('0 条')
+            self.previous_page.setEnabled(False); self.next_page.setEnabled(False)
             return
         source = self.repository.source(task['source_id']) if task['source_id'] else None
         filters = {'category':self.category_filter.currentData(),'status':self.status_filter.currentData()}
         total = self.repository.candidate_count(self.result_task_id,**filters)
         self.result_offset = min(self.result_offset, max(0, (total - 1) // self.page_size * self.page_size))
         candidates = self.repository.candidate_page(self.result_task_id, offset=self.result_offset, limit=self.page_size,**filters)
+        self.result_table.clearSelection()
         self.current_candidates = candidates
-        self.preview_candidate_id = None
-        self.preview_label.clear(); self.preview_label.setText('选择一张 JPG/PNG，再点击预览。')
-        self.fill(self.result_table, [(c['name'], c['file_type'], c['size'], c['integrity'], c['original_path'],
+        self.fill(self.result_table, [(c['name'], c['file_type'], c['size'], content_check(c.get('integrity')).label, c['original_path'],
                                       c.get('local_path', ''), c.get('sha256') or '', c.get('acquired_at') or '',
-                                      c.get('offset') if c.get('offset') is not None else '', c['status'],
+                                      c.get('offset') if c.get('offset') is not None else '', candidate_status(c.get('status')).label,
                                       c.get('file_system') or '',
-                                      {'deleted_record':'文件系统删除记录','unverified_record':'记录校验不足'}.get(c.get('deletion_state'),'未知（签名候选）') if c.get('file_system') else '',
+                                      deletion_evidence(c).label,
                                       len(c.get('extents') or ()) if c.get('file_system') else '') for c in candidates])
         for row, candidate in enumerate(candidates):
-            if candidate.get('file_system'):
-                self.result_table.item(row,11).setToolTip('删除记录只证明元数据标记；当前字节可能已被覆盖。签名候选不能判断文件是否已删除。')
-        description = f"{source['kind']} · {source['label']} · {source['locator']}" if source else '旧记录：未保存独立数据源，见原始路径'
-        self.result_source.setText(f"来源：{description}\n任务状态：{task['status']} · 仅展示已入库记录，历史路径可能已失效。")
-        self.result_source.setToolTip(f"任务 {task['id']}\n来源：{description}\n取消、失败或中断任务仅展示部分结果，不自动重新采集。")
+            for column, display in ((3, content_check(candidate.get('integrity'))),
+                                    (9, candidate_status(candidate.get('status'))),
+                                    (11, deletion_evidence(candidate))):
+                self.explain_item(self.result_table.item(row,column), display)
+        self.clear_preview()
+        description = f"{source_kind(source['kind']).label} · {source['label']} · {source['locator']}" if source else '旧记录：未保存独立数据源，见原始路径'
+        display = task_status(task['status'])
+        self.result_source.setText(f"来源：{description}\n任务状态：{display.label} · 仅展示已入库记录，历史路径可能已失效。")
+        raw_source = f"\n来源类型记录值：{source['kind']}" if source else ''
+        self.result_source.setToolTip(f"任务 {task['id']}\n来源：{description}{raw_source}\n{display.tooltip}\n取消、失败或中断任务仅展示部分结果，不自动重新采集。")
         self.result_page_label.setText(f'{self.result_offset + 1 if total else 0}–{self.result_offset + len(candidates)} / {total} 条')
         self.previous_page.setEnabled(self.result_offset > 0)
         self.next_page.setEnabled(self.result_offset + len(candidates) < total)
@@ -569,8 +638,12 @@ class MainWindow(QMainWindow):
         selected = self.history_table.currentRow()
         selected_id = self.history[selected]['id'] if 0 <= selected < len(self.history) else None
         self.history = self.repository.tasks()
-        self.fill(self.history_table, [(t['kind'], t['status'], t['updated_at'], t['error_code'] or '') for t in self.history])
+        self.fill(self.history_table, [(task_kind(t['kind']).label, task_status(t['status']).label,
+                                       t['updated_at'], error_text(t['error_code']).label) for t in self.history])
         for row, task in enumerate(self.history):
+            for column, display in ((0, task_kind(task['kind'])), (1, task_status(task['status'])),
+                                    (3, error_text(task['error_code']))):
+                self.explain_item(self.history_table.item(row,column), display)
             if task['id'] == selected_id:
                 self.history_table.selectRow(row)
 
@@ -598,6 +671,12 @@ class MainWindow(QMainWindow):
         # hidden main window. Close it only after the task guard accepts exit.
         if self.export_dialog:
             self.export_dialog.close()
+        if self.evidence_dialog:
+            self.evidence_dialog.close()
         self.timer.stop()
         self.manager.shutdown()
+        workspace_lock = getattr(self, '_workspace_lock', None)
+        if workspace_lock is not None:
+            workspace_lock.unlock()
+            self._workspace_lock = None
         event.accept()

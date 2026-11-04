@@ -3,9 +3,6 @@ import argparse
 import os
 import tempfile
 import logging
-from app.app_config import AppConfig
-from app.logging_config import configure_logging
-from storage.database.repository import Repository
 from app.version import VERSION
 
 def main():
@@ -34,7 +31,6 @@ def main():
 def _run_gui(smoke_report=None, smoke_screenshot=None):
     try:
         from PySide6.QtWidgets import QApplication, QMessageBox
-        from app.main_window import MainWindow
     except ImportError:
         print("请先运行 python -m pip install -r requirements.txt", file=sys.stderr)
         return 1
@@ -42,16 +38,31 @@ def _run_gui(smoke_report=None, smoke_screenshot=None):
     app.setApplicationName("DeepRecover")
     app.setOrganizationName("DeepRecover")
     app.setApplicationVersion(VERSION)
+    quit_on_last_window = app.quitOnLastWindowClosed()
+    app.setQuitOnLastWindowClosed(False)
     try:
-        config = AppConfig.default()
-        config.initialize()
-        logger = configure_logging(config.data_dir / "Logs")
-        repository = Repository(config.database)
-        repository.recover_interrupted()
-        window = MainWindow(config, repository)
+        import sqlite3
+        from app.workspace import WorkspaceError, WorkspaceSession, startup_workspace
+        session = WorkspaceSession(app)
+        suggested = None
+        while True:
+            selection = startup_workspace(suggested)
+            if selection is None: return 0
+            try:
+                window = session.activate(selection)
+                break
+            except (WorkspaceError, OSError, sqlite3.Error) as error:
+                QMessageBox.critical(None, '工作目录未打开', str(error) if isinstance(error, WorkspaceError)
+                    else f'无法打开此目录（{type(error).__name__}），请检查权限或选择其他目录。')
+                if os.environ.get('DEEPRECOVER_DATA_DIR'): return 1
+                suggested = selection.path
+        app.workspace_session = session
+        logger = logging.getLogger('deeprecover')
     except Exception as error:
         QMessageBox.critical(None, "DeepRecover 启动失败", f"无法初始化工作目录或数据库（{type(error).__name__}）。请检查目录权限及版本。")
         return 1
+    finally:
+        app.setQuitOnLastWindowClosed(quit_on_last_window)
     logger.info("application_started version=%s", VERSION)
     window.show()
     if smoke_report:
@@ -78,6 +89,14 @@ def _verify_packaged(app, window, report_path, screenshot_path=None):
     exit_code = 1
     try:
         assert window.isVisible() and window.stack.count() == 8
+        from ui.settings.workspace import WorkspaceDialog
+        from app.workspace import validate_workspace
+        untouched = window.config.data_dir / 'workspace-dialog-check'
+        chooser = WorkspaceDialog(untouched, window); chooser.show(); app.processEvents()
+        assert chooser.isVisible() and not untouched.exists()
+        chooser.reject(); app.processEvents()
+        assert not untouched.exists()
+        result['workspace_dialog_verified'] = True
         for index in range(8):
             window.nav.setCurrentRow(index); app.processEvents()
             assert window.stack.currentIndex() == index
@@ -122,6 +141,16 @@ def _verify_packaged(app, window, report_path, screenshot_path=None):
         assert [Path(r['output_path']).read_bytes() for r in computer_records] == payloads
         assert source.read_bytes() == original
         result.update(computer_candidates=2, computer_verified_exports=2)
+        previous_directory = window.config.data_dir
+        session = app.workspace_session
+        fresh = session.activate(validate_workspace(previous_directory / 'workspace-roundtrip'))
+        assert fresh.repository.tasks() == []
+        window = session.activate(validate_workspace(previous_directory))
+        assert window.repository.candidate_count(scan.id) == 2
+        assert len(window.repository.exports(exported.id)) == 2
+        assert window.repository.candidate_count(computer.id) == 2
+        assert source.read_bytes() == original
+        result['workspace_roundtrip_verified'] = True
         if screenshot_path:
             window.nav.setCurrentRow(0)
             app.processEvents()

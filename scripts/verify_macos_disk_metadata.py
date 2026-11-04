@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 import platform
 import sys
+from collections import Counter
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from core.computer import devices
@@ -33,7 +34,7 @@ def _info_schema(info):
             'snapshot': info.get('APFSSnapshot') is True}
 
 
-def verify_metadata(work_dir=None):
+def verify_metadata(work_dir=None, include_inventory=False):
     if sys.platform != 'darwin':
         raise RuntimeError('Native disk metadata validation requires macOS.')
     apfs = devices._mac_apfs()
@@ -62,7 +63,7 @@ def verify_metadata(work_dir=None):
     stores = [store for container in devices._array(apfs.get('Containers'))
               if isinstance(container, dict)
               for store in devices._array(container.get('PhysicalStores'))]
-    return {'success': True, 'platform': sys.platform, 'architecture': platform.machine(),
+    report = {'success': True, 'platform': sys.platform, 'architecture': platform.machine(),
             'metadata_queries_only': True, 'raw_reads': False,
             'root_physical_disk_count': len(root_ids),
             'work_directory_physical_disk_count': len(work_ids),
@@ -71,13 +72,26 @@ def verify_metadata(work_dir=None):
             'schemas': {'root': _info_schema(root_info),
                         'work_directory': _info_schema(work_info),
                         'apfs_list_physical_stores': _store_schema(stores)}}
+    if include_inventory:
+        inventory = devices.list_devices()
+        if not inventory or len({d.path for d in inventory}) != len(inventory):
+            raise RuntimeError('Native disk inventory is empty or contains duplicate locators.')
+        if not any(d.system_disk and {p.removeprefix('/dev/') for p in d.physical_disks} & root_ids
+                   for d in inventory):
+            raise RuntimeError('Native inventory cannot link the system disk to its physical members.')
+        report['inventory'] = {'source_count': len(inventory),
+            'kinds': dict(Counter(d.device_kind for d in inventory)),
+            'known_physical_groups': len({d.physical_disks for d in inventory if d.physical_disks}),
+            'system_sources': sum(d.system_disk for d in inventory),
+            'metadata_queries_only': True}
+    return report
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--report', required=True, type=Path)
     args = parser.parse_args()
-    report = verify_metadata()
+    report = verify_metadata(include_inventory=True)
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
     print(json.dumps(report))

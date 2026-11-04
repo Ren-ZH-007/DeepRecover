@@ -26,6 +26,7 @@ def validate_report(path, expected_version, qt_platform):
                 'navigation_pages': 8, 'verified_exports': 2,
                 'decoded_formats': ['PNG', 'JPEG'], 'qt_platform': qt_platform}
     expected.update(computer_candidates=2, computer_verified_exports=2)
+    expected.update(workspace_dialog_verified=True, workspace_roundtrip_verified=True)
     if qt_platform == 'cocoa':
         expected['native_quit_verified'] = True
     for name, value in expected.items():

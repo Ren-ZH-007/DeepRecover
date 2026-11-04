@@ -91,14 +91,14 @@ QComboBox {
 QComboBox:hover, QComboBox:focus { border-color: #9ebee8; }
 QComboBox::drop-down { width: 24px; border: none; }
 QComboBox QAbstractItemView { background: #ffffff; border: 1px solid #dce5f0; selection-background-color: #e8f0fe; selection-color: #2256a4; padding: 4px; outline: none; }
-QTableWidget {
+QTableWidget, QTreeWidget {
     background: #ffffff; alternate-background-color: #f8fafd; color: #455e7b;
     border: 1px solid #e2e9f2; border-radius: 9px; gridline-color: #eef2f7;
     selection-background-color: #e7f0ff; selection-color: #24569c; font-size: 12px;
 }
-QTableWidget::item { padding: 6px 9px; border-bottom: 1px solid #f0f3f8; }
-QTableWidget::item:selected { background: #e7f0ff; color: #24569c; }
-QTableWidget::item:focus { border: none; }
+QTableWidget::item, QTreeWidget::item { padding: 6px 9px; border-bottom: 1px solid #f0f3f8; }
+QTableWidget::item:selected, QTreeWidget::item:selected { background: #e7f0ff; color: #24569c; }
+QTableWidget::item:focus, QTreeWidget::item:focus { border: none; }
 QHeaderView { background: #f6f9fd; }
 QHeaderView::section {
     background: #f6f9fd; color: #7c8da5; border: none;

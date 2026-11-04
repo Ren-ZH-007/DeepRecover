@@ -39,6 +39,7 @@ class MacOSBuildVerificationTests(unittest.TestCase):
                         'decoded_formats': ['PNG', 'JPEG'], 'qt_platform': 'cocoa',
                         'native_quit_verified': True}
         self.payload.update(computer_candidates=2, computer_verified_exports=2)
+        self.payload.update(workspace_dialog_verified=True, workspace_roundtrip_verified=True)
 
     def write_info(self):
         with (self.bundle / 'Contents/Info.plist').open('wb') as stream:

@@ -48,7 +48,7 @@ class MacOSMetadataProbeTests(unittest.TestCase):
             return b'Filesystem 1024-blocks Used Available Capacity Mounted on\n/dev/disk3s1s1 100 10 90 10% /\n'
         raise AssertionError('Unexpected command: ' + repr(arguments))
 
-    def simulated_probe(self, **patches):
+    def simulated_probe(self, include_inventory=False, **patches):
         with ExitStack() as stack:
             stack.enter_context(patch.object(verify.sys, 'platform', 'darwin'))
             stack.enter_context(patch.object(devices, '_run', side_effect=self.run_metadata_command))
@@ -60,7 +60,7 @@ class MacOSMetadataProbeTests(unittest.TestCase):
                 side_effect=AssertionError('Metadata probe opened a raw source')))
             for name, replacement in patches.items():
                 stack.enter_context(patch.object(devices, name, **replacement))
-            result = verify.verify_metadata(self.work_dir)
+            result = verify.verify_metadata(self.work_dir, include_inventory=include_inventory)
             raw.assert_not_called()
             return result
 
@@ -112,3 +112,18 @@ class MacOSMetadataProbeTests(unittest.TestCase):
     def test_guard_that_allows_root_volume_causes_validation_failure(self):
         with self.assertRaisesRegex(RuntimeError, 'unexpectedly allowed'):
             self.simulated_probe(ensure_different_device={'return_value': True})
+
+    def test_inventory_links_system_members_without_exposing_paths(self):
+        disk = devices.DiskDevice('/dev/disk0', 'system', 1000, True,
+                                  physical_disks=('/dev/disk0',), device_kind='physical')
+        with patch.object(devices, 'list_devices', return_value=[disk]):
+            report = self.simulated_probe(include_inventory=True)
+        self.assertEqual(report['inventory']['source_count'], 1)
+        self.assertEqual(report['inventory']['known_physical_groups'], 1)
+        self.assertNotIn('disk0', json.dumps(report))
+
+    def test_unlinked_inventory_cannot_pass_native_display_validation(self):
+        unknown = devices.DiskDevice('/dev/disk9', 'unknown', 1000)
+        for rows in [[], [unknown], [unknown, unknown]]:
+            with self.subTest(rows=rows), patch.object(devices, 'list_devices', return_value=rows):
+                with self.assertRaises(RuntimeError): self.simulated_probe(include_inventory=True)

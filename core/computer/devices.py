@@ -20,6 +20,14 @@ class DiskDevice:
     size: int
     system_disk: bool = False
     mountpoints: tuple[str, ...] = ()
+    # Presentation metadata only. Scans must still run the live physical-disk
+    # guard; grouping or a removable/internal hint never grants access.
+    physical_disks: tuple[str, ...] = ()
+    device_kind: str = 'unknown'
+    file_system: str = ''
+    internal: bool | None = None
+    removable: bool = False
+    roles: tuple[str, ...] = ()
 
 
 WINDOWS_INVENTORY = r"""
@@ -30,10 +38,17 @@ $partitions = @(Get-Partition | Select-Object DiskNumber,PartitionNumber,DriveLe
 [pscustomobject]@{disks=$disks;partitions=$partitions} | ConvertTo-Json -Depth 6 -Compress
 """
 
+WINDOWS_VOLUME_INVENTORY = r"""
+$ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+$volumes = @(Get-Volume | Select-Object DriveLetter,FileSystemType,FileSystem,FileSystemLabel,Size)
+[pscustomobject]@{volumes=$volumes} | ConvertTo-Json -Depth 4 -Compress
+"""
 
-def _run(arguments):
+
+def _run(arguments, *, timeout=20):
     try:
-        result = subprocess.run(arguments, capture_output=True, timeout=20,
+        result = subprocess.run(arguments, capture_output=True, timeout=timeout,
             creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
     except (OSError, subprocess.TimeoutExpired) as error:
         raise DiskError('无法读取本机磁盘信息，请检查系统权限或改选镜像。') from error
@@ -52,14 +67,24 @@ def _plist(arguments):
         raise DiskError('系统磁盘信息格式无效，未访问磁盘内容。') from error
 
 
-def _windows_inventory():
+def _windows_inventory(*, include_volumes=False):
     try:
         payload = json.loads(_run(['powershell.exe', '-NoProfile', '-NonInteractive', '-Command', WINDOWS_INVENTORY]).decode('utf-8-sig'))
         if not isinstance(payload, dict):
             raise ValueError('Expected disk inventory')
-        return payload
     except (ValueError, UnicodeError, TypeError) as error:
         raise DiskError('系统磁盘列表格式无效，未访问磁盘内容。') from error
+    if include_volumes:
+        try:
+            metadata = json.loads(_run(['powershell.exe', '-NoProfile', '-NonInteractive', '-Command',
+                WINDOWS_VOLUME_INVENTORY], timeout=5).decode('utf-8-sig'))
+            payload['volumes'] = _array(metadata.get('volumes')) if isinstance(metadata, dict) else []
+        except (DiskError, ValueError, UnicodeError, TypeError):
+            # Filesystem names and labels are optional display metadata. A
+            # disconnected volume or a permission failure must not suppress the
+            # required physical inventory or weaken its separate live guard.
+            payload['volumes'] = []
+    return payload
 
 
 def _array(value):
@@ -70,28 +95,54 @@ def _valid_size(value):
     return type(value) is int and value > 0
 
 
+def _filesystem(value):
+    if not isinstance(value, str):
+        return ''
+    return {'ntfs': 'NTFS', 'windows_ntfs': 'NTFS', 'fat32': 'FAT32',
+            'dos_fat_32': 'FAT32', 'ms-dos fat32': 'FAT32', 'exfat': 'exFAT',
+            'apfs': 'APFS', 'apple_apfs': 'APFS', 'hfs+': 'HFS+',
+            'hfs': 'HFS+', 'hfsx': 'HFS+', 'apple_hfs': 'HFS+'}.get(value.casefold(), '')
+
+
+def _explicit_internal(metadata):
+    value = metadata.get('Internal', metadata.get('IsInternal'))
+    return value if type(value) is bool else None
+
+
+def _windows_removable(metadata):
+    value = metadata.get('IsRemovable')
+    if type(value) is bool:
+        return value
+    bus = metadata.get('BusType')
+    return (type(bus) is int and bus == 7) or (isinstance(bus, str) and bus.casefold() == 'usb')
+
+
+def _windows_bus_is_direct(bus):
+    direct_types = {1, 2, 3, 4, 5, 7, 10, 11, 12, 13, 17, 18, 19}
+    direct_names = {'scsi', 'atapi', 'ata', '1394', 'ssa', 'usb', 'sas', 'sata',
+                    'sd', 'mmc', 'nvme', 'scm', 'ufs'}
+    return ((type(bus) is int and bus in direct_types)
+            or (isinstance(bus, str) and bus.casefold() in direct_names))
+
+
 def _confirmed_windows_disks(numbers):
     # Disk extents name OS disk numbers. Storage Spaces, file-backed virtual
     # disks and RAID/network pools may hide shared underlying physical media.
     # Different numbers alone are not proof of physical separation.
-    direct_types = {1, 2, 3, 4, 5, 7, 10, 11, 12, 13, 17, 18, 19}
-    direct_names = {'scsi', 'atapi', 'ata', '1394', 'ssa', 'usb', 'sas', 'sata',
-                    'sd', 'mmc', 'nvme', 'scm', 'ufs'}
     inventory = {disk.get('Number'): disk.get('BusType')
                  for disk in _array(_windows_inventory().get('disks'))
                  if type(disk.get('Number')) is int}
     for number in numbers:
         bus = inventory.get(number)
-        known = (type(bus) is int and bus in direct_types) or (isinstance(bus, str) and bus.casefold() in direct_names)
-        if not known:
+        if not _windows_bus_is_direct(bus):
             raise DiskError('虚拟盘、存储池或未知总线不能证明物理隔离，请使用稳定原始镜像或可确认的独立磁盘。')
 
 
 def _windows_devices():
-    inventory = _windows_inventory()
+    inventory = _windows_inventory(include_volumes=True)
     partitions = [p for p in _array(inventory.get('partitions')) if isinstance(p, dict)]
     devices = []
-    disk_flags = {}
+    disk_flags, disk_metadata = {}, {}
     for disk in _array(inventory.get('disks')):
         if not isinstance(disk, dict):
             continue
@@ -100,20 +151,47 @@ def _windows_devices():
             continue
         system = disk.get('IsBoot') is True or disk.get('IsSystem') is True
         disk_flags[number] = system
+        disk_metadata[number] = disk
         mounts = tuple(sorted({path for partition in partitions
             if partition.get('DiskNumber') == number
             for path in (partition.get('AccessPaths') if isinstance(partition.get('AccessPaths'), list) else [])
             if isinstance(path, str) and re.match(r'^[A-Za-z]:\\', path)}))
-        devices.append(DiskDevice(rf'\\.\PhysicalDrive{number}',
-            str(disk.get('FriendlyName') or f'磁盘 {number}'), size, system, mounts))
+        path = rf'\\.\PhysicalDrive{number}'
+        direct = _windows_bus_is_direct(disk.get('BusType'))
+        devices.append(DiskDevice(path,
+            str(disk.get('FriendlyName') or f'磁盘 {number}'), size, system, mounts,
+            (path,) if direct else (), 'physical' if direct else 'unknown', internal=_explicit_internal(disk),
+            removable=_windows_removable(disk)))
+    volumes = {row['DriveLetter'].upper(): row for row in _array(inventory.get('volumes'))
+               if isinstance(row, dict) and isinstance(row.get('DriveLetter'), str)
+               and re.fullmatch('[A-Za-z]', row['DriveLetter'])}
+    by_letter = {}
     for partition in partitions:
         letter, size = partition.get('DriveLetter'), partition.get('Size')
         if not isinstance(letter, str) or not re.fullmatch('[A-Za-z]', letter) or not _valid_size(size):
             continue
         letter = letter.upper()
-        system = (partition.get('IsBoot') is True or partition.get('IsSystem') is True
-                  or disk_flags.get(partition.get('DiskNumber'), False))
-        devices.append(DiskDevice(rf'\\.\{letter}:', f'{letter}: 卷', size, system, (letter + ':\\',)))
+        by_letter.setdefault(letter, []).append(partition)
+    for letter, members in by_letter.items():
+        volume = volumes.get(letter, {})
+        numbers = {member.get('DiskNumber') for member in members
+                   if type(member.get('DiskNumber')) is int and member['DiskNumber'] >= 0}
+        confirmed = (len(numbers) > 0 and all(number in disk_metadata
+                     and _windows_bus_is_direct(disk_metadata[number].get('BusType')) for number in numbers)
+                     and all(type(member.get('DiskNumber')) is int and member['DiskNumber'] >= 0 for member in members))
+        parents = tuple(rf'\\.\PhysicalDrive{number}' for number in sorted(numbers)) if confirmed else ()
+        flags = [_explicit_internal(disk_metadata[number]) for number in numbers if number in disk_metadata]
+        internal = flags[0] if flags and all(flag is flags[0] for flag in flags) and confirmed else None
+        system = any(member.get('IsBoot') is True or member.get('IsSystem') is True
+                     or (type(member.get('DiskNumber')) is int and disk_flags.get(member['DiskNumber'], False))
+                     for member in members)
+        size = volume.get('Size') if _valid_size(volume.get('Size')) else max(member['Size'] for member in members)
+        label = volume.get('FileSystemLabel')
+        label = f'{letter}: · {label}' if isinstance(label, str) and label else f'{letter}: 卷'
+        devices.append(DiskDevice(rf'\\.\{letter}:', label, size, system, (letter + ':\\',),
+            parents, 'partition' if confirmed else 'unknown',
+            _filesystem(volume.get('FileSystemType')) or _filesystem(volume.get('FileSystem')),
+            internal, any(_windows_removable(disk_metadata[number]) for number in numbers if number in disk_metadata)))
     return devices
 
 
@@ -223,33 +301,147 @@ def _mac_physical_ids(info, apfs):
     return {_disk_identifier(info.get('ParentWholeDisk') or info.get('PartOfWhole') or identifier)}
 
 
+def _mac_roles(metadata):
+    names = {'system': 'System', 'data': 'Data', 'preboot': 'Preboot',
+             'recovery': 'Recovery', 'vm': 'VM', 'update': 'Update',
+             'xart': 'xART', 'hardware': 'Hardware', 'iscpreboot': 'iSCPreboot',
+             'iscrecovery': 'iSCRecovery'}
+    roles = set()
+    for key in ('Roles', 'Role'):
+        if key not in metadata:
+            continue
+        values = metadata[key]
+        values = [values] if isinstance(values, str) else values
+        if not isinstance(values, list) or any(not isinstance(value, str) for value in values):
+            # Malformed or unknown role metadata must not hide a data volume.
+            return ()
+        roles.update(names.get(value.casefold(), value) for value in values if value)
+    return tuple(sorted(roles))
+
+
 def _mac_devices():
     inventory = _plist(['/usr/sbin/diskutil', 'list', '-plist'])
     apfs = _mac_apfs()
+    root_info, system_ids = {}, set()
     try:
-        system_ids = _mac_physical_ids(_mac_info('/'), apfs)
+        root_info = _mac_info('/')
+        system_ids = _mac_physical_ids(root_info, apfs)
     except DiskError:
-        system_ids = set()
-    devices = {}
-    def collect(node):
+        pass
+    nodes, contexts, stores = {}, {}, set()
+
+    def valid_identifier(value):
+        return isinstance(value, str) and re.fullmatch(r'disk[0-9]+(?:s[0-9]+)*', value)
+
+    def collect(node, container=None):
         if not isinstance(node, dict):
             return
-        identifier, size = node.get('DeviceIdentifier'), node.get('Size')
-        if isinstance(identifier, str) and re.fullmatch(r'disk[0-9]+(?:s[0-9]+)*', identifier) and _valid_size(size):
-            try:
-                system = bool(_mac_physical_ids(node, apfs) & system_ids)
-            except DiskError:
-                system = False
-            mount = node.get('MountPoint')
-            devices[identifier] = DiskDevice('/dev/' + identifier,
-                str(node.get('VolumeName') or node.get('Content') or identifier),
-                size, system, (mount,) if isinstance(mount, str) else ())
+        identifier = node.get('DeviceIdentifier')
+        if valid_identifier(identifier):
+            nodes.setdefault(identifier, {}).update(node)
+            if container is not None:
+                contexts.setdefault(identifier, set()).add(container)
         for key in ('Partitions', 'APFSVolumes', 'Volumes'):
             for child in _array(node.get(key)):
-                collect(child)
+                collect(child, identifier if key == 'APFSVolumes' and valid_identifier(identifier) else container)
+
     for node in _array(inventory.get('AllDisksAndPartitions')):
         collect(node)
-    return list(devices.values())
+    container_ids = set()
+    for container in _array(apfs.get('Containers')):
+        if not isinstance(container, dict):
+            continue
+        reference = container.get('ContainerReference') or container.get('APFSContainerReference')
+        if not valid_identifier(reference):
+            continue
+        container_ids.add(reference)
+        ceiling = container.get('CapacityCeiling')
+        if reference not in nodes and _valid_size(ceiling):
+            nodes[reference] = {'DeviceIdentifier': reference, 'Size': ceiling, 'Content': 'Apple_APFS'}
+        for store in _array(container.get('PhysicalStores')):
+            if not isinstance(store, dict):
+                continue
+            try:
+                values = { _canonical_mac_identifier(store[key])
+                           for key in ('DeviceIdentifier', 'APFSPhysicalStore') if key in store }
+            except DiskError:
+                continue
+            if len(values) == 1:
+                stores.update(values)
+        for volume in _array(container.get('Volumes')):
+            if not isinstance(volume, dict) or not valid_identifier(volume.get('DeviceIdentifier')):
+                continue
+            identifier = volume['DeviceIdentifier']
+            contexts.setdefault(identifier, set()).add(reference)
+            metadata = {**volume, **nodes.get(identifier, {})}
+            for key in ('Roles', 'Role'):
+                if key in volume:
+                    metadata[key] = volume[key]
+            metadata.setdefault('VolumeName', volume.get('Name'))
+            metadata.setdefault('Size', nodes.get(reference, {}).get('Size', ceiling))
+            nodes[identifier] = metadata
+    root_identifier = root_info.get('DeviceIdentifier')
+    if valid_identifier(root_identifier):
+        if root_identifier in nodes:
+            nodes[root_identifier].update(root_info)
+        elif root_info.get('APFSSnapshot') is True:
+            reference = root_info.get('APFSContainerReference')
+            size = root_info.get('Size') or root_info.get('TotalSize') or nodes.get(reference, {}).get('Size')
+            if _valid_size(size):
+                nodes[root_identifier] = {**root_info, 'Size': size}
+
+    auxiliary_roles = {'Preboot', 'Recovery', 'VM', 'Update', 'xART', 'Hardware', 'iSCPreboot', 'iSCRecovery'}
+    whole_nodes = {identifier: node for identifier, node in nodes.items() if re.fullmatch('disk[0-9]+', identifier)}
+    if len(system_ids) == 1 and _explicit_internal(root_info) is not None:
+        whole = whole_nodes.get(next(iter(system_ids)))
+        if whole is not None and _explicit_internal(whole) is None:
+            whole['Internal'] = _explicit_internal(root_info)
+    devices = []
+    for identifier, original in nodes.items():
+        node = dict(original)
+        size = node.get('Size')
+        if not _valid_size(size):
+            continue
+        references = contexts.get(identifier, set())
+        if len(references) == 1:
+            node.setdefault('APFSContainerReference', next(iter(references)))
+        if identifier in container_ids:
+            node.setdefault('APFSContainerReference', identifier)
+        try:
+            if len(references) > 1:
+                raise DiskError('Ambiguous presentation container')
+            physical_ids = ({_disk_identifier(identifier)} if identifier in stores
+                            else _mac_physical_ids(node, apfs))
+        except DiskError:
+            physical_ids = set()
+        roles = _mac_roles(node)
+        fs = (_filesystem(node.get('FilesystemType')) or _filesystem(node.get('FileSystemType'))
+              or _filesystem(node.get('Content')) or ('APFS' if references or identifier in container_ids
+                  or 'APFSPhysicalStores' in node or node.get('APFSSnapshot') is True else ''))
+        if not physical_ids:
+            kind = 'unknown'
+        elif node.get('APFSSnapshot') is True:
+            kind = 'snapshot'
+        elif identifier in container_ids:
+            kind = 'apfs_container'
+        elif references:
+            kind = 'auxiliary' if roles and set(roles) <= auxiliary_roles else 'apfs_volume'
+        elif re.fullmatch('disk[0-9]+', identifier):
+            kind = 'physical'
+        else:
+            kind = 'partition'
+        internal_flags = [_explicit_internal(node)] + [_explicit_internal(whole_nodes.get(parent, {})) for parent in physical_ids]
+        internal_flags = [flag for flag in internal_flags if flag is not None]
+        internal = (internal_flags[0] if internal_flags and all(flag is internal_flags[0] for flag in internal_flags) else None)
+        removable = any(item.get('Ejectable') is True or item.get('RemovableMedia') is True
+                        for item in [node] + [whole_nodes.get(parent, {}) for parent in physical_ids])
+        mount = node.get('MountPoint')
+        devices.append(DiskDevice('/dev/' + identifier,
+            str(node.get('VolumeName') or node.get('Name') or node.get('Content') or identifier), size,
+            identifier == root_identifier or bool(physical_ids & system_ids),
+            (mount,) if isinstance(mount, str) else (),
+            tuple('/dev/' + parent for parent in sorted(physical_ids)), kind, fs, internal, removable, roles))
+    return devices
 
 
 def list_devices():
