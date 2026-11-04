@@ -1,21 +1,21 @@
 # macOS 适配
 
-[v0.3.0 预览版已发布](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.3.0)，目标 macOS 13 或更高版本，分别提供 Apple Silicon（arm64）和 Intel（x86_64）原生应用。请从 Release 下载与你的芯片一致的 ZIP；实际原生验证环境为 macOS 15。
+[v0.4.0 预览版已发布](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.4.0)，目标 macOS 13 或更高版本，分别提供 Apple Silicon（arm64）和 Intel（x86_64）原生应用。请从 Release 下载与你的芯片一致的 ZIP；实际原生验证环境为 macOS 15。
 
-原生双架构构建及详细回归已通过；[详细测试报告与截图](MACOS_TEST_REPORT_20261103.md)记录 161 项自动化、14 项 Cocoa 工作流及本轮缺陷修复。[初次适配验证](releases/0.3.0/VALIDATION.md)保留历史证据。
+v0.4.0 原生双架构各 270 项自动化通过，每架构另有 9 项电脑流程及原有 14 项 Cocoa 回归，见[电脑恢复测试报告与截图](COMPUTER_TEST_REPORT_20261104.md)。[v0.3.0 适配报告](MACOS_TEST_REPORT_20261103.md)记录当时的 161 项自动化、14 项 Cocoa 工作流和缺陷修复；[初次适配验证](releases/0.3.0/VALIDATION.md)保留历史证据。
 
-正式附件的下载后校验结果及发布构建见 [发布校验记录](releases/0.3.0/PUBLISHED.json)。
+正式附件的下载后校验结果及发布构建见 [v0.4.0 发布校验记录](releases/0.4.0/PUBLISHED.json)。
 
 ## 使用应用包
 
-在“关于本机”确认芯片类型，下载对应的 `DeepRecover-v0.3.0-macos-arm64.zip` 或 `DeepRecover-v0.3.0-macos-x86_64.zip`。解压后把整个 `DeepRecover.app` 拖到“应用程序”，再从 Finder 打开；不需要另装 Python。不要单独复制 `Contents/MacOS` 中的可执行文件。
+在“关于本机”确认芯片类型，下载对应的 `DeepRecover-v0.4.0-macos-arm64.zip` 或 `DeepRecover-v0.4.0-macos-x86_64.zip`。解压后把整个 `DeepRecover.app` 拖到“应用程序”，再从 Finder 打开；不需要另装 Python。不要单独复制 `Contents/MacOS` 中的可执行文件。
 
 预览构建未提供 Apple Developer ID 签名和 Apple 公证；本地 ad-hoc 签名不等于 Developer ID 签名。下载带隔离标记的应用可能被 Gatekeeper 拦截。只在确认来源可信后按 Apple 的“系统设置 → 隐私与安全性 → 仍要打开”流程处理，或按下方从源码启动；不要关闭系统安全策略。应用不要求管理员权限。
 
 SHA-256 校验（在 ZIP 所在目录执行）：
 
 ```sh
-shasum -a 256 DeepRecover-v0.3.0-macos-arm64.zip
+shasum -a 256 DeepRecover-v0.4.0-macos-arm64.zip
 ```
 
 将结果与 `SHA256SUMS.txt` 中同名文件的摘要比较。Intel 用户将命令中的 `arm64` 改为 `x86_64`。独立 CI 制品中的校验文件仅对应当前架构；正式 Release 的校验文件对应全部平台。
