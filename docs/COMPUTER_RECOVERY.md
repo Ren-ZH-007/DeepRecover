@@ -57,4 +57,4 @@ DEEPRECOVER_DATA_DIR='/Volumes/OtherDisk/DeepRecover_Work' \
 
 Windows/macOS 双架构的编译、270 项测试、电脑流程及关键截图见[测试报告](COMPUTER_TEST_REPORT_20261104.md)。
 
-0.4.1 修复 macOS APFS 预检兼容性：识别 `diskutil info` 的 `APFSPhysicalStore` 字段与系统快照的卷引用。若选择 Macintosh HD，而工作目录也在内置盘上，预检仍会拒绝；请按上面的启动示例先将工作目录放在另一块物理磁盘。界面提供“查看工作目录设置”入口。APFS/HFS+ 的签名扫描范围保持上述限制。
+0.4.1 修复 macOS APFS 预检兼容性：识别 `diskutil info` 的 `APFSPhysicalStore` 字段与系统快照的卷引用。若选择 Macintosh HD，而工作目录也在内置盘上，预检仍会拒绝；请按上面的启动示例先将工作目录放在另一块物理磁盘。界面提供“查看工作目录设置”入口。APFS/HFS+ 的签名扫描范围保持上述限制。[修复报告、编译包和原生验证](APFS_PREFLIGHT_FIX_20261104.md)记录尚未发布的 0.4.1 修复候选。

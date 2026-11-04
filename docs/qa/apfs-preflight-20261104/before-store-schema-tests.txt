@@ -1,0 +1,184 @@
+test_apfs_mapping_uses_every_fusion_physical_store (tests.test_computer_devices.ComputerDeviceTests.test_apfs_mapping_uses_every_fusion_physical_store) ... ok
+test_conflicting_or_malformed_physical_store_descriptors_are_rejected (tests.test_computer_devices.ComputerDeviceTests.test_conflicting_or_malformed_physical_store_descriptors_are_rejected) ... 
+  test_conflicting_or_malformed_physical_store_descriptors_are_rejected (tests.test_computer_devices.ComputerDeviceTests.test_conflicting_or_malformed_physical_store_descriptors_are_rejected) (stores=None) ... FAIL
+  test_conflicting_or_malformed_physical_store_descriptors_are_rejected (tests.test_computer_devices.ComputerDeviceTests.test_conflicting_or_malformed_physical_store_descriptors_are_rejected) (stores=[{'DeviceIdentifier': 'disk0s2', 'APFSPhysicalStore': 'disk2s2'}]) ... FAIL
+  test_conflicting_or_malformed_physical_store_descriptors_are_rejected (tests.test_computer_devices.ComputerDeviceTests.test_conflicting_or_malformed_physical_store_descriptors_are_rejected) (stores=[{'DeviceIdentifier': 'disk0s2', 'APFSPhysicalStore': 'disk0s3'}]) ... FAIL
+  test_conflicting_or_malformed_physical_store_descriptors_are_rejected (tests.test_computer_devices.ComputerDeviceTests.test_conflicting_or_malformed_physical_store_descriptors_are_rejected) (stores=[{'DeviceIdentifier': 'disk0s2', 'APFSPhysicalStore': None}]) ... FAIL
+test_direct_apfs_stores_and_inventory_must_agree (tests.test_computer_devices.ComputerDeviceTests.test_direct_apfs_stores_and_inventory_must_agree) ... FAIL
+test_diskutil_info_physical_store_key_maps_volume_and_snapshot (tests.test_computer_devices.ComputerDeviceTests.test_diskutil_info_physical_store_key_maps_volume_and_snapshot) ... 
+  test_diskutil_info_physical_store_key_maps_volume_and_snapshot (tests.test_computer_devices.ComputerDeviceTests.test_diskutil_info_physical_store_key_maps_volume_and_snapshot) (identifier='disk3s1') ... ERROR
+  test_diskutil_info_physical_store_key_maps_volume_and_snapshot (tests.test_computer_devices.ComputerDeviceTests.test_diskutil_info_physical_store_key_maps_volume_and_snapshot) (identifier='disk3s1s1') ... ERROR
+test_empty_windows_extent_mapping_is_rejected (tests.test_computer_devices.ComputerDeviceTests.test_empty_windows_extent_mapping_is_rejected) ... ok
+test_guard_rejects_unresolved_target_instead_of_assuming_other_disk (tests.test_computer_devices.ComputerDeviceTests.test_guard_rejects_unresolved_target_instead_of_assuming_other_disk) ... ok
+test_info_fusion_stores_protect_every_member_disk (tests.test_computer_devices.ComputerDeviceTests.test_info_fusion_stores_protect_every_member_disk) ... ERROR
+test_invalid_inventory_rows_cannot_create_untrusted_device_paths (tests.test_computer_devices.ComputerDeviceTests.test_invalid_inventory_rows_cannot_create_untrusted_device_paths) ... ok
+test_invalid_system_metadata_is_reported_without_payload_leak (tests.test_computer_devices.ComputerDeviceTests.test_invalid_system_metadata_is_reported_without_payload_leak) ... ok
+test_macos_df_command_keeps_unicode_and_shell_characters_in_one_argument (tests.test_computer_devices.ComputerDeviceTests.test_macos_df_command_keeps_unicode_and_shell_characters_in_one_argument) ... ok
+test_macos_guard_accepts_confirmed_different_physical_disk (tests.test_computer_devices.ComputerDeviceTests.test_macos_guard_accepts_confirmed_different_physical_disk) ... ok
+test_macos_guard_rejects_destination_apfs_volume_on_source_physical_disk (tests.test_computer_devices.ComputerDeviceTests.test_macos_guard_rejects_destination_apfs_volume_on_source_physical_disk) ... ok
+test_macos_inventory_preserves_partitions_and_marks_synthesized_system_volumes (tests.test_computer_devices.ComputerDeviceTests.test_macos_inventory_preserves_partitions_and_marks_synthesized_system_volumes) ... ok
+test_real_shape_source_and_external_workdisk_are_accepted (tests.test_computer_devices.ComputerDeviceTests.test_real_shape_source_and_external_workdisk_are_accepted) ... ERROR
+test_real_shape_source_same_internal_data_disk_rejected_before_directory_creation (tests.test_computer_devices.ComputerDeviceTests.test_real_shape_source_same_internal_data_disk_rejected_before_directory_creation) ... FAIL
+test_snapshot_volume_reference_maps_only_through_apfs_inventory (tests.test_computer_devices.ComputerDeviceTests.test_snapshot_volume_reference_maps_only_through_apfs_inventory) ... FAIL
+test_snapshot_volume_reference_without_mapping_is_rejected (tests.test_computer_devices.ComputerDeviceTests.test_snapshot_volume_reference_without_mapping_is_rejected) ... FAIL
+test_unknown_apfs_virtual_mapping_never_falls_back_to_synthesized_number (tests.test_computer_devices.ComputerDeviceTests.test_unknown_apfs_virtual_mapping_never_falls_back_to_synthesized_number) ... ok
+test_unsupported_platform_never_runs_device_tools (tests.test_computer_devices.ComputerDeviceTests.test_unsupported_platform_never_runs_device_tools) ... ok
+test_windows_guard_checks_all_spanned_destination_extents (tests.test_computer_devices.ComputerDeviceTests.test_windows_guard_checks_all_spanned_destination_extents) ... ok
+test_windows_inventory_lists_physical_disks_and_volumes_without_shell (tests.test_computer_devices.ComputerDeviceTests.test_windows_inventory_lists_physical_disks_and_volumes_without_shell) ... ok
+test_windows_missing_disk_inventory_cannot_establish_separation (tests.test_computer_devices.ComputerDeviceTests.test_windows_missing_disk_inventory_cannot_establish_separation) ... ok
+test_windows_virtual_storage_cannot_prove_physical_separation (tests.test_computer_devices.ComputerDeviceTests.test_windows_virtual_storage_cannot_prove_physical_separation) ... ok
+test_windows_volume_source_and_directory_mount_are_mapped_physically (tests.test_computer_devices.ComputerDeviceTests.test_windows_volume_source_and_directory_mount_are_mapped_physically) ... ok
+
+======================================================================
+ERROR: test_diskutil_info_physical_store_key_maps_volume_and_snapshot (tests.test_computer_devices.ComputerDeviceTests.test_diskutil_info_physical_store_key_maps_volume_and_snapshot) (identifier='disk3s1')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/DeepRecover/tests/test_computer_devices.py", line 80, in test_diskutil_info_physical_store_key_maps_volume_and_snapshot
+    self.assertEqual(devices._mac_physical_ids(info, self.apfs), {'disk0'})
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/DeepRecover/core/computer/devices.py", line 156, in _mac_physical_ids
+    return _store_ids(stores)
+           ^^^^^^^^^^^^^^^^^^
+  File "/workspace/DeepRecover/core/computer/devices.py", line 149, in _store_ids
+    identifiers.add(_disk_identifier(value))
+                    ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/DeepRecover/core/computer/devices.py", line 135, in _disk_identifier
+    raise DiskError('缺少物理磁盘标识，不能确认安全的写入位置。')
+core.computer.io.DiskError: 缺少物理磁盘标识，不能确认安全的写入位置。
+
+======================================================================
+ERROR: test_diskutil_info_physical_store_key_maps_volume_and_snapshot (tests.test_computer_devices.ComputerDeviceTests.test_diskutil_info_physical_store_key_maps_volume_and_snapshot) (identifier='disk3s1s1')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/DeepRecover/tests/test_computer_devices.py", line 80, in test_diskutil_info_physical_store_key_maps_volume_and_snapshot
+    self.assertEqual(devices._mac_physical_ids(info, self.apfs), {'disk0'})
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/DeepRecover/core/computer/devices.py", line 156, in _mac_physical_ids
+    return _store_ids(stores)
+           ^^^^^^^^^^^^^^^^^^
+  File "/workspace/DeepRecover/core/computer/devices.py", line 149, in _store_ids
+    identifiers.add(_disk_identifier(value))
+                    ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/DeepRecover/core/computer/devices.py", line 135, in _disk_identifier
+    raise DiskError('缺少物理磁盘标识，不能确认安全的写入位置。')
+core.computer.io.DiskError: 缺少物理磁盘标识，不能确认安全的写入位置。
+
+======================================================================
+ERROR: test_info_fusion_stores_protect_every_member_disk (tests.test_computer_devices.ComputerDeviceTests.test_info_fusion_stores_protect_every_member_disk)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/DeepRecover/tests/test_computer_devices.py", line 115, in test_info_fusion_stores_protect_every_member_disk
+    self.assertEqual(devices._mac_physical_ids(info, {}), {'disk0', 'disk1'})
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/DeepRecover/core/computer/devices.py", line 156, in _mac_physical_ids
+    return _store_ids(stores)
+           ^^^^^^^^^^^^^^^^^^
+  File "/workspace/DeepRecover/core/computer/devices.py", line 149, in _store_ids
+    identifiers.add(_disk_identifier(value))
+                    ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/DeepRecover/core/computer/devices.py", line 135, in _disk_identifier
+    raise DiskError('缺少物理磁盘标识，不能确认安全的写入位置。')
+core.computer.io.DiskError: 缺少物理磁盘标识，不能确认安全的写入位置。
+
+======================================================================
+ERROR: test_real_shape_source_and_external_workdisk_are_accepted (tests.test_computer_devices.ComputerDeviceTests.test_real_shape_source_and_external_workdisk_are_accepted)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/DeepRecover/tests/test_computer_devices.py", line 149, in test_real_shape_source_and_external_workdisk_are_accepted
+    self.assertTrue(devices.ensure_different_device('/dev/disk3s1', self.root / 'not-created'))
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/DeepRecover/core/computer/devices.py", line 266, in ensure_different_device
+    source_ids = _mac_physical_ids(_mac_info(source), apfs)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/DeepRecover/core/computer/devices.py", line 156, in _mac_physical_ids
+    return _store_ids(stores)
+           ^^^^^^^^^^^^^^^^^^
+  File "/workspace/DeepRecover/core/computer/devices.py", line 149, in _store_ids
+    identifiers.add(_disk_identifier(value))
+                    ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/DeepRecover/core/computer/devices.py", line 135, in _disk_identifier
+    raise DiskError('缺少物理磁盘标识，不能确认安全的写入位置。')
+core.computer.io.DiskError: 缺少物理磁盘标识，不能确认安全的写入位置。
+
+======================================================================
+FAIL: test_conflicting_or_malformed_physical_store_descriptors_are_rejected (tests.test_computer_devices.ComputerDeviceTests.test_conflicting_or_malformed_physical_store_descriptors_are_rejected) (stores=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/DeepRecover/tests/test_computer_devices.py", line 108, in test_conflicting_or_malformed_physical_store_descriptors_are_rejected
+    with self.subTest(stores=stores), self.assertRaises(DiskError):
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: DiskError not raised
+
+======================================================================
+FAIL: test_conflicting_or_malformed_physical_store_descriptors_are_rejected (tests.test_computer_devices.ComputerDeviceTests.test_conflicting_or_malformed_physical_store_descriptors_are_rejected) (stores=[{'DeviceIdentifier': 'disk0s2', 'APFSPhysicalStore': 'disk2s2'}])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/DeepRecover/tests/test_computer_devices.py", line 108, in test_conflicting_or_malformed_physical_store_descriptors_are_rejected
+    with self.subTest(stores=stores), self.assertRaises(DiskError):
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: DiskError not raised
+
+======================================================================
+FAIL: test_conflicting_or_malformed_physical_store_descriptors_are_rejected (tests.test_computer_devices.ComputerDeviceTests.test_conflicting_or_malformed_physical_store_descriptors_are_rejected) (stores=[{'DeviceIdentifier': 'disk0s2', 'APFSPhysicalStore': 'disk0s3'}])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/DeepRecover/tests/test_computer_devices.py", line 108, in test_conflicting_or_malformed_physical_store_descriptors_are_rejected
+    with self.subTest(stores=stores), self.assertRaises(DiskError):
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: DiskError not raised
+
+======================================================================
+FAIL: test_conflicting_or_malformed_physical_store_descriptors_are_rejected (tests.test_computer_devices.ComputerDeviceTests.test_conflicting_or_malformed_physical_store_descriptors_are_rejected) (stores=[{'DeviceIdentifier': 'disk0s2', 'APFSPhysicalStore': None}])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/DeepRecover/tests/test_computer_devices.py", line 108, in test_conflicting_or_malformed_physical_store_descriptors_are_rejected
+    with self.subTest(stores=stores), self.assertRaises(DiskError):
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: DiskError not raised
+
+======================================================================
+FAIL: test_direct_apfs_stores_and_inventory_must_agree (tests.test_computer_devices.ComputerDeviceTests.test_direct_apfs_stores_and_inventory_must_agree)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/DeepRecover/tests/test_computer_devices.py", line 97, in test_direct_apfs_stores_and_inventory_must_agree
+    with self.assertRaises(DiskError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: DiskError not raised
+
+======================================================================
+FAIL: test_real_shape_source_same_internal_data_disk_rejected_before_directory_creation (tests.test_computer_devices.ComputerDeviceTests.test_real_shape_source_same_internal_data_disk_rejected_before_directory_creation)
+----------------------------------------------------------------------
+core.computer.io.DiskError: 缺少物理磁盘标识，不能确认安全的写入位置。
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/workspace/DeepRecover/tests/test_computer_devices.py", line 136, in test_real_shape_source_same_internal_data_disk_rejected_before_directory_creation
+    with self.assertRaisesRegex(DiskError, '另一块物理磁盘'):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: "另一块物理磁盘" does not match "缺少物理磁盘标识，不能确认安全的写入位置。"
+
+======================================================================
+FAIL: test_snapshot_volume_reference_maps_only_through_apfs_inventory (tests.test_computer_devices.ComputerDeviceTests.test_snapshot_volume_reference_maps_only_through_apfs_inventory)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/DeepRecover/tests/test_computer_devices.py", line 86, in test_snapshot_volume_reference_maps_only_through_apfs_inventory
+    self.assertEqual(devices._mac_physical_ids(info, self.apfs), {'disk0'})
+AssertionError: Items in the first set but not the second:
+'disk3'
+Items in the second set but not the first:
+'disk0'
+
+======================================================================
+FAIL: test_snapshot_volume_reference_without_mapping_is_rejected (tests.test_computer_devices.ComputerDeviceTests.test_snapshot_volume_reference_without_mapping_is_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/DeepRecover/tests/test_computer_devices.py", line 91, in test_snapshot_volume_reference_without_mapping_is_rejected
+    with self.assertRaises(DiskError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: DiskError not raised
+
+----------------------------------------------------------------------
+Ran 24 tests in 0.020s
+
+FAILED (failures=8, errors=4)
