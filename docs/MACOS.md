@@ -4,7 +4,7 @@
 
 v0.4.1 修复 APFS 物理盘映射与预检提示，原生双架构各 292 项自动化通过，见[修复报告](APFS_PREFLIGHT_FIX_20261104.md)。v0.4.0 原生双架构各 270 项自动化通过，每架构另有 9 项电脑流程及原有 14 项 Cocoa 回归，见[电脑恢复测试报告与截图](COMPUTER_TEST_REPORT_20261104.md)。[v0.3.0 适配报告](MACOS_TEST_REPORT_20261103.md)记录当时的 161 项自动化、14 项 Cocoa 工作流和缺陷修复；[初次适配验证](releases/0.3.0/VALIDATION.md)保留历史证据。
 
-正式附件的下载后校验结果及发布构建见 [v0.4.0 发布校验记录](releases/0.4.0/PUBLISHED.json)。
+正式附件的下载后校验结果及发布构建见 [v0.4.1 发布校验记录](releases/0.4.1/PUBLISHED.json)。
 
 ## 使用应用包
 

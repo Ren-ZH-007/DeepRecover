@@ -1,0 +1,45 @@
+{
+  "success": true,
+  "platform": "darwin",
+  "architecture": "arm64",
+  "metadata_queries_only": true,
+  "raw_reads": false,
+  "root_physical_disk_count": 1,
+  "work_directory_physical_disk_count": 1,
+  "root_and_work_directory_overlap": true,
+  "same_device_rejected": true,
+  "schemas": {
+    "root": {
+      "physical_stores": {
+        "entry_types": [
+          "dict"
+        ],
+        "identifier_keys": [
+          "APFSPhysicalStore"
+        ]
+      },
+      "volume_disk_value_type": "NoneType",
+      "snapshot": true
+    },
+    "work_directory": {
+      "physical_stores": {
+        "entry_types": [
+          "dict"
+        ],
+        "identifier_keys": [
+          "APFSPhysicalStore"
+        ]
+      },
+      "volume_disk_value_type": "NoneType",
+      "snapshot": false
+    },
+    "apfs_list_physical_stores": {
+      "entry_types": [
+        "dict"
+      ],
+      "identifier_keys": [
+        "DeviceIdentifier"
+      ]
+    }
+  }
+}
