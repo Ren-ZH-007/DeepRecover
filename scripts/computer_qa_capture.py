@@ -18,6 +18,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 from PySide6.QtTest import QTest
+from PySide6.QtGui import QTextLayout
 from PySide6.QtWidgets import QApplication, QMessageBox, QScrollArea
 from app.app_config import AppConfig
 from app.main_window import MainWindow
@@ -29,6 +30,21 @@ from tests.fixtures_ntfs import NTFSFixture, file_name, resident_attr, nonreside
 from tests.test_scanner import png_image
 
 
+def verify_text_glyphs(font):
+    text = 'DeepRecover 0123456789 电脑恢复 已删除图片 碎片文档 来源只读 本地处理 预览导出 历史结果'
+    layout = QTextLayout(text, font)
+    layout.beginLayout()
+    line = layout.createLine()
+    assert line.isValid(), 'Screenshot font cannot lay out text'
+    line.setLineWidth(10000)
+    layout.endLayout()
+    runs = layout.glyphRuns()
+    assert runs and all(run.glyphIndexes() and all(run.glyphIndexes()) for run in runs), \
+        'Screenshot font is missing Latin or Chinese glyphs; configure QT_QPA_FONTDIR'
+    return {'text': text, 'families': sorted({run.rawFont().familyName() for run in runs}),
+        'missing_glyphs': 0}
+
+
 def run(output):
     output.mkdir(parents=True, exist_ok=True)
     app = QApplication.instance() or QApplication([])
@@ -36,6 +52,8 @@ def run(output):
     with tempfile.TemporaryDirectory(prefix='DeepRecover-Computer-QA-') as directory:
         root = Path(directory).resolve(); config = AppConfig(root / 'work'); config.initialize()
         repo = Repository(config.database); window = MainWindow(config, repo); window.show()
+        app.processEvents()
+        font_check = verify_text_glyphs(window.font())
         page = window.computer_page
         def capture(name, widget=None):
             QTest.qWait(30); app.processEvents()
@@ -182,6 +200,7 @@ def run(output):
         'architecture': platform.machine(), 'qt_platform': app.platformName(), 'cases': cases,
         'source_hashes_unchanged': True, 'source_sha256_before': before, 'source_sha256_after': after,
         'real_disks_enumerated_or_opened': False,
+        'screenshot_font_check': font_check,
         'screenshots': [{'file': name, 'sha256': hashlib.sha256((output / name).read_bytes()).hexdigest()} for name in shots]}
     (output / 'evidence.json').write_text(json.dumps(evidence, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     print(json.dumps({'workflow_cases': len(cases), 'screenshots': len(shots), 'passed': len(cases)}, ensure_ascii=False))

@@ -41,10 +41,20 @@ jobs:
       - name: Test, compile, start executable and make ZIP
         shell: pwsh
         run: ./scripts/build-windows.ps1 -Version '${{ steps.version.outputs.version }}'
+      - name: Prepare pinned CJK font for offscreen screenshots
+        shell: pwsh
+        run: |
+          # The offscreen plugin does not enumerate Windows system fonts.
+          # Test-only OFL font; it is not included in the application ZIP.
+          New-Item -ItemType Directory -Force build/qa-fonts | Out-Null
+          $font = Join-Path (Get-Location) 'build/qa-fonts/NotoSansCJKsc-Regular.otf'
+          Invoke-WebRequest 'https://raw.githubusercontent.com/notofonts/noto-cjk/f8d157532fbfaeda587e826d4cd5b21a49186f7c/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf' -OutFile $font
+          if ((Get-FileHash -Algorithm SHA256 $font).Hash.ToLowerInvariant() -ne '2c76254f6fc379fddfce0a7e84fb5385bb135d3e399294f6eeb6680d0365b74b') { throw 'QA font checksum mismatch' }
       - name: Computer recovery image workflows and screenshots
         shell: pwsh
         env:
           QT_QPA_PLATFORM: offscreen
+          QT_QPA_FONTDIR: ${{ github.workspace }}/build/qa-fonts
         run: .venv/Scripts/python.exe scripts/computer_qa_capture.py --output build/computer-qa
       - name: Preserve test and executable evidence
         if: always()
