@@ -47,9 +47,10 @@ class MacOSBuildQaTests(unittest.TestCase):
         self.info = {'CFBundleIconFile': self.icon.name}
         self.executable = self.bundle / 'Contents/MacOS/DeepRecover'
         self.payload = {'success': True, 'version': '0.3.0', 'schema_version': 3,
-                        'navigation_pages': 7, 'verified_exports': 2,
+                        'navigation_pages': 8, 'verified_exports': 2,
                         'decoded_formats': ['PNG', 'JPEG'], 'qt_platform': 'cocoa',
                         'native_quit_verified': True}
+        self.payload.update(computer_candidates=2, computer_verified_exports=2)
         self.exit_code = 0
         self.screenshot_bytes = png(10, 10, (b'\0' + bytes(range(30))) * 10)
         self.launches = []

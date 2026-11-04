@@ -13,5 +13,5 @@ class DataSource:
     created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
     def __post_init__(self):
-        if self.kind not in {"android", "ios_backup", "image"} or not self.locator:
+        if self.kind not in {"android", "ios_backup", "image", "computer"} or not self.locator:
             raise ValueError("Invalid data source")

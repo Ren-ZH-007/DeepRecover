@@ -77,8 +77,8 @@ def _verify_packaged(app, window, report_path, screenshot_path=None):
               'navigation_pages': window.stack.count(), 'qt_platform': app.platformName()}
     exit_code = 1
     try:
-        assert window.isVisible() and window.stack.count() == 7
-        for index in range(7):
+        assert window.isVisible() and window.stack.count() == 8
+        for index in range(8):
             window.nav.setCurrentRow(index); app.processEvents()
             assert window.stack.currentIndex() == index
         payloads = []
@@ -107,6 +107,21 @@ def _verify_packaged(app, window, report_path, screenshot_path=None):
             assert record['status'] == 'exported' and record['source_sha256'] == record['target_sha256']
             assert Path(record['output_path']).read_bytes() == payload
         assert hashlib.sha256(source.read_bytes()).digest() == hashlib.sha256(original).digest()
+        from core.computer.service import ComputerScanner
+        computer = window.manager.submit('computer_scan', lambda token: ComputerScanner(window.config.data_dir).scan(source, token, mode='signature'),
+            source=DataSource('computer', str(source)), persist_candidates=True, batch_size=1)
+        assert computer.future.result(15) == 2
+        computer_ids = repo.candidate_ids(computer.id)
+        for candidate_id in computer_ids:
+            assert not preview_image(repo, candidate_id, window.config.data_dir, CancellationToken()).isNull()
+        copied = window.manager.submit('export', lambda token, task_id: export_batch(repo, task_id, computer_ids,
+            window.config.data_dir / 'Recovered', window.config.data_dir, token), with_task_id=True)
+        copied.future.result(15)
+        computer_records = repo.exports(copied.id)
+        assert len(computer_records) == 2 and all(r['status'] == 'exported' and r['source_sha256'] == r['target_sha256'] for r in computer_records)
+        assert [Path(r['output_path']).read_bytes() for r in computer_records] == payloads
+        assert source.read_bytes() == original
+        result.update(computer_candidates=2, computer_verified_exports=2)
         if screenshot_path:
             window.nav.setCurrentRow(0)
             app.processEvents()

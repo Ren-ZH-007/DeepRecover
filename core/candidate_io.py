@@ -50,8 +50,30 @@ class CandidateInput:
     size: int
     expected_hash: str | None
     expected_stat: dict | None
+    extents: tuple | None = None
+
+    def open_source(self):
+        if self.extents is not None:
+            from core.computer.io import DiskReader
+            return DiskReader(self.path, self.expected_stat['kind'])
+        return self.path.open('rb')
+
+    def chunks(self, stream, token):
+        from core.computer.content import extent_chunks
+        return extent_chunks(stream, self.extents, token)
 
     def check(self, stream, original=None):
+        if self.extents is not None:
+            from core.computer.content import checked_extents
+            from core.computer.io import DiskError
+            try:
+                current = stream.check(self.expected_stat)
+                checked_extents(self.extents, self.size, stream.size)
+                if original is not None and current != original:
+                    raise CandidateAccessError('电脑来源在读取期间变化。')
+                return current
+            except (DiskError, ValueError, OSError) as error:
+                raise CandidateAccessError(str(error)) from error
         info = os.fstat(stream.fileno())
         current = snapshot(info)
         if not stat.S_ISREG(info.st_mode) or snapshot(self.path.stat()) != current:
@@ -87,7 +109,25 @@ def candidate_input(repository, candidate_id, data_dir):
     if expected_hash is not None and not re.fullmatch('[0-9a-f]{64}', expected_hash):
         raise CandidateAccessError('候选摘要格式无效。')
     expected_stat = candidate.get('source_stat')
-    if kind == 'signature_scan' and source['kind'] == 'image':
+    if kind in ('computer_deleted', 'computer_signature') and source['kind'] == 'computer':
+        from core.computer.content import checked_extents
+        from core.computer.service import check_access, ComputerError
+        if candidate['status'] != 'candidate' or not expected_hash or not isinstance(expected_stat, dict):
+            raise CandidateAccessError('电脑候选缺少完整布局或来源校验信息，请重新扫描。')
+        required = 'metadata_checked' if kind == 'computer_deleted' else 'structure_checked'
+        if candidate['integrity'] != required or (kind == 'computer_deleted' and candidate.get('deletion_state') != 'deleted_record'):
+            raise CandidateAccessError('此电脑候选的记录或布局尚未验证，不能导出为完整文件。')
+        if expected_stat.get('kind') not in ('image', 'device') or type(expected_stat.get('size')) is not int:
+            raise CandidateAccessError('电脑来源身份格式无效。')
+        try:
+            check_access(repository, [candidate_id], data_dir)
+            extents = checked_extents(candidate.get('extents'), size, expected_stat['size'])
+        except (ValueError, ComputerError, RuntimeError) as error:
+            raise CandidateAccessError(str(error)) from error
+        path = Path(source['locator'])
+        return CandidateInput(candidate, source, path, extents[0][0] if extents else 0,
+                              size, expected_hash, expected_stat, extents)
+    elif kind == 'signature_scan' and source['kind'] == 'image':
         if candidate['integrity'] != 'structure_checked' or candidate['status'] != 'candidate':
             raise CandidateAccessError('只允许预览或导出结构检查通过的扫描候选。')
         if not expected_stat or not expected_hash:
@@ -120,11 +160,13 @@ def read_candidate(repository, candidate_id, data_dir, token, max_bytes=32 * 102
     if item.size > max_bytes:
         raise CandidateAccessError('图片输入超过预览大小上限。')
     try:
-        with item.path.open('rb') as stream:
+        with item.open_source() as stream:
             original = item.check(stream)
-            data = b''.join(range_chunks(stream, item.offset, item.size, token))
+            data = b''.join(item.chunks(stream, token) if item.extents is not None else range_chunks(stream, item.offset, item.size, token))
             item.verify_hash(hashlib.sha256(data).hexdigest())
             item.check(stream, original)
             return data
-    except OSError as error:
+    except CandidateAccessError:
+        raise
+    except (OSError, RuntimeError) as error:
         raise CandidateAccessError('无法只读访问本地来源文件。') from error

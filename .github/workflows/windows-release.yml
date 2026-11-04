@@ -2,7 +2,7 @@ name: Windows and macOS build and release
 
 on:
   push:
-    branches: [feature/ui-refresh-release, feature/macos-support]
+    branches: [feature/ui-refresh-release, feature/macos-support, feature/computer-recovery]
     tags: ['v*']
     paths-ignore: ['docs/**', 'README.md']
   workflow_dispatch:
@@ -41,6 +41,11 @@ jobs:
       - name: Test, compile, start executable and make ZIP
         shell: pwsh
         run: ./scripts/build-windows.ps1 -Version '${{ steps.version.outputs.version }}'
+      - name: Computer recovery image workflows and screenshots
+        shell: pwsh
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: .venv/Scripts/python.exe scripts/computer_qa_capture.py --output build/computer-qa
       - name: Preserve test and executable evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -49,6 +54,7 @@ jobs:
           path: |
             build/test-report.json
             build/executable-smoke.json
+            build/computer-qa/
           if-no-files-found: warn
       - name: Preserve complete distribution
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
