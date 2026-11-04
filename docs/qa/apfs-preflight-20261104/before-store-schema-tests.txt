@@ -1,11 +1,11 @@
 test_apfs_mapping_uses_every_fusion_physical_store (tests.test_computer_devices.ComputerDeviceTests.test_apfs_mapping_uses_every_fusion_physical_store) ... ok
-test_conflicting_or_malformed_physical_store_descriptors_are_rejected (tests.test_computer_devices.ComputerDeviceTests.test_conflicting_or_malformed_physical_store_descriptors_are_rejected) ... 
+test_conflicting_or_malformed_physical_store_descriptors_are_rejected (tests.test_computer_devices.ComputerDeviceTests.test_conflicting_or_malformed_physical_store_descriptors_are_rejected) ...
   test_conflicting_or_malformed_physical_store_descriptors_are_rejected (tests.test_computer_devices.ComputerDeviceTests.test_conflicting_or_malformed_physical_store_descriptors_are_rejected) (stores=None) ... FAIL
   test_conflicting_or_malformed_physical_store_descriptors_are_rejected (tests.test_computer_devices.ComputerDeviceTests.test_conflicting_or_malformed_physical_store_descriptors_are_rejected) (stores=[{'DeviceIdentifier': 'disk0s2', 'APFSPhysicalStore': 'disk2s2'}]) ... FAIL
   test_conflicting_or_malformed_physical_store_descriptors_are_rejected (tests.test_computer_devices.ComputerDeviceTests.test_conflicting_or_malformed_physical_store_descriptors_are_rejected) (stores=[{'DeviceIdentifier': 'disk0s2', 'APFSPhysicalStore': 'disk0s3'}]) ... FAIL
   test_conflicting_or_malformed_physical_store_descriptors_are_rejected (tests.test_computer_devices.ComputerDeviceTests.test_conflicting_or_malformed_physical_store_descriptors_are_rejected) (stores=[{'DeviceIdentifier': 'disk0s2', 'APFSPhysicalStore': None}]) ... FAIL
 test_direct_apfs_stores_and_inventory_must_agree (tests.test_computer_devices.ComputerDeviceTests.test_direct_apfs_stores_and_inventory_must_agree) ... FAIL
-test_diskutil_info_physical_store_key_maps_volume_and_snapshot (tests.test_computer_devices.ComputerDeviceTests.test_diskutil_info_physical_store_key_maps_volume_and_snapshot) ... 
+test_diskutil_info_physical_store_key_maps_volume_and_snapshot (tests.test_computer_devices.ComputerDeviceTests.test_diskutil_info_physical_store_key_maps_volume_and_snapshot) ...
   test_diskutil_info_physical_store_key_maps_volume_and_snapshot (tests.test_computer_devices.ComputerDeviceTests.test_diskutil_info_physical_store_key_maps_volume_and_snapshot) (identifier='disk3s1') ... ERROR
   test_diskutil_info_physical_store_key_maps_volume_and_snapshot (tests.test_computer_devices.ComputerDeviceTests.test_diskutil_info_physical_store_key_maps_volume_and_snapshot) (identifier='disk3s1s1') ... ERROR
 test_empty_windows_extent_mapping_is_rejected (tests.test_computer_devices.ComputerDeviceTests.test_empty_windows_extent_mapping_is_rejected) ... ok
