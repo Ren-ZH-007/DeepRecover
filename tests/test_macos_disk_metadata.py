@@ -22,6 +22,7 @@ class MacOSMetadataProbeTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.work_dir = Path(self.temp.name).resolve()
+        self.host_root = Path('/').resolve()
         self.root_info = {'DeviceIdentifier': 'disk3s1s1', 'APFSVolumeDisk': 'disk3s1',
             'APFSSnapshot': True, 'FilesystemType': 'apfs',
             'APFSPhysicalStores': [{'DeviceIdentifier': 'disk0s2'}],
@@ -43,7 +44,7 @@ class MacOSMetadataProbeTests(unittest.TestCase):
                 return plistlib.dumps(self.work_info)
         if arguments == ['/bin/df', '-P', str(self.work_dir)]:
             return b'Filesystem 1024-blocks Used Available Capacity Mounted on\n/dev/disk3s5 100 10 90 10% /private\n'
-        if arguments == ['/bin/df', '-P', '/']:
+        if arguments == ['/bin/df', '-P', str(self.host_root)]:
             return b'Filesystem 1024-blocks Used Available Capacity Mounted on\n/dev/disk3s1s1 100 10 90 10% /\n'
         raise AssertionError('Unexpected command: ' + repr(arguments))
 
@@ -51,6 +52,10 @@ class MacOSMetadataProbeTests(unittest.TestCase):
         with ExitStack() as stack:
             stack.enter_context(patch.object(verify.sys, 'platform', 'darwin'))
             stack.enter_context(patch.object(devices, '_run', side_effect=self.run_metadata_command))
+            # The simulated macOS device name is not a host Windows pathname.
+            # Production path normalization remains covered by the I/O tests
+            # and is exercised without this substitute by the native CI probe.
+            stack.enter_context(patch.object(devices, 'normalize_device', side_effect=lambda path: path))
             raw = stack.enter_context(patch('core.computer.io.DiskReader',
                 side_effect=AssertionError('Metadata probe opened a raw source')))
             for name, replacement in patches.items():

@@ -163,6 +163,8 @@ class ComputerUiTests(unittest.TestCase):
     def test_real_shape_apfs_same_disk_preflight_explains_work_directory_without_raw_read(self):
         from core.computer import devices
         self.window.nav.setCurrentRow(7)
+        self.prepare_source(file_system='APFS')
+        self.assertIn('APFS', self.page.capability_label.text())
         self.page.devices = [SimpleNamespace(path='/dev/disk3s1', size=4096,
             label='Macintosh HD', system_disk=True)]
         self.window.fill(self.page.device_table, [('/dev/disk3s1', 4096, 'Macintosh HD')])
@@ -172,6 +174,7 @@ class ComputerUiTests(unittest.TestCase):
                     'APFSContainerReference': 'disk3',
                     'APFSPhysicalStores': [{'APFSPhysicalStore': 'disk0s2'}]}
         with patch.object(devices.sys, 'platform', 'darwin'), \
+                patch.object(devices, 'normalize_device', side_effect=lambda path: path) as normalize, \
                 patch.object(devices, '_mac_apfs', return_value={}), \
                 patch.object(devices, '_mac_info', side_effect=info), \
                 patch.object(devices, '_mac_volume_path', return_value='/dev/disk3s5'), \
@@ -180,9 +183,11 @@ class ComputerUiTests(unittest.TestCase):
             with self.assertRaises(DiskError): self.page._future.result(5)
             self.window.poll(); self.app.processEvents()
             raw.assert_not_called()
-        self.assertIn('另一块物理磁盘', self.page.status.text())
+            normalize.assert_called_once_with('/dev/disk3s1')
+        self.assertIn('工作目录和导出目标必须位于另一块物理磁盘，不能写回来源磁盘。', self.page.status.text())
         self.assertNotIn('缺少物理磁盘标识', self.page.status.text())
         self.assertIn(str(self.config.data_dir), self.page.status.text())
+        self.assertIn('尚未确认分区和文件系统', self.page.capability_label.text())
         self.assertEqual(self.repo.tasks(), [])
         self.assertFalse(self.page.start_button.isEnabled())
         self.window.resize(880, 620); QTest.qWait(40)
@@ -198,11 +203,13 @@ class ComputerUiTests(unittest.TestCase):
             return {'DeviceIdentifier': path.removeprefix('/dev/'),
                     'APFSPhysicalStores': [{'APFSPhysicalStore': 'disk0s2' if source else 'disk2s1'}]}
         with patch.object(devices.sys, 'platform', 'darwin'), \
+                patch.object(devices, 'normalize_device', side_effect=lambda path: path) as normalize, \
                 patch.object(devices, '_mac_apfs', return_value={}), \
                 patch.object(devices, '_mac_info', side_effect=info), \
                 patch.object(devices, '_mac_volume_path', return_value='/dev/disk8s1'), \
                 patch('core.computer.service.inspect_source', return_value=[self.partition('APFS')]) as inspect:
             self.page.inspect_selected(); self.finish_probe()
+            normalize.assert_called_once_with('/dev/disk3s1')
         inspect.assert_called_once_with('/dev/disk3s1', kind='device')
         self.assertTrue(self.page.start_button.isEnabled())
         self.assertEqual(self.page.mode_combo.currentData(), 'signature')

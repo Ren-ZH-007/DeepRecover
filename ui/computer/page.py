@@ -199,6 +199,7 @@ class ComputerPage(QWidget):
         self.source_path, self.source_kind = str(path), kind
         self.partitions = []
         self.partition_combo.clear()
+        self.capability_label.setText('正在等待只读预检完成；尚未确认分区和文件系统。')
         self.source_label.setText(('磁盘' if kind == 'device' else '镜像') + ' · ' + str(path))
         self.source_label.setToolTip(str(path)); self.progress.setValue(0)
         self.refresh_controls()

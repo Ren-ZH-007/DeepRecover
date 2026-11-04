@@ -171,14 +171,16 @@ def run(output):
                 return {'DeviceIdentifier': path.removeprefix('/dev/'),
                     'APFSPhysicalStores': [{'APFSPhysicalStore': 'disk0s2'}]}
             with patch.object(disk_devices.sys, 'platform', 'darwin'), \
+                    patch.object(disk_devices, 'normalize_device', side_effect=lambda path: path) as normalize, \
                     patch.object(disk_devices, '_mac_apfs', return_value={}), \
                     patch.object(disk_devices, '_mac_info', side_effect=apfs_info), \
                     patch.object(disk_devices, '_mac_volume_path', return_value='/dev/disk3s5'), \
                     patch('core.computer.service.DiskReader', side_effect=AssertionError('Raw disk opened')) as raw:
                 page.choose_device(); probe(DiskError)
                 raw.assert_not_called()
+                normalize.assert_called_once_with('/dev/disk99')
             assert len(repo.tasks()) == count and page.partitions == []
-            assert '另一块物理磁盘' in page.status.text() and '缺少物理磁盘标识' not in page.status.text()
+            assert '工作目录和导出目标必须位于另一块物理磁盘，不能写回来源磁盘。' in page.status.text()
             assert str(config.data_dir) in page.status.text()
             capture('10-raw-workspace-isolation-refused.png')
             page.directory_help_button.click(); app.processEvents()

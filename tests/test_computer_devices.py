@@ -97,6 +97,26 @@ class ComputerDeviceTests(unittest.TestCase):
         with self.assertRaises(DiskError):
             devices._mac_physical_ids(info, self.apfs)
 
+    def test_conflicting_direct_container_reference_is_rejected_without_inventory(self):
+        for additions in [
+                {'DeviceIdentifier': 'disk3s1'},
+                {'DeviceIdentifier': 'disk3s1s1', 'APFSVolumeDisk': 'disk3s1'},
+                {'APFSVolumeDisk': 'disk3s1'},
+                {'DeviceIdentifier': 'disk3s1', 'VirtualOrPhysical': 'Physical'}]:
+            info = {'APFSContainerReference': 'disk8',
+                    'APFSPhysicalStores': [{'APFSPhysicalStore': 'disk0s2'}], **additions}
+            with self.subTest(info=info), self.assertRaises(DiskError):
+                devices._mac_physical_ids(info, {})
+
+    def test_explicit_physical_apfs_store_can_reference_synthesized_container(self):
+        info = {'DeviceIdentifier': 'disk0s2', 'VirtualOrPhysical': 'Physical',
+                'APFSContainerReference': 'disk3',
+                'APFSPhysicalStores': [{'APFSPhysicalStore': 'disk0s2'}]}
+        self.assertEqual(devices._mac_physical_ids(info, {}), {'disk0'})
+        self.assertEqual(devices._mac_physical_ids(info, self.apfs), {'disk0'})
+        del info['APFSPhysicalStores']
+        self.assertEqual(devices._mac_physical_ids(info, self.apfs), {'disk0'})
+
     def test_conflicting_or_malformed_physical_store_descriptors_are_rejected(self):
         for stores in [None, [], [{}], [{'OtherIdentifier': 'disk0s2'}],
                        [{'APFSPhysicalStore': None}], [{'APFSPhysicalStore': 'disk0;command'}],

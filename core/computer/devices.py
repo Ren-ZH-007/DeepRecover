@@ -174,6 +174,14 @@ def _mac_physical_ids(info, apfs):
         raise DiskError('APFS 卷标识无效，不能确认安全的写入位置。')
     if volume is not None and identifier is not None and _disk_identifier(volume) != _disk_identifier(identifier):
         raise DiskError('APFS 快照与卷标识冲突，不能确认安全的写入位置。')
+    physical_source = (_disk_identifier(identifier)
+                       if identifier is not None and info.get('VirtualOrPhysical') == 'Physical' else None)
+    if container is not None:
+        if (_disk_identifier(container) != container
+                or (volume is not None and _disk_identifier(volume) != container)
+                or (identifier is not None and _disk_identifier(identifier) != container
+                    and physical_source is None)):
+            raise DiskError('APFS 容器与卷标识冲突，不能确认安全的写入位置。')
     mapped = None
     for item in _array(apfs.get('Containers')):
         if not isinstance(item, dict):
@@ -196,9 +204,14 @@ def _mac_physical_ids(info, apfs):
     if direct is not None:
         if mapped is not None and direct != mapped:
             raise DiskError('APFS 物理存储映射不一致，请重新检测来源。')
-        return direct
-    if mapped is not None:
-        return mapped
+    resolved = direct if direct is not None else mapped
+    if resolved is not None:
+        # A real physical-store partition may reference a differently numbered
+        # synthesized container. Keep this case only when diskutil explicitly
+        # marks it physical and the resolved stores contain that physical disk.
+        if physical_source is not None and physical_source not in resolved:
+            raise DiskError('APFS 来源物理盘与存储映射冲突，不能确认安全的写入位置。')
+        return resolved
     if container or info.get('Virtual') is True or info.get('VirtualOrPhysical') == 'Virtual':
         raise DiskError('无法确认虚拟卷或 APFS 容器对应的全部物理磁盘。')
     # A physical partition belongs to its containing physical disk. Synthesized
