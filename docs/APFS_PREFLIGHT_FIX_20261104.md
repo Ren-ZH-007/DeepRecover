@@ -1,6 +1,6 @@
 # macOS APFS 只读预检修复
 
-日期：2026-11-04。0.4.1 修复候选；已发布的 v0.4.0 不包含此修复。[PR #10](https://github.com/Ren-ZH-007/DeepRecover/pull/10)。
+日期：2026-11-04。本报告保存 0.4.1 发布前的 PR 验证快照；该修复已随 [v0.4.1 预览版](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.4.1)发布，v0.4.0 不包含此修复。[PR #10](https://github.com/Ren-ZH-007/DeepRecover/pull/10)。
 
 ## 问题和处理
 
