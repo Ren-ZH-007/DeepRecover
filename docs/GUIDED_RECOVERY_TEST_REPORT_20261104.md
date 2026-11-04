@@ -1,8 +1,12 @@
 # 引导式恢复界面升级测试报告
 
-日期：2026-11-04。功能代码 `3e23dd584012ea7f252a6566412572fe4be92a6a`，版本 0.5.0；后续证据提交仅修改文档。当前发布版仍为 v0.4.1，本报告不代表 0.5.0 已发布。
+日期：2026-11-04。功能代码 `3e23dd584012ea7f252a6566412572fe4be92a6a`，版本 0.5.0；后续证据提交仅修改文档。本报告保留发布前 PR 验证快照，执行时最新发布版为 v0.4.1。
 
 本轮完成物理磁盘来源树、工作目录图形化选择与空闲切换、三步预检，以及中文结果和独立依据窗。使用方法见[升级说明](GUIDED_RECOVERY.md)。
+
+发布更新：[v0.5.0 预览版](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.5.0)已从 PR #12 合并提交重新构建并发布。准确构建提交、正式原生报告及附件下载后校验见[发布记录](releases/0.5.0/PUBLISHED.json)。以下 PR 制品和截图保留原始来源及摘要；下载以正式 Release 附件和 SHA256SUMS.txt 为准。
+
+2026-11-04 19:09（北京时间）发布，正式构建提交 `fab92ed58b7b206b2261f78c3142da183db82972`，[发布流水线](https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41818558830)全部通过。发布后重新下载三个平台 ZIP，逐包核验 SHA-256、ZIP CRC 与可执行架构；核对正式原生测试及工作流报告，并验证 109 张流程截图的摘要、PNG CRC、解码和非空采样，另有 2 张打包应用截图通过完整性检查。正式报告计数与下方 PR 验证一致；本记录不代替真实介质验收。
 
 ## 执行结果
 
@@ -34,7 +38,7 @@ macOS 原生检查实际查询系统元数据：Apple Silicon 返回 20 个来�
 
 ## 测试包与关键截图
 
-以下为功能提交的 Actions 测试包，受仓库权限和制品保留期限限制。下载后先解压制品 ZIP，再使用其中的平台 ZIP 及 SHA256SUMS；不是新的 GitHub Release。
+以下保留发布前功能提交的 Actions 测试包，受仓库权限和制品保留期限限制。下载后先解压制品 ZIP，再使用其中的平台 ZIP 及 SHA256SUMS；当前下载请使用上方正式 v0.5.0 Release，避免混用 PR 与发布包的摘要。
 
 - [Windows x64](https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41816563725/artifacts/13314882423)
 - [macOS Apple Silicon](https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41816704020/artifacts/13314991511)

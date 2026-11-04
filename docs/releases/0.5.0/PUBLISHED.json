@@ -1,0 +1,602 @@
+{
+  "success": true,
+  "tag": "v0.5.0",
+  "source_commit": "fab92ed58b7b206b2261f78c3142da183db82972",
+  "release_url": "https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.5.0",
+  "build_url": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41818558830",
+  "published_at_utc": "2026-11-04T11:09:19Z",
+  "pre_release": true,
+  "assets": [
+    {
+      "name": "DeepRecover-v0.5.0-macos-arm64.zip",
+      "bytes": 38472623,
+      "sha256": "1a4691f93381ba05ba0a097ab0ac4be59b7f271161a57e9470ba3611a4d7e28b",
+      "download_url": "https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.5.0/DeepRecover-v0.5.0-macos-arm64.zip",
+      "zip_crc": "passed",
+      "entries": 420,
+      "architecture": "arm64",
+      "mach_o": "passed",
+      "preserved_symlinks": 94
+    },
+    {
+      "name": "DeepRecover-v0.5.0-macos-x86_64.zip",
+      "bytes": 42220956,
+      "sha256": "c93742e6b147a8918be843debe5a4373a1cf13aa39deaf96906dd7f3d52eb43d",
+      "download_url": "https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.5.0/DeepRecover-v0.5.0-macos-x86_64.zip",
+      "zip_crc": "passed",
+      "entries": 420,
+      "architecture": "x86_64",
+      "mach_o": "passed",
+      "preserved_symlinks": 94
+    },
+    {
+      "name": "DeepRecover-v0.5.0-windows-x64.zip",
+      "bytes": 51627542,
+      "sha256": "23820a907b65b1f5fd7ee71bdc4078f0ed5e320eee733e0c29d40edce24b159a",
+      "download_url": "https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.5.0/DeepRecover-v0.5.0-windows-x64.zip",
+      "zip_crc": "passed",
+      "entries": 216,
+      "architecture": "x64",
+      "pe_machine": "0x8664",
+      "qt_platform_and_jpeg_plugins": true
+    }
+  ],
+  "native_validation": {
+    "windows": {
+      "tests_passed": 362,
+      "skipped": 2,
+      "computer_workflows_passed": 11,
+      "computer_screenshots": 18,
+      "source_hashes_unchanged": true,
+      "computer_workflow_real_disks_enumerated_or_opened": false,
+      "computer_qa_cases": [
+        {
+          "id": "CQA-01",
+          "result": "passed",
+          "filesystem": "NTFS",
+          "task_created_during_probe": false
+        },
+        {
+          "id": "CQA-02",
+          "result": "passed",
+          "deleted_records": 3,
+          "ready": 2,
+          "restricted": 1,
+          "fragmented_extents": 2
+        },
+        {
+          "id": "CQA-03",
+          "result": "passed",
+          "resident_png_decoded": true
+        },
+        {
+          "id": "CQA-04",
+          "result": "passed",
+          "verified_exports": 2,
+          "fragmented_logical_order": true
+        },
+        {
+          "id": "CQA-05",
+          "result": "passed",
+          "restricted_preview_rejected": true,
+          "restricted_export_rejected": true
+        },
+        {
+          "id": "CQA-06",
+          "result": "passed",
+          "candidates_after_reopen": 3,
+          "exports_after_reopen": 2,
+          "source_read_for_history": false
+        },
+        {
+          "id": "CQA-07",
+          "result": "passed",
+          "filesystem": "APFS",
+          "mode": "signature",
+          "deletion_state": "unknown"
+        },
+        {
+          "id": "CQA-11",
+          "result": "passed",
+          "deleted_record_explained": true,
+          "signature_deletion_state_unknown": true,
+          "content_check_separate": true,
+          "export_evidence_separate": true,
+          "stored_candidate_unchanged": true
+        },
+        {
+          "id": "CQA-08",
+          "result": "passed",
+          "same_device_guard_rejected": true,
+          "task_count_unchanged": true,
+          "real_disk_opened": false,
+          "mocked_apfs_store_schema": "APFSPhysicalStore",
+          "work_directory_help_visible": true
+        },
+        {
+          "id": "CQA-09",
+          "result": "passed",
+          "minimum_window": [
+            880,
+            620
+          ],
+          "source_controls_readable": true,
+          "scan_control_readable": true
+        },
+        {
+          "id": "CQA-10",
+          "result": "passed",
+          "physical_groups": true,
+          "auxiliary_and_snapshots_hidden_by_metadata": true,
+          "unknown_source_visible": true,
+          "selected_source_bound_by_path": true,
+          "filter_invalidates_preflight": true,
+          "inventory": "synthetic",
+          "task_count_unchanged": true
+        }
+      ],
+      "screenshot_font_check": {
+        "text": "DeepRecover 0123456789 电脑恢复 已删除图片 碎片文档 来源只读 本地处理 预览导出 历史结果",
+        "families": [
+          "Noto Sans CJK SC"
+        ],
+        "missing_glyphs": 0
+      },
+      "validation_artifact": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41818558830/artifacts/13314939153",
+      "guided_workflows_passed": 5,
+      "guided_screenshots": 5,
+      "guided_qa_cases": [
+        {
+          "id": "GQA-01",
+          "result": "passed",
+          "no_database_or_logs_before_selection": true,
+          "opened_selected_workspace": true
+        },
+        {
+          "id": "GQA-02",
+          "result": "passed",
+          "actual_signature_candidates": 1,
+          "readable_content_state": true
+        },
+        {
+          "id": "GQA-03",
+          "result": "passed",
+          "old_database_unchanged": true,
+          "old_log_unchanged": true,
+          "history_not_copied": true
+        },
+        {
+          "id": "GQA-04",
+          "result": "passed",
+          "existing_workspace_history_reopened": true
+        },
+        {
+          "id": "GQA-05",
+          "result": "passed",
+          "busy_picker_not_opened": true,
+          "workspace_unchanged": true
+        }
+      ],
+      "executable_smoke": true
+    },
+    "arm64": {
+      "tests_passed": 364,
+      "skipped": 0,
+      "computer_workflows_passed": 11,
+      "computer_screenshots": 18,
+      "source_hashes_unchanged": true,
+      "computer_workflow_real_disks_enumerated_or_opened": false,
+      "computer_qa_cases": [
+        {
+          "id": "CQA-01",
+          "result": "passed",
+          "filesystem": "NTFS",
+          "task_created_during_probe": false
+        },
+        {
+          "id": "CQA-02",
+          "result": "passed",
+          "deleted_records": 3,
+          "ready": 2,
+          "restricted": 1,
+          "fragmented_extents": 2
+        },
+        {
+          "id": "CQA-03",
+          "result": "passed",
+          "resident_png_decoded": true
+        },
+        {
+          "id": "CQA-04",
+          "result": "passed",
+          "verified_exports": 2,
+          "fragmented_logical_order": true
+        },
+        {
+          "id": "CQA-05",
+          "result": "passed",
+          "restricted_preview_rejected": true,
+          "restricted_export_rejected": true
+        },
+        {
+          "id": "CQA-06",
+          "result": "passed",
+          "candidates_after_reopen": 3,
+          "exports_after_reopen": 2,
+          "source_read_for_history": false
+        },
+        {
+          "id": "CQA-07",
+          "result": "passed",
+          "filesystem": "APFS",
+          "mode": "signature",
+          "deletion_state": "unknown"
+        },
+        {
+          "id": "CQA-11",
+          "result": "passed",
+          "deleted_record_explained": true,
+          "signature_deletion_state_unknown": true,
+          "content_check_separate": true,
+          "export_evidence_separate": true,
+          "stored_candidate_unchanged": true
+        },
+        {
+          "id": "CQA-08",
+          "result": "passed",
+          "same_device_guard_rejected": true,
+          "task_count_unchanged": true,
+          "real_disk_opened": false,
+          "mocked_apfs_store_schema": "APFSPhysicalStore",
+          "work_directory_help_visible": true
+        },
+        {
+          "id": "CQA-09",
+          "result": "passed",
+          "minimum_window": [
+            880,
+            620
+          ],
+          "source_controls_readable": true,
+          "scan_control_readable": true
+        },
+        {
+          "id": "CQA-10",
+          "result": "passed",
+          "physical_groups": true,
+          "auxiliary_and_snapshots_hidden_by_metadata": true,
+          "unknown_source_visible": true,
+          "selected_source_bound_by_path": true,
+          "filter_invalidates_preflight": true,
+          "inventory": "synthetic",
+          "task_count_unchanged": true
+        }
+      ],
+      "screenshot_font_check": {
+        "text": "DeepRecover 0123456789 电脑恢复 已删除图片 碎片文档 来源只读 本地处理 预览导出 历史结果",
+        "families": [
+          "Helvetica Neue",
+          "PingFang SC"
+        ],
+        "missing_glyphs": 0
+      },
+      "validation_artifact": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41818558830/artifacts/13316176232",
+      "native_disk_metadata": {
+        "success": true,
+        "platform": "darwin",
+        "architecture": "arm64",
+        "metadata_queries_only": true,
+        "raw_reads": false,
+        "root_physical_disk_count": 1,
+        "work_directory_physical_disk_count": 1,
+        "root_and_work_directory_overlap": true,
+        "same_device_rejected": true,
+        "schemas": {
+          "root": {
+            "physical_stores": {
+              "entry_types": [
+                "dict"
+              ],
+              "identifier_keys": [
+                "APFSPhysicalStore"
+              ]
+            },
+            "volume_disk_value_type": "NoneType",
+            "snapshot": true
+          },
+          "work_directory": {
+            "physical_stores": {
+              "entry_types": [
+                "dict"
+              ],
+              "identifier_keys": [
+                "APFSPhysicalStore"
+              ]
+            },
+            "volume_disk_value_type": "NoneType",
+            "snapshot": false
+          },
+          "apfs_list_physical_stores": {
+            "entry_types": [
+              "dict"
+            ],
+            "identifier_keys": [
+              "DeviceIdentifier"
+            ]
+          }
+        },
+        "inventory": {
+          "source_count": 20,
+          "kinds": {
+            "physical": 2,
+            "partition": 3,
+            "apfs_container": 3,
+            "auxiliary": 8,
+            "apfs_volume": 3,
+            "snapshot": 1
+          },
+          "known_physical_groups": 2,
+          "system_sources": 17,
+          "metadata_queries_only": true
+        }
+      },
+      "guided_workflows_passed": 5,
+      "guided_screenshots": 5,
+      "guided_qa_cases": [
+        {
+          "id": "GQA-01",
+          "result": "passed",
+          "no_database_or_logs_before_selection": true,
+          "opened_selected_workspace": true
+        },
+        {
+          "id": "GQA-02",
+          "result": "passed",
+          "actual_signature_candidates": 1,
+          "readable_content_state": true
+        },
+        {
+          "id": "GQA-03",
+          "result": "passed",
+          "old_database_unchanged": true,
+          "old_log_unchanged": true,
+          "history_not_copied": true
+        },
+        {
+          "id": "GQA-04",
+          "result": "passed",
+          "existing_workspace_history_reopened": true
+        },
+        {
+          "id": "GQA-05",
+          "result": "passed",
+          "busy_picker_not_opened": true,
+          "workspace_unchanged": true
+        }
+      ],
+      "cocoa_workflows_passed": 14,
+      "cocoa_screenshots": 20,
+      "packaged_cocoa_smoke": true
+    },
+    "x86_64": {
+      "tests_passed": 364,
+      "skipped": 0,
+      "computer_workflows_passed": 11,
+      "computer_screenshots": 18,
+      "source_hashes_unchanged": true,
+      "computer_workflow_real_disks_enumerated_or_opened": false,
+      "computer_qa_cases": [
+        {
+          "id": "CQA-01",
+          "result": "passed",
+          "filesystem": "NTFS",
+          "task_created_during_probe": false
+        },
+        {
+          "id": "CQA-02",
+          "result": "passed",
+          "deleted_records": 3,
+          "ready": 2,
+          "restricted": 1,
+          "fragmented_extents": 2
+        },
+        {
+          "id": "CQA-03",
+          "result": "passed",
+          "resident_png_decoded": true
+        },
+        {
+          "id": "CQA-04",
+          "result": "passed",
+          "verified_exports": 2,
+          "fragmented_logical_order": true
+        },
+        {
+          "id": "CQA-05",
+          "result": "passed",
+          "restricted_preview_rejected": true,
+          "restricted_export_rejected": true
+        },
+        {
+          "id": "CQA-06",
+          "result": "passed",
+          "candidates_after_reopen": 3,
+          "exports_after_reopen": 2,
+          "source_read_for_history": false
+        },
+        {
+          "id": "CQA-07",
+          "result": "passed",
+          "filesystem": "APFS",
+          "mode": "signature",
+          "deletion_state": "unknown"
+        },
+        {
+          "id": "CQA-11",
+          "result": "passed",
+          "deleted_record_explained": true,
+          "signature_deletion_state_unknown": true,
+          "content_check_separate": true,
+          "export_evidence_separate": true,
+          "stored_candidate_unchanged": true
+        },
+        {
+          "id": "CQA-08",
+          "result": "passed",
+          "same_device_guard_rejected": true,
+          "task_count_unchanged": true,
+          "real_disk_opened": false,
+          "mocked_apfs_store_schema": "APFSPhysicalStore",
+          "work_directory_help_visible": true
+        },
+        {
+          "id": "CQA-09",
+          "result": "passed",
+          "minimum_window": [
+            880,
+            620
+          ],
+          "source_controls_readable": true,
+          "scan_control_readable": true
+        },
+        {
+          "id": "CQA-10",
+          "result": "passed",
+          "physical_groups": true,
+          "auxiliary_and_snapshots_hidden_by_metadata": true,
+          "unknown_source_visible": true,
+          "selected_source_bound_by_path": true,
+          "filter_invalidates_preflight": true,
+          "inventory": "synthetic",
+          "task_count_unchanged": true
+        }
+      ],
+      "screenshot_font_check": {
+        "text": "DeepRecover 0123456789 电脑恢复 已删除图片 碎片文档 来源只读 本地处理 预览导出 历史结果",
+        "families": [
+          "Helvetica Neue",
+          "PingFang SC"
+        ],
+        "missing_glyphs": 0
+      },
+      "validation_artifact": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41818558830/artifacts/13315174981",
+      "native_disk_metadata": {
+        "success": true,
+        "platform": "darwin",
+        "architecture": "x86_64",
+        "metadata_queries_only": true,
+        "raw_reads": false,
+        "root_physical_disk_count": 1,
+        "work_directory_physical_disk_count": 1,
+        "root_and_work_directory_overlap": true,
+        "same_device_rejected": true,
+        "schemas": {
+          "root": {
+            "physical_stores": {
+              "entry_types": [
+                "dict"
+              ],
+              "identifier_keys": [
+                "APFSPhysicalStore"
+              ]
+            },
+            "volume_disk_value_type": "NoneType",
+            "snapshot": true
+          },
+          "work_directory": {
+            "physical_stores": {
+              "entry_types": [
+                "dict"
+              ],
+              "identifier_keys": [
+                "APFSPhysicalStore"
+              ]
+            },
+            "volume_disk_value_type": "NoneType",
+            "snapshot": false
+          },
+          "apfs_list_physical_stores": {
+            "entry_types": [
+              "dict"
+            ],
+            "identifier_keys": [
+              "DeviceIdentifier"
+            ]
+          }
+        },
+        "inventory": {
+          "source_count": 11,
+          "kinds": {
+            "physical": 1,
+            "partition": 2,
+            "apfs_container": 1,
+            "apfs_volume": 2,
+            "auxiliary": 4,
+            "snapshot": 1
+          },
+          "known_physical_groups": 1,
+          "system_sources": 11,
+          "metadata_queries_only": true
+        }
+      },
+      "guided_workflows_passed": 5,
+      "guided_screenshots": 5,
+      "guided_qa_cases": [
+        {
+          "id": "GQA-01",
+          "result": "passed",
+          "no_database_or_logs_before_selection": true,
+          "opened_selected_workspace": true
+        },
+        {
+          "id": "GQA-02",
+          "result": "passed",
+          "actual_signature_candidates": 1,
+          "readable_content_state": true
+        },
+        {
+          "id": "GQA-03",
+          "result": "passed",
+          "old_database_unchanged": true,
+          "old_log_unchanged": true,
+          "history_not_copied": true
+        },
+        {
+          "id": "GQA-04",
+          "result": "passed",
+          "existing_workspace_history_reopened": true
+        },
+        {
+          "id": "GQA-05",
+          "result": "passed",
+          "busy_picker_not_opened": true,
+          "workspace_unchanged": true
+        }
+      ],
+      "cocoa_workflows_passed": 14,
+      "cocoa_screenshots": 20,
+      "packaged_cocoa_smoke": true
+    }
+  },
+  "macos_signing": "local ad-hoc; no Developer ID certificate; not notarized",
+  "physical_device_acceptance": false,
+  "native_macos_metadata_queried": true,
+  "raw_devices_opened_by_application": false,
+  "apfs_hfs_capability": "continuous JPG/PNG signature candidates only; no deleted metadata parser",
+  "release_workflow_screenshots": {
+    "total": 109,
+    "per_platform": {
+      "macos-arm64-validation-fab92ed58b7b206b2261f78c3142da183db82972": 43,
+      "macos-x86_64-validation-fab92ed58b7b206b2261f78c3142da183db82972": 43,
+      "windows-validation-fab92ed58b7b206b2261f78c3142da183db82972": 23
+    },
+    "sha256_matches_evidence": true,
+    "png_crc_and_decode_passed": true,
+    "nonblank_sample_pixels": true
+  },
+  "additional_packaged_smoke_screenshots": {
+    "total": 2,
+    "png_crc_and_decode_passed": true,
+    "nonblank_sample_pixels": true
+  }
+}
