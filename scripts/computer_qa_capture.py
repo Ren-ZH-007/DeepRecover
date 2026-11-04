@@ -24,6 +24,7 @@ from app.app_config import AppConfig
 from app.main_window import MainWindow
 from core.candidate_io import CandidateAccessError
 from core.computer.io import DiskError
+from core.computer import devices as disk_devices
 from core.export.service import ExportError
 from storage.database.repository import Repository
 from tests.fixtures_ntfs import NTFSFixture, file_name, resident_attr, nonresident_attr
@@ -166,13 +167,27 @@ def run(output):
             count = len(repo.tasks()); window.nav.setCurrentRow(7)
             page.devices = [SimpleNamespace(path='/dev/disk99', size=1024, label='QA mock disk', system_disk=False)]
             window.fill(page.device_table, [('/dev/disk99', 1024, 'QA mock disk')]); page.device_table.selectRow(0)
-            with patch('core.computer.devices.ensure_different_device', side_effect=DiskError('QA：工作目录必须位于其他物理盘')) as guard, \
+            def apfs_info(path):
+                return {'DeviceIdentifier': path.removeprefix('/dev/'),
+                    'APFSPhysicalStores': [{'APFSPhysicalStore': 'disk0s2'}]}
+            with patch.object(disk_devices.sys, 'platform', 'darwin'), \
+                    patch.object(disk_devices, 'normalize_device', side_effect=lambda path: path) as normalize, \
+                    patch.object(disk_devices, '_mac_apfs', return_value={}), \
+                    patch.object(disk_devices, '_mac_info', side_effect=apfs_info), \
+                    patch.object(disk_devices, '_mac_volume_path', return_value='/dev/disk3s5'), \
                     patch('core.computer.service.DiskReader', side_effect=AssertionError('Raw disk opened')) as raw:
                 page.choose_device(); probe(DiskError)
-                guard.assert_called_once(); raw.assert_not_called()
+                raw.assert_not_called()
+                normalize.assert_called_once_with('/dev/disk99')
             assert len(repo.tasks()) == count and page.partitions == []
+            assert '工作目录和导出目标必须位于另一块物理磁盘，不能写回来源磁盘。' in page.status.text()
+            assert str(config.data_dir) in page.status.text()
             capture('10-raw-workspace-isolation-refused.png')
-            record('CQA-08', same_device_guard_rejected=True, task_count_unchanged=True, real_disk_opened=False)
+            page.directory_help_button.click(); app.processEvents()
+            assert not page.work_directory_label.visibleRegion().isEmpty()
+            capture('10a-work-directory-guidance.png')
+            record('CQA-08', same_device_guard_rejected=True, task_count_unchanged=True,
+                real_disk_opened=False, mocked_apfs_store_schema='APFSPhysicalStore', work_directory_help_visible=True)
             window.resize(880, 620); QTest.qWait(50); app.processEvents()
             scroll = page.findChildren(QScrollArea)[0]; scroll.verticalScrollBar().setValue(0)
             for button in (page.image_button, page.devices_button):

@@ -56,3 +56,5 @@ DEEPRECOVER_DATA_DIR='/Volumes/OtherDisk/DeepRecover_Work' \
 自动化使用自行构造的 NTFS、FAT32、exFAT 和分区表镜像，验证源哈希不变、resident USA、碎片顺序、分配重用拒绝、越界/循环/取消、校验导出和历史回读。原始设备 API、磁盘枚举和物理盘隔离使用受控替身测试，不扫描云端真实磁盘；原生构建/镜像验证不能替代真实 USB、系统盘、权限和文件系统兼容性验收。
 
 Windows/macOS 双架构的编译、270 项测试、电脑流程及关键截图见[测试报告](COMPUTER_TEST_REPORT_20261104.md)。
+
+0.4.1 修复 macOS APFS 预检兼容性：识别 `diskutil info` 的 `APFSPhysicalStore` 字段与系统快照的卷引用。若选择 Macintosh HD，而工作目录也在内置盘上，预检仍会拒绝；请按上面的启动示例先将工作目录放在另一块物理磁盘。界面提供“查看工作目录设置”入口。APFS/HFS+ 的签名扫描范围保持上述限制。[修复报告、编译包和原生验证](APFS_PREFLIGHT_FIX_20261104.md)记录尚未发布的 0.4.1 修复候选。

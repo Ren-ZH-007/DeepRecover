@@ -1,0 +1,47 @@
+test_conflicting_direct_container_reference_is_rejected_without_inventory (tests.test_computer_devices.ComputerDeviceTests.test_conflicting_direct_container_reference_is_rejected_without_inventory) ...
+  test_conflicting_direct_container_reference_is_rejected_without_inventory (tests.test_computer_devices.ComputerDeviceTests.test_conflicting_direct_container_reference_is_rejected_without_inventory) (info={'APFSContainerReference': 'disk8', 'APFSPhysicalStores': [{'APFSPhysicalStore': 'disk0s2'}], 'DeviceIdentifier': 'disk3s1'}) ... FAIL
+  test_conflicting_direct_container_reference_is_rejected_without_inventory (tests.test_computer_devices.ComputerDeviceTests.test_conflicting_direct_container_reference_is_rejected_without_inventory) (info={'APFSContainerReference': 'disk8', 'APFSPhysicalStores': [{'APFSPhysicalStore': 'disk0s2'}], 'DeviceIdentifier': 'disk3s1s1', 'APFSVolumeDisk': 'disk3s1'}) ... FAIL
+  test_conflicting_direct_container_reference_is_rejected_without_inventory (tests.test_computer_devices.ComputerDeviceTests.test_conflicting_direct_container_reference_is_rejected_without_inventory) (info={'APFSContainerReference': 'disk8', 'APFSPhysicalStores': [{'APFSPhysicalStore': 'disk0s2'}], 'APFSVolumeDisk': 'disk3s1'}) ... FAIL
+  test_conflicting_direct_container_reference_is_rejected_without_inventory (tests.test_computer_devices.ComputerDeviceTests.test_conflicting_direct_container_reference_is_rejected_without_inventory) (info={'APFSContainerReference': 'disk8', 'APFSPhysicalStores': [{'APFSPhysicalStore': 'disk0s2'}], 'DeviceIdentifier': 'disk3s1', 'VirtualOrPhysical': 'Physical'}) ... FAIL
+test_explicit_physical_apfs_store_can_reference_synthesized_container (tests.test_computer_devices.ComputerDeviceTests.test_explicit_physical_apfs_store_can_reference_synthesized_container) ... ok
+
+======================================================================
+FAIL: test_conflicting_direct_container_reference_is_rejected_without_inventory (tests.test_computer_devices.ComputerDeviceTests.test_conflicting_direct_container_reference_is_rejected_without_inventory) (info={'APFSContainerReference': 'disk8', 'APFSPhysicalStores': [{'APFSPhysicalStore': 'disk0s2'}], 'DeviceIdentifier': 'disk3s1'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/DeepRecover/tests/test_computer_devices.py", line 108, in test_conflicting_direct_container_reference_is_rejected_without_inventory
+    with self.subTest(info=info), self.assertRaises(DiskError):
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: DiskError not raised
+
+======================================================================
+FAIL: test_conflicting_direct_container_reference_is_rejected_without_inventory (tests.test_computer_devices.ComputerDeviceTests.test_conflicting_direct_container_reference_is_rejected_without_inventory) (info={'APFSContainerReference': 'disk8', 'APFSPhysicalStores': [{'APFSPhysicalStore': 'disk0s2'}], 'DeviceIdentifier': 'disk3s1s1', 'APFSVolumeDisk': 'disk3s1'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/DeepRecover/tests/test_computer_devices.py", line 108, in test_conflicting_direct_container_reference_is_rejected_without_inventory
+    with self.subTest(info=info), self.assertRaises(DiskError):
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: DiskError not raised
+
+======================================================================
+FAIL: test_conflicting_direct_container_reference_is_rejected_without_inventory (tests.test_computer_devices.ComputerDeviceTests.test_conflicting_direct_container_reference_is_rejected_without_inventory) (info={'APFSContainerReference': 'disk8', 'APFSPhysicalStores': [{'APFSPhysicalStore': 'disk0s2'}], 'APFSVolumeDisk': 'disk3s1'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/DeepRecover/tests/test_computer_devices.py", line 108, in test_conflicting_direct_container_reference_is_rejected_without_inventory
+    with self.subTest(info=info), self.assertRaises(DiskError):
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: DiskError not raised
+
+======================================================================
+FAIL: test_conflicting_direct_container_reference_is_rejected_without_inventory (tests.test_computer_devices.ComputerDeviceTests.test_conflicting_direct_container_reference_is_rejected_without_inventory) (info={'APFSContainerReference': 'disk8', 'APFSPhysicalStores': [{'APFSPhysicalStore': 'disk0s2'}], 'DeviceIdentifier': 'disk3s1', 'VirtualOrPhysical': 'Physical'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/DeepRecover/tests/test_computer_devices.py", line 108, in test_conflicting_direct_container_reference_is_rejected_without_inventory
+    with self.subTest(info=info), self.assertRaises(DiskError):
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: DiskError not raised
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.001s
+
+FAILED (failures=4)

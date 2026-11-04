@@ -1,0 +1,14 @@
+{
+  "success": true,
+  "version": "0.4.1",
+  "schema_version": 3,
+  "navigation_pages": 8,
+  "qt_platform": "offscreen",
+  "computer_candidates": 2,
+  "computer_verified_exports": 2,
+  "verified_exports": 2,
+  "decoded_formats": [
+    "PNG",
+    "JPEG"
+  ]
+}

@@ -2,7 +2,7 @@ name: Windows and macOS build and release
 
 on:
   push:
-    branches: [feature/ui-refresh-release, feature/macos-support, feature/computer-recovery]
+    branches: [feature/ui-refresh-release, feature/macos-support, feature/computer-recovery, fix/macos-apfs-preflight]
     tags: ['v*']
     paths-ignore: ['docs/**', 'README.md']
   workflow_dispatch:

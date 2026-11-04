@@ -71,6 +71,125 @@ class ComputerDeviceTests(unittest.TestCase):
         ids = devices._mac_physical_ids({'DeviceIdentifier': 'disk8s1', 'APFSContainerReference': 'disk8'}, apfs)
         self.assertEqual(ids, {'disk0', 'disk1'})
 
+    def test_diskutil_info_physical_store_key_maps_volume_and_snapshot(self):
+        for identifier in ('disk3s1', 'disk3s1s1'):
+            info = {'DeviceIdentifier': identifier, 'APFSContainerReference': 'disk3',
+                    'APFSVolumeDisk': 'disk3s1',
+                    'APFSPhysicalStores': [{'APFSPhysicalStore': 'disk0s2'}]}
+            with self.subTest(identifier=identifier):
+                self.assertEqual(devices._mac_physical_ids(info, self.apfs), {'disk0'})
+                self.assertEqual(devices._mac_physical_ids(info, {}), {'disk0'})
+
+    def test_snapshot_volume_reference_maps_only_through_apfs_inventory(self):
+        info = {'DeviceIdentifier': 'disk3s1s1', 'APFSVolumeDisk': 'disk3s1',
+                'APFSSnapshot': True, 'ParentWholeDisk': 'disk3'}
+        self.assertEqual(devices._mac_physical_ids(info, self.apfs), {'disk0'})
+
+    def test_snapshot_volume_reference_without_mapping_is_rejected(self):
+        info = {'DeviceIdentifier': 'disk3s1s1', 'APFSVolumeDisk': 'disk3s1',
+                'APFSSnapshot': True, 'ParentWholeDisk': 'disk3'}
+        with self.assertRaises(DiskError):
+            devices._mac_physical_ids(info, {})
+
+    def test_direct_apfs_stores_and_inventory_must_agree(self):
+        info = {'DeviceIdentifier': 'disk3s1', 'APFSContainerReference': 'disk3',
+                'APFSPhysicalStores': [{'DeviceIdentifier': 'disk2s2'}]}
+        with self.assertRaises(DiskError):
+            devices._mac_physical_ids(info, self.apfs)
+
+    def test_conflicting_direct_container_reference_is_rejected_without_inventory(self):
+        for additions in [
+                {'DeviceIdentifier': 'disk3s1'},
+                {'DeviceIdentifier': 'disk3s1s1', 'APFSVolumeDisk': 'disk3s1'},
+                {'APFSVolumeDisk': 'disk3s1'},
+                {'DeviceIdentifier': 'disk3s1', 'VirtualOrPhysical': 'Physical'}]:
+            info = {'APFSContainerReference': 'disk8',
+                    'APFSPhysicalStores': [{'APFSPhysicalStore': 'disk0s2'}], **additions}
+            with self.subTest(info=info), self.assertRaises(DiskError):
+                devices._mac_physical_ids(info, {})
+
+    def test_explicit_physical_apfs_store_can_reference_synthesized_container(self):
+        info = {'DeviceIdentifier': 'disk0s2', 'VirtualOrPhysical': 'Physical',
+                'APFSContainerReference': 'disk3',
+                'APFSPhysicalStores': [{'APFSPhysicalStore': 'disk0s2'}]}
+        self.assertEqual(devices._mac_physical_ids(info, {}), {'disk0'})
+        self.assertEqual(devices._mac_physical_ids(info, self.apfs), {'disk0'})
+        del info['APFSPhysicalStores']
+        self.assertEqual(devices._mac_physical_ids(info, self.apfs), {'disk0'})
+
+    def test_conflicting_or_malformed_physical_store_descriptors_are_rejected(self):
+        for stores in [None, [], [{}], [{'OtherIdentifier': 'disk0s2'}],
+                       [{'APFSPhysicalStore': None}], [{'APFSPhysicalStore': 'disk0;command'}],
+                       [{'DeviceIdentifier': 'disk0s2', 'APFSPhysicalStore': 'disk2s2'}],
+                       [{'DeviceIdentifier': 'disk0s2', 'APFSPhysicalStore': 'disk0s3'}],
+                       [{'DeviceIdentifier': 'disk0s2', 'APFSPhysicalStore': None}]]:
+            info = {'DeviceIdentifier': 'disk3s1', 'APFSContainerReference': 'disk3',
+                    'APFSPhysicalStores': stores}
+            with self.subTest(stores=stores), self.assertRaises(DiskError):
+                devices._mac_physical_ids(info, self.apfs)
+
+    def test_equivalent_apfs_store_descriptor_aliases_are_accepted(self):
+        info = {'DeviceIdentifier': 'disk3s1', 'APFSContainerReference': 'disk3',
+                'APFSPhysicalStores': [{'DeviceIdentifier': '/dev/rdisk0s2',
+                                        'APFSPhysicalStore': 'disk0s2'}]}
+        self.assertEqual(devices._mac_physical_ids(info, self.apfs), {'disk0'})
+
+    def test_conflicting_snapshot_or_container_references_are_rejected(self):
+        for additions in [{'APFSContainerReference': 'disk8'}, {'APFSVolumeDisk': 'disk8s1'},
+                          {'APFSVolumeDisk': {'DeviceIdentifier': 'disk3s1'}},
+                          {'APFSVolumeDisk': 'not-a-device'}]:
+            info = {'DeviceIdentifier': 'disk3s1s1', 'APFSVolumeDisk': 'disk3s1', **additions}
+            with self.subTest(additions=additions), self.assertRaises(DiskError):
+                devices._mac_physical_ids(info, self.apfs)
+
+    def test_conflicting_apfs_inventory_matches_cannot_choose_one_store(self):
+        apfs = {'Containers': self.apfs['Containers'] + [{'ContainerReference': 'disk8',
+            'PhysicalStores': [{'DeviceIdentifier': 'disk2s2'}],
+            'Volumes': [{'DeviceIdentifier': 'disk3s1'}]}]}
+        with self.assertRaises(DiskError):
+            devices._mac_physical_ids({'DeviceIdentifier': 'disk3s1'}, apfs)
+
+    def test_info_fusion_stores_protect_every_member_disk(self):
+        info = {'DeviceIdentifier': 'disk8s1', 'APFSContainerReference': 'disk8',
+                'APFSPhysicalStores': [{'APFSPhysicalStore': 'disk0s2'},
+                                       {'APFSPhysicalStore': 'disk1s2'}]}
+        self.assertEqual(devices._mac_physical_ids(info, {}), {'disk0', 'disk1'})
+        for member in ('disk0', 'disk1'):
+            with self.subTest(member=member), patch.object(devices.sys, 'platform', 'darwin'), \
+                    patch.object(devices, 'normalize_device', return_value='/dev/disk8s1'), \
+                    patch.object(devices, '_mac_apfs', return_value={}), \
+                    patch.object(devices, '_mac_info', side_effect=[info, {'DeviceIdentifier': member}]), \
+                    patch.object(devices, '_mac_volume_path', return_value='/dev/' + member):
+                with self.assertRaisesRegex(DiskError, '另一块物理磁盘'):
+                    devices.ensure_different_device('/dev/disk8s1', self.root / 'not-created')
+        self.assertFalse((self.root / 'not-created').exists())
+
+    def test_real_shape_source_same_internal_data_disk_rejected_before_directory_creation(self):
+        source = {'DeviceIdentifier': 'disk3s1', 'APFSContainerReference': 'disk3',
+                  'APFSPhysicalStores': [{'APFSPhysicalStore': 'disk0s2'}]}
+        target = {'DeviceIdentifier': 'disk3s5', 'APFSContainerReference': 'disk3',
+                  'APFSPhysicalStores': [{'APFSPhysicalStore': 'disk0s2'}]}
+        with patch.object(devices.sys, 'platform', 'darwin'), \
+                patch.object(devices, 'normalize_device', return_value='/dev/disk3s1'), \
+                patch.object(devices, '_mac_apfs', return_value=self.apfs), \
+                patch.object(devices, '_mac_info', side_effect=[source, target]), \
+                patch.object(devices, '_mac_volume_path', return_value='/dev/disk3s5'):
+            with self.assertRaisesRegex(DiskError, '另一块物理磁盘'):
+                devices.ensure_different_device('/dev/disk3s1', self.root / 'not-created')
+        self.assertFalse((self.root / 'not-created').exists())
+
+    def test_real_shape_source_and_external_workdisk_are_accepted(self):
+        source = {'DeviceIdentifier': 'disk3s1', 'APFSContainerReference': 'disk3',
+                  'APFSPhysicalStores': [{'APFSPhysicalStore': 'disk0s2'}]}
+        target = {'DeviceIdentifier': 'disk4s1', 'ParentWholeDisk': 'disk4', 'VirtualOrPhysical': 'Physical'}
+        with patch.object(devices.sys, 'platform', 'darwin'), \
+                patch.object(devices, 'normalize_device', return_value='/dev/disk3s1'), \
+                patch.object(devices, '_mac_apfs', return_value=self.apfs), \
+                patch.object(devices, '_mac_info', side_effect=[source, target]), \
+                patch.object(devices, '_mac_volume_path', return_value='/dev/disk4s1'):
+            self.assertTrue(devices.ensure_different_device('/dev/disk3s1', self.root / 'not-created'))
+        self.assertFalse((self.root / 'not-created').exists())
+
     def test_unknown_apfs_virtual_mapping_never_falls_back_to_synthesized_number(self):
         for info in [{'DeviceIdentifier': 'disk3s1', 'APFSContainerReference': 'disk3'},
                      {'DeviceIdentifier': 'disk3s1', 'Content': 'Apple_APFS'},
