@@ -1,5 +1,7 @@
 # 第一阶段进度 — M4 图片预览与校验导出
 
+0.5.0 开发升级：落实物理磁盘来源树、图形化工作目录选择/切换和中文结果依据；源数据、数据库与导出校验语义保持原有边界。[使用说明](GUIDED_RECOVERY.md)和[三平台测试报告](GUIDED_RECOVERY_TEST_REPORT_20261104.md)单独记录；M5 的真实介质、手机和安装体验仍待验收，当前发布版仍为 v0.4.1。
+
 2026-11-04 macOS APFS 预检修复（[v0.4.1 预览版已发布](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.4.1)）：兼容 `APFSPhysicalStore` 与系统快照卷引用，预检失败时提示工作目录设置，见[修复报告](APFS_PREFLIGHT_FIX_20261104.md)。
 
 2026-11-04 电脑恢复扩展（[v0.4.0 预览版已发布](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.4.0)）：新增 Windows/macOS 原始盘、U 盘及镜像入口，NTFS/FAT32/exFAT 的受支持删除布局与 APFS/HFS+ 签名候选，见[支持矩阵](COMPUTER_RECOVERY.md)。270 项自动化、原生双平台编译及电脑界面证据见[测试报告](COMPUTER_TEST_REPORT_20261104.md)。真实盘/USB 仍未验收；本次不改变下方历史里程碑的验收状态。

@@ -1,0 +1,12 @@
+{
+  "success": true,
+  "platform": "darwin",
+  "run": 364,
+  "passed": 364,
+  "failures": 0,
+  "errors": 0,
+  "skipped": [],
+  "unexpected_skips": [],
+  "expected_failures": 0,
+  "unexpected_successes": 0
+}
