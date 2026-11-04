@@ -170,7 +170,8 @@ class M4UiTests(unittest.TestCase):
                 with self.assertRaises(TaskCancelled): self.window.pending[0].future.result(5)
                 self.window.poll()
             self.assertEqual(self.repo.task(export_task)['status'],'cancelled')
-            self.assertEqual(self.window.export_dialog.table.item(0,1).text(),'cancelled')
+            self.assertEqual(self.window.export_dialog.table.item(0,1).text(),'已停止')
+            self.assertIn('cancelled',self.window.export_dialog.table.item(0,1).toolTip())
             self.assertEqual(path.read_bytes(),JPEG)
         finally:
             release.set()

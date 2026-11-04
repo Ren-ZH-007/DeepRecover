@@ -27,6 +27,8 @@ class PackagedEntryTests(unittest.TestCase):
             self.assertEqual(data['verified_exports'], 2)
             self.assertEqual(data['computer_candidates'], 2)
             self.assertEqual(data['computer_verified_exports'], 2)
+            self.assertTrue(data['workspace_dialog_verified'])
+            self.assertTrue(data['workspace_roundtrip_verified'])
             self.assertEqual(data['qt_platform'], 'offscreen')
             self.assertEqual(set(data['decoded_formats']), {'PNG','JPEG'})
             self.assertEqual(screenshot.read_bytes()[:8], b'\x89PNG\r\n\x1a\n')

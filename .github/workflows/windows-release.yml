@@ -2,7 +2,7 @@ name: Windows and macOS build and release
 
 on:
   push:
-    branches: [feature/ui-refresh-release, feature/macos-support, feature/computer-recovery, fix/macos-apfs-preflight]
+    branches: [feature/ui-refresh-release, feature/macos-support, feature/computer-recovery, fix/macos-apfs-preflight, feature/guided-recovery]
     tags: ['v*']
     paths-ignore: ['docs/**', 'README.md']
   workflow_dispatch:
@@ -56,6 +56,12 @@ jobs:
           QT_QPA_PLATFORM: offscreen
           QT_QPA_FONTDIR: ${{ github.workspace }}/build/qa-fonts
         run: .venv/Scripts/python.exe scripts/computer_qa_capture.py --output build/computer-qa
+      - name: Guided workspace workflows and screenshots
+        shell: pwsh
+        env:
+          QT_QPA_PLATFORM: offscreen
+          QT_QPA_FONTDIR: ${{ github.workspace }}/build/qa-fonts
+        run: .venv/Scripts/python.exe scripts/guided_qa_capture.py --output build/guided-qa
       - name: Preserve test and executable evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -65,6 +71,7 @@ jobs:
             build/test-report.json
             build/executable-smoke.json
             build/computer-qa/
+            build/guided-qa/
           if-no-files-found: warn
       - name: Preserve complete distribution
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

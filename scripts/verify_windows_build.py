@@ -17,6 +17,8 @@ def validate_report(path, expected_version):
         'decoded_formats': ['PNG', 'JPEG'],
         'computer_candidates': 2,
         'computer_verified_exports': 2,
+        'workspace_dialog_verified': True,
+        'workspace_roundtrip_verified': True,
     }
     for name, value in expected.items():
         if type(data.get(name)) is not type(value) or data.get(name) != value:

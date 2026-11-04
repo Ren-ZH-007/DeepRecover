@@ -3,6 +3,7 @@ from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QTableWidget, QTableWidgetItem, QAbstractItemView, QHeaderView)
 from app.theme import STYLE, icon, brand_icon
+from ui.recovery.presentation import export_status, task_status, error_text
 
 
 STATUS = {
@@ -34,19 +35,21 @@ class ExportHistory(QDialog):
         title = QLabel('导出记录'); title.setObjectName('title'); headings.addWidget(title)
         note = QLabel('核对来源与目标摘要，追踪每个文件的实际导出结果。')
         note.setObjectName('subtitle'); headings.addWidget(note)
-        status, foreground, background = STATUS.get(task['status'], (task['status'], '#7b8ba1', '#edf1f6'))
+        status, foreground, background = STATUS.get(task['status'], ('导出状态未知', '#7b8ba1', '#edf1f6'))
         badge = QLabel(status); badge.setObjectName('badge')
+        badge.setToolTip(task_status(task['status']).tooltip)
         badge.setStyleSheet(f'color: {foreground}; background: {background};')
         header.addWidget(badge, 0, Qt.AlignmentFlag.AlignVCenter)
         counts = repository.export_counts(task_id)
-        summary = QLabel(f"已校验 {counts.get('exported', 0)} 项    ·    失败 {counts.get('failed', 0)} 项    ·    已停止 {counts.get('cancelled', 0)} 项")
-        summary.setObjectName('sectionTitle'); box.addWidget(summary)
+        summary = QLabel(f"记录标记已导出 {counts.get('exported', 0)} 项    ·    失败 {counts.get('failed', 0)} 项    ·    已停止 {counts.get('cancelled', 0)} 项")
+        summary.setObjectName('sectionTitle'); summary.setWordWrap(True)
+        summary.setToolTip('按保存的逐项状态计数，摘要记录是否完整请查看每一项的结果。'); box.addWidget(summary)
         label = QLabel(f"本地清单  {task['result_path'] or '尚未生成清单'}")
         label.setObjectName('sourceInfo'); label.setTextFormat(Qt.TextFormat.PlainText)
         label.setWordWrap(True); label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         box.addWidget(label)
         self.table = QTableWidget(0, 7)
-        self.table.setHorizontalHeaderLabels(['原始名称', '结果', '输出文件', '来源 SHA-256', '目标 SHA-256', '大小', '错误类型'])
+        self.table.setHorizontalHeaderLabels(['原始名称', '结果', '输出文件', '来源 SHA-256', '目标 SHA-256', '大小', '错误说明'])
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
@@ -80,14 +83,23 @@ class ExportHistory(QDialog):
         records = self.repository.exports(self.task_id, offset=self.offset, limit=100)
         self.table.setRowCount(len(records))
         for row, record in enumerate(records):
-            values = (record['metadata']['name'], record['status'], record['output_path'],
-                      record['source_sha256'] or '', record['target_sha256'] or '', record['size'], record['error_code'] or '')
+            display = export_status(record)
+            error = error_text(record['error_code'])
+            values = (record['metadata']['name'], display.label, record['output_path'],
+                      record['source_sha256'] or '', record['target_sha256'] or '', record['size'], error.label)
             for column, value in enumerate(values):
                 item = QTableWidgetItem(str(value)); item.setToolTip(str(value))
                 if column == 1:
-                    explanation, foreground, background = STATUS.get(record['status'], (record['status'], '#7b8ba1', '#edf1f6'))
-                    item.setToolTip(explanation); item.setForeground(QColor(foreground)); item.setBackground(QColor(background))
+                    foreground, background = {
+                        'warning': ('#a87529', '#fff5e5'), 'danger': ('#b45353', '#fceeee'),
+                        'info': ('#356fbd', '#eaf2ff'), 'neutral': ('#7b8ba1', '#edf1f6'),
+                    }.get(display.tone, ('#7b8ba1', '#edf1f6'))
+                    if display.label == '摘要校验通过':
+                        foreground, background = '#15816c', '#e8f6f0'
+                    item.setToolTip(display.tooltip); item.setForeground(QColor(foreground)); item.setBackground(QColor(background))
                     font = item.font(); font.setBold(True); item.setFont(font)
+                elif column == 6:
+                    item.setToolTip(error.tooltip)
                 self.table.setItem(row, column, item)
         self.page.setText(f'{self.offset+1 if total else 0}–{self.offset+len(records)} / {total} 条')
         self.previous.setEnabled(self.offset > 0)

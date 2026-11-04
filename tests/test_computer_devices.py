@@ -28,10 +28,16 @@ class ComputerDeviceTests(unittest.TestCase):
                                    'AccessPaths': ['E:\\']}]}
         def runner(arguments, **kwargs):
             self.assertEqual(arguments[:4], ['powershell.exe', '-NoProfile', '-NonInteractive', '-Command'])
-            self.assertEqual(arguments[4], devices.WINDOWS_INVENTORY)
             self.assertNotIn('shell', kwargs)
             self.assertNotIn('Set-Disk', arguments[4])
-            return subprocess.CompletedProcess(arguments, 0, json.dumps(payload, ensure_ascii=False).encode('utf-8'), b'')
+            if arguments[4] == devices.WINDOWS_INVENTORY:
+                self.assertEqual(kwargs['timeout'], 20)
+                result = payload
+            else:
+                self.assertEqual(arguments[4], devices.WINDOWS_VOLUME_INVENTORY)
+                self.assertEqual(kwargs['timeout'], 5)
+                result = {'volumes': []}
+            return subprocess.CompletedProcess(arguments, 0, json.dumps(result, ensure_ascii=False).encode('utf-8'), b'')
         with patch.object(devices.sys, 'platform', 'win32'), patch.object(devices.subprocess, 'run', side_effect=runner):
             found = {item.path: item for item in devices.list_devices()}
         self.assertEqual(set(found), {r'\\.\PhysicalDrive0', r'\\.\PhysicalDrive2', r'\\.\C:', r'\\.\E:'})

@@ -5,6 +5,8 @@
 **当前预览版本：[v0.4.1](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.4.1)，已发布 Windows 和 macOS 双架构包，在 v0.4.0 电脑磁盘与镜像恢复基础上修复 macOS APFS 预检。** 电脑功能的范围与使用方法见 [电脑恢复](docs/COMPUTER_RECOVERY.md)，macOS 启动说明见 [macOS 适配](docs/MACOS.md)。
 依据《DeepRecover_当前对话归档与研发方案_20261102.md》创建。
 
+0.5.0 开发升级：新增图形化工作目录选择、物理磁盘来源树、三步预检及中文结果依据；尚未纳入上方 v0.4.1 发布。见[使用与验证说明](docs/GUIDED_RECOVERY.md)。
+
 ## 已实现
 
 - 分层工程、虚拟环境依赖清单、入口和 8 个导航页面。
