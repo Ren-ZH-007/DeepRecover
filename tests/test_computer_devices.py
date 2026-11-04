@@ -127,9 +127,31 @@ class ComputerDeviceTests(unittest.TestCase):
         with patch.object(devices.sys, 'platform', 'win32'), \
                 patch.object(devices, 'normalize_device', return_value=r'\\.\C:'), \
                 patch.object(devices, '_windows_volume_path', return_value='volume-mounted-under-C'), \
-                patch.object(devices, 'windows_volume_disk_numbers', extents):
+                patch.object(devices, 'windows_volume_disk_numbers', extents), \
+                patch.object(devices, '_windows_inventory', return_value={'disks': [
+                    {'Number': 0, 'BusType': 17}, {'Number': 3, 'BusType': 7}]}):
             self.assertTrue(devices.ensure_different_device(r'\\.\C:', self.root))
         self.assertEqual([call.args[0] for call in extents.call_args_list], [r'\\.\C:', 'volume-mounted-under-C'])
+
+    def test_windows_virtual_storage_cannot_prove_physical_separation(self):
+        for bus in (14, 15, 16, 8, 9, 0, 'Spaces', 'Virtual', None):
+            with self.subTest(bus=bus), patch.object(devices.sys, 'platform', 'win32'), \
+                    patch.object(devices, 'normalize_device', return_value=r'\\.\PhysicalDrive0'), \
+                    patch.object(devices, '_windows_volume_path', return_value='volume-guid'), \
+                    patch.object(devices, 'windows_volume_disk_numbers', return_value={3}), \
+                    patch.object(devices, '_windows_inventory', return_value={'disks': [
+                        {'Number': 0, 'BusType': 17}, {'Number': 3, 'BusType': bus}]}):
+                with self.assertRaises(DiskError):
+                    devices.ensure_different_device(r'\\.\PhysicalDrive0', self.root)
+
+    def test_windows_missing_disk_inventory_cannot_establish_separation(self):
+        with patch.object(devices.sys, 'platform', 'win32'), \
+                patch.object(devices, 'normalize_device', return_value=r'\\.\PhysicalDrive0'), \
+                patch.object(devices, '_windows_volume_path', return_value='volume-guid'), \
+                patch.object(devices, 'windows_volume_disk_numbers', return_value={3}), \
+                patch.object(devices, '_windows_inventory', return_value={'disks': [{'Number': 0, 'BusType': 17}]}):
+            with self.assertRaises(DiskError):
+                devices.ensure_different_device(r'\\.\PhysicalDrive0', self.root)
 
     def test_empty_windows_extent_mapping_is_rejected(self):
         with patch.object(devices.sys, 'platform', 'win32'), \

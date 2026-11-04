@@ -282,6 +282,16 @@ class ComputerUiTests(unittest.TestCase):
         self.assertEqual(task_count(), before + 1)
         self.assertFalse(self.window.preview_label.pixmap().isNull())
 
+    def test_partitioned_image_defaults_to_supported_metadata_not_whole_disk_carving(self):
+        whole = self.partition('unknown')
+        data = self.partition('NTFS'); data.offset = 512
+        with patch('ui.computer.page.QFileDialog.getOpenFileName', return_value=(str(self.image), '')), \
+                patch('ui.computer.page.inspect_computer_source', return_value=[whole, data]):
+            self.page.choose_image(); self.finish_probe()
+        self.assertEqual(self.page.current_partition().offset, 512)
+        self.assertEqual(self.page.mode_combo.currentData(), 'deleted')
+        self.assertEqual(self.repo.tasks(), [])
+
 
 if __name__ == '__main__':
     unittest.main()

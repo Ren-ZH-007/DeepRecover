@@ -25,7 +25,7 @@ class DiskDevice:
 WINDOWS_INVENTORY = r"""
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
-$disks = @(Get-Disk | Select-Object Number,FriendlyName,Size,IsBoot,IsSystem)
+$disks = @(Get-Disk | Select-Object Number,FriendlyName,Size,IsBoot,IsSystem,BusType)
 $partitions = @(Get-Partition | Select-Object DiskNumber,PartitionNumber,DriveLetter,Size,IsBoot,IsSystem,AccessPaths)
 [pscustomobject]@{disks=$disks;partitions=$partitions} | ConvertTo-Json -Depth 6 -Compress
 """
@@ -68,6 +68,23 @@ def _array(value):
 
 def _valid_size(value):
     return type(value) is int and value > 0
+
+
+def _confirmed_windows_disks(numbers):
+    # Disk extents name OS disk numbers. Storage Spaces, file-backed virtual
+    # disks and RAID/network pools may hide shared underlying physical media.
+    # Different numbers alone are not proof of physical separation.
+    direct_types = {1, 2, 3, 4, 5, 7, 10, 11, 12, 13, 17, 18, 19}
+    direct_names = {'scsi', 'atapi', 'ata', '1394', 'ssa', 'usb', 'sas', 'sata',
+                    'sd', 'mmc', 'nvme', 'scm', 'ufs'}
+    inventory = {disk.get('Number'): disk.get('BusType')
+                 for disk in _array(_windows_inventory().get('disks'))
+                 if type(disk.get('Number')) is int}
+    for number in numbers:
+        bus = inventory.get(number)
+        known = (type(bus) is int and bus in direct_types) or (isinstance(bus, str) and bus.casefold() in direct_names)
+        if not known:
+            raise DiskError('虚拟盘、存储池或未知总线不能证明物理隔离，请使用稳定原始镜像或可确认的独立磁盘。')
 
 
 def _windows_devices():
@@ -256,4 +273,6 @@ def ensure_different_device(source_path, destination):
         raise DiskError('物理磁盘映射为空，已拒绝写入。')
     if source_ids & target_ids:
         raise DiskError('工作目录和导出目标必须位于另一块物理磁盘，不能写回来源磁盘。')
+    if sys.platform == 'win32':
+        _confirmed_windows_disks(source_ids | target_ids)
     return True

@@ -242,6 +242,11 @@ class ComputerPage(QWidget):
             for partition in self.partitions:
                 self.partition_combo.addItem(f'{partition.label or partition.file_system} · {partition.file_system} · '
                     f'{readable_size(partition.size)} · 起始 {partition.offset}')
+            supported = next((index for index, partition in enumerate(self.partitions)
+                              if str(partition.file_system).upper() in METADATA_FILESYSTEMS), None)
+            if supported is not None:
+                self.partition_combo.setCurrentIndex(supported)
+                self.mode_combo.setCurrentIndex(self.mode_combo.findData('deleted'))
             self.partition_changed()
             self.status.setText(f'只读预检完成，发现 {len(self.partitions)} 个可选范围。请选择扫描方式。' if self.partitions else '未找到可选范围，请检查镜像格式与设备状态。')
         self._readonly(lambda: inspect_computer_source(path, kind, self.window.config.data_dir), complete,
