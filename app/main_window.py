@@ -16,6 +16,7 @@ from core.candidate_io import CandidateAccessError
 from core.preview.images import preview_image
 from core.export.service import export_batch, ExportError
 from ui.recovery.export_history import ExportHistory
+from ui.computer.page import ComputerPage, check_computer_access, computer_error_types
 from app.theme import STYLE, icon, brand_icon
 from app.version import VERSION
 
@@ -61,7 +62,7 @@ class MainWindow(QMainWindow):
         section = QLabel('工作空间'); section.setObjectName('sidebarSection'); sidebox.addWidget(section)
         self.nav = QListWidget()
         self.nav.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        for label, name in zip(PAGES,('home','android','iphone','scan','results','history','settings')):
+        for label, name in zip(PAGES,('home','android','iphone','scan','results','history','settings','disk')):
             self.nav.addItem(QListWidgetItem(icon(name),label))
         sidebox.addWidget(self.nav,1)
         footer = QLabel(f'●  本地处理 · 源数据只读\nv{VERSION}  /  Preview'); footer.setObjectName('sidebarFooter'); sidebox.addWidget(footer)
@@ -143,7 +144,7 @@ class MainWindow(QMainWindow):
         for i, row in enumerate(rows):
             for j, value in enumerate(row):
                 item = QTableWidgetItem(str(value)); item.setToolTip(str(value))
-                if value in ('completed','exported','structure_checked','device'): item.setForeground(QColor('#087c68'))
+                if value in ('completed','exported','structure_checked','metadata_checked','device'): item.setForeground(QColor('#087c68'))
                 elif value in ('failed','missing','invalid_structure','unauthorized'): item.setForeground(QColor('#c53f53'))
                 elif value in ('partial','truncated','validation_limit','cancelled','interrupted'): item.setForeground(QColor('#a86608'))
                 table.setItem(i, j, item)
@@ -170,7 +171,8 @@ class MainWindow(QMainWindow):
         note = QLabel('只读索引与图片候选扫描，保留来源线索。\n预览确认后，按需导出并逐项核对 SHA-256。'); note.setObjectName('heroText'); note.setWordWrap(True); hero_box.addWidget(note)
         actions = QHBoxLayout(); hero_box.addLayout(actions)
         self.button(actions,'打开本地备份',lambda: self.nav.setCurrentRow(2),'primary','folder')
-        self.button(actions,'扫描本地镜像',lambda: self.nav.setCurrentRow(3),'secondary','scan'); actions.addStretch()
+        self.button(actions,'扫描本地镜像',lambda: self.nav.setCurrentRow(3),'secondary','scan')
+        self.computer_home_button = self.button(actions,'电脑磁盘恢复',lambda: self.nav.setCurrentRow(7),'secondary','disk'); actions.addStretch()
         cards = QHBoxLayout(); cards.setSpacing(12); box.addLayout(cards)
         for number,title,description,symbol in [('01','连接与采集','选择已授权设备或本地备份','android'),('02','定位与预览','按类型筛选，查看 JPG / PNG','image'),('03','校验与导出','独立批次，源 / 目标摘要对照','check')]:
             frame = QFrame(); frame.setObjectName('card'); cards.addWidget(frame,1)
@@ -235,7 +237,7 @@ class MainWindow(QMainWindow):
         self.result_page_label = QLabel('0 条'); self.result_page_label.setObjectName('sectionNote'); row.addWidget(self.result_page_label)
         self.category_filter.currentIndexChanged.connect(self.filter_results); self.status_filter.currentIndexChanged.connect(self.filter_results)
         splitter = QSplitter(); box.addWidget(splitter,1)
-        self.result_table = self.table(['文件名','类型','大小 / 字节','完整性','原始路径','本地文件','来源范围 SHA-256','采集时间 / UTC','源内偏移 / 字节','候选状态'])
+        self.result_table = self.table(['文件名','类型','大小 / 字节','完整性','原始路径','本地文件','来源范围 SHA-256','采集时间 / UTC','源内偏移 / 字节','候选状态','文件系统','删除依据','来源范围数'])
         self.result_table.setToolTip(f'{selection_modifier()} 可多选本页记录；分页或筛选会重置当前选择。')
         self.result_table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection); splitter.addWidget(self.result_table)
         preview = QFrame(); preview.setObjectName('previewPanel'); preview_box = QVBoxLayout(preview); preview_box.setContentsMargins(14,14,14,14); splitter.addWidget(preview)
@@ -246,7 +248,7 @@ class MainWindow(QMainWindow):
         self.preview_button = self.button(preview_box,'预览选中图片',self.preview_selected,'secondary','image')
         splitter.setSizes([720,260])
         self.result_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
-        for column in range(10): self.result_table.setColumnWidth(column,140)
+        for column in range(13): self.result_table.setColumnWidth(column,140)
         self.result_table.setColumnWidth(0,220); self.result_table.setColumnWidth(1,70); self.result_table.setColumnWidth(2,100)
         row = QHBoxLayout(); box.addLayout(row)
         self.previous_page = self.button(row,'上一页',lambda: self.change_result_page(-1),'secondary','arrow-left')
@@ -275,14 +277,19 @@ class MainWindow(QMainWindow):
         about = self.card(box,'关于 DeepRecover')
         label = QLabel(f'版本 {VERSION}  ·  Preview\n普通文件复制与候选导出，不等于已删除数据恢复成功。'); label.setObjectName('sectionNote'); label.setWordWrap(True); about.addWidget(label); box.addStretch(1)
 
+        self.computer_page = ComputerPage(self)
+        self.stack.addWidget(self.computer_page)
+
     def run_task(self, kind, operation, on_success, *, persist_candidates=False, source=None, batch_size=100, with_task_id=False):
-        if self.pending:
+        if self.pending or self.computer_page.readonly_pending:
             self.statusBar().showMessage('已有任务执行中，请等待或在任务记录页停止。'); return
         self.pending = (self.manager.submit(kind, operation, persist_candidates=persist_candidates,
                                             source=source, batch_size=batch_size, with_task_id=with_task_id), on_success)
+        self.computer_page.refresh_controls()
         self.statusBar().showMessage('任务执行中…')
 
     def poll(self):
+        self.computer_page.poll()
         if self.pending is None:
             return
         progress = self.pending[0].token.progress
@@ -302,7 +309,7 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage('任务完成。')
         except TaskCancelled:
             self.statusBar().showMessage('任务已停止。')
-        except (AdbError, BackupError, ScanError, CandidateAccessError, ExportError) as error:
+        except (AdbError, BackupError, ScanError, CandidateAccessError, ExportError, *computer_error_types()) as error:
             self.statusBar().showMessage(str(error))
         except Exception as error:
             self.statusBar().showMessage(f'操作未完成（{type(error).__name__}），请检查数据源和目录权限。')
@@ -322,6 +329,7 @@ class MainWindow(QMainWindow):
             self.export_status.setText(f'{outcome} · {details}详见导出记录。')
             self.show_export_history(handle.id)
         self.refresh_history()
+        self.computer_page.refresh_controls()
 
     def filter_results(self, *_):
         self.result_offset = 0
@@ -338,19 +346,40 @@ class MainWindow(QMainWindow):
 
     def preview_selected(self):
         ids = self.selected_candidate_ids()
-        if len(ids) != 1 or self.pending:
+        if len(ids) != 1 or self.pending or self.computer_page.readonly_pending:
             self.statusBar().showMessage('请选择一张图片，并等待当前任务结束。'); return
         selected, task_id = ids[0], self.result_task_id
-        self.preview_candidate_id = selected
-        self.preview_label.clear(); self.preview_label.setText('正在校验来源并解码图片…')
         def complete(image, _):
             if self.result_task_id == task_id and self.preview_candidate_id == selected:
                 self.preview_label.setPixmap(QPixmap.fromImage(image).scaled(280,240,Qt.AspectRatioMode.KeepAspectRatio,Qt.TransformationMode.SmoothTransformation))
                 self.preview_label.setToolTip('本地解码预览；不更改候选状态，不表示已删除数据恢复成功。')
-        self.run_task('image_preview',lambda token: preview_image(self.repository,selected,self.config.data_dir,token),complete)
+        def begin(_):
+            if self.result_task_id != task_id or self.selected_candidate_ids() != [selected]:
+                self.statusBar().showMessage('选中项已变化，请重新预览。'); return
+            self.preview_candidate_id = selected
+            self.preview_label.clear(); self.preview_label.setText('正在校验来源并解码图片…')
+            self.run_task('image_preview',lambda token: preview_image(self.repository,selected,self.config.data_dir,token),complete)
+        if self.requires_computer_preflight(ids):
+            self.preview_label.clear(); self.preview_label.setText('正在检查源盘与工作目录隔离…')
+            self.computer_page._readonly(lambda: check_computer_access(self.repository,tuple(ids),self.config.data_dir), begin,
+                '正在检查原始磁盘与工作目录隔离，检查通过前不会建立预览任务。',
+                lambda message: self.preview_label.setText('未开始预览：' + message) if self.result_task_id == task_id else None)
+        else:
+            begin(None)
+
+    def requires_computer_preflight(self, candidate_ids):
+        for candidate_id in candidate_ids:
+            candidate = self.repository.candidate(candidate_id)
+            if candidate and candidate['source'] in ('computer_deleted','computer_signature'):
+                identity = candidate.get('source_stat')
+                # Unknown computer identities must also be checked before a
+                # task can write to a possibly relocated working database.
+                if not isinstance(identity,dict) or identity.get('kind') != 'image':
+                    return True
+        return False
 
     def export_results(self, all_filtered):
-        if self.pending or not self.result_task_id:
+        if self.pending or self.computer_page.readonly_pending or not self.result_task_id:
             self.statusBar().showMessage('请先打开结果并等待当前任务结束。'); return
         try:
             ids = self.repository.candidate_ids(self.result_task_id,category=self.category_filter.currentData(),status=self.status_filter.currentData()) if all_filtered else self.selected_candidate_ids()
@@ -364,9 +393,17 @@ class MainWindow(QMainWindow):
         if QMessageBox.question(self,'确认本地批量导出',f'导出 {len(ids)} 项到新批次目录。\n源文件保持只读；复制不等于已删除数据恢复。\n失败或取消时保留此前已校验文件和本地清单，是否继续？',
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
             return
-        self.export_progress.setValue(0); self.export_status.setText('正在导出并核对来源与目标摘要…')
-        self.run_task('export',lambda token,task_id: export_batch(self.repository,task_id,tuple(ids),directory,self.config.data_dir,token),
-                      lambda *_: None,with_task_id=True)
+        def begin(_):
+            self.export_progress.setValue(0); self.export_status.setText('正在导出并核对来源与目标摘要…')
+            self.run_task('export',lambda token,task_id: export_batch(self.repository,task_id,tuple(ids),directory,self.config.data_dir,token),
+                          lambda *_: None,with_task_id=True)
+        if self.requires_computer_preflight(ids):
+            self.export_status.setText('正在检查工作目录和导出目标与原始磁盘隔离…')
+            self.computer_page._readonly(lambda: check_computer_access(self.repository,tuple(ids),self.config.data_dir,directory), begin,
+                '正在检查原始磁盘、工作目录与导出目录隔离，检查通过前不会建立导出任务。',
+                lambda message: self.export_status.setText('未开始导出：' + message))
+        else:
+            begin(None)
 
     def cancel_export(self):
         if self.pending and self.repository.task(self.pending[0].id)['kind'] == 'export':
@@ -504,7 +541,13 @@ class MainWindow(QMainWindow):
         self.preview_label.clear(); self.preview_label.setText('选择一张 JPG/PNG，再点击预览。')
         self.fill(self.result_table, [(c['name'], c['file_type'], c['size'], c['integrity'], c['original_path'],
                                       c.get('local_path', ''), c.get('sha256') or '', c.get('acquired_at') or '',
-                                      c.get('offset') if c.get('offset') is not None else '', c['status']) for c in candidates])
+                                      c.get('offset') if c.get('offset') is not None else '', c['status'],
+                                      c.get('file_system') or '',
+                                      {'deleted_record':'文件系统删除记录','unverified_record':'记录校验不足'}.get(c.get('deletion_state'),'未知（签名候选）') if c.get('file_system') else '',
+                                      len(c.get('extents') or ()) if c.get('file_system') else '') for c in candidates])
+        for row, candidate in enumerate(candidates):
+            if candidate.get('file_system'):
+                self.result_table.item(row,11).setToolTip('删除记录只证明元数据标记；当前字节可能已被覆盖。签名候选不能判断文件是否已删除。')
         description = f"{source['kind']} · {source['label']} · {source['locator']}" if source else '旧记录：未保存独立数据源，见原始路径'
         self.result_source.setText(f"来源：{description}\n任务状态：{task['status']} · 仅展示已入库记录，历史路径可能已失效。")
         self.result_source.setToolTip(f"任务 {task['id']}\n来源：{description}\n取消、失败或中断任务仅展示部分结果，不自动重新采集。")
@@ -538,10 +581,15 @@ class MainWindow(QMainWindow):
                 self.statusBar().showMessage('已请求停止扫描；已入库的候选记录会保留。')
             elif self.repository.task(self.pending[0].id)['kind'] in ('export','image_preview'):
                 self.statusBar().showMessage('已请求停止；此前已校验的导出文件和记录会保留。')
+            elif self.repository.task(self.pending[0].id)['kind'] == 'computer_scan':
+                self.statusBar().showMessage('已请求停止电脑扫描；已提交的部分候选保留，当前读取结束后停止。')
             else:
                 self.statusBar().showMessage('已请求停止；正在进行的 ADB pull 最长等待 60 秒，其他 ADB 调用最长 15 秒。')
 
     def closeEvent(self, event):
+        if not self.computer_page.prepare_close():
+            self.statusBar().showMessage('正在结束只读磁盘预检，请等待当前系统调用返回后再次关闭。')
+            event.ignore(); return
         if self.pending and not self.pending[0].future.done():
             self.cancel_task()
             self.statusBar().showMessage('正在停止任务，请在任务结束后再次关闭窗口。')

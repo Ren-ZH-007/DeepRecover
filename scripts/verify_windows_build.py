@@ -12,9 +12,11 @@ def validate_report(path, expected_version):
         'success': True,
         'version': expected_version,
         'schema_version': 3,
-        'navigation_pages': 7,
+        'navigation_pages': 8,
         'verified_exports': 2,
         'decoded_formats': ['PNG', 'JPEG'],
+        'computer_candidates': 2,
+        'computer_verified_exports': 2,
     }
     for name, value in expected.items():
         if type(data.get(name)) is not type(value) or data.get(name) != value:

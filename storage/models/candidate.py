@@ -29,6 +29,12 @@ class Candidate:
     local_path: str = ""
     acquired_at: str | None = None
     source_stat: dict | None = None
+    # Logical file order; offsets always refer to the bound computer source.
+    # Fragmented files and NTFS resident fixups can require several extents.
+    extents: tuple[tuple[int, int], ...] | None = None
+    file_system: str = ""
+    deletion_state: str = "unknown"
+    record_id: int | None = None
 
     def __post_init__(self):
         if self.size < 0 or (self.offset is not None and self.offset < 0):

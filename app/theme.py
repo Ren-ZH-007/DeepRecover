@@ -129,7 +129,7 @@ QLineEdit, QTextEdit, QPlainTextEdit { background: #ffffff; border: 1px solid #d
 def icon(name, size=20, color='#96afcf'):
     """Return a 24-unit line icon. Unknown names use a simple file glyph.
 
-    Navigation names: home, android, iphone, scan, results, history, settings.
+    Navigation names: home, android, iphone, scan, results, history, settings, disk.
     Action names: folder, refresh, play, stop, check, shield, image, export,
     arrow-left, arrow-right. ``logo`` returns the blue rounded brand mark.
     """
@@ -158,6 +158,10 @@ def icon(name, size=20, color='#96afcf'):
     elif name in ('iphone', 'phone'):
         painter.drawRoundedRect(QRectF(6,2,12,20),3,3)
         line(10,5,14,5); line(11,19,13,19)
+    elif name == 'disk':
+        painter.drawRoundedRect(QRectF(3,4,18,16),3,3)
+        line(3,14,21,14); line(7,17,10,17)
+        painter.drawPoint(QPointF(17,17))
     elif name in ('scan', 'scanner'):
         for points in [[(3,8),(3,3),(8,3)],[(16,3),(21,3),(21,8)],[(21,16),(21,21),(16,21)],[(8,21),(3,21),(3,16)]]: poly(points)
         line(3,12,21,12); line(8,8,8,16); line(12,8,12,16); line(16,8,16,16)

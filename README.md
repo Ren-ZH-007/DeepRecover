@@ -1,13 +1,15 @@
 # DeepRecover
 
-个人自用、本地运行的手机数据恢复工作台。目标平台：Windows 10/11 x64、macOS 13+（Apple Silicon / Intel），Python 3.12 + PySide6 + SQLite。
+个人自用、本地运行的手机与电脑数据恢复工作台。目标平台：Windows 10/11 x64、macOS 13+（Apple Silicon / Intel），Python 3.12 + PySide6 + SQLite。
 
-**当前版本：0.3.0，Windows 与 macOS 适配预览版。尚不是完整恢复软件。** [发布页与下载](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.3.0)；macOS 使用说明见 [macOS 适配](docs/MACOS.md)。
+**当前开发版本：0.4.0，新增电脑磁盘与镜像恢复。** 最新已发布版本仍为 [v0.3.0](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.3.0)；电脑功能的范围与使用方法见 [电脑恢复](docs/COMPUTER_RECOVERY.md)，macOS 启动说明见 [macOS 适配](docs/MACOS.md)。
 依据《DeepRecover_当前对话归档与研发方案_20261102.md》创建。
 
 ## 已实现
 
-- 分层工程、虚拟环境依赖清单、入口和 7 个导航页面。
+- 分层工程、虚拟环境依赖清单、入口和 8 个导航页面。
+- 电脑恢复入口：Windows 本地磁盘/U 盘、macOS 磁盘、原始镜像；MBR/扩展分区及 GPT 识别，源只读，原始盘工作目录/导出目标必须位于另一物理盘。
+- NTFS 删除记录与碎片布局、FAT32 空闲单簇、exFAT 明确连续布局候选；分配已重用或布局不明的记录保留为受限项。APFS/HFS+ 当前仅提供 JPG/PNG 签名候选，不解析删除记录。
 - 深蓝导航、浅色工作区、三步总览入口、卡片分区与统一图标；结果预览、分页工具栏和导出历史使用同一视觉主题。
 - 工作目录初始化、轮转日志、SQLite v3 迁移、数据源/候选/导出记录（兼容 v1/v2 历史记录）。
 - 后台任务执行、协作式取消、成功/失败/中断状态及任务历史。
@@ -79,6 +81,8 @@ Android SHA-256 仅是本地副本的摘要，不是源端哈希比对或文件�
 
 ## 本地 JPG/PNG 签名扫描
 
+新增“电脑恢复”页面可读磁盘或镜像中的删除记录，并复用预览、分页、校验导出与历史。任意扩展名的文件可来自受支持的删除元数据；图片预览仍限 JPG/PNG。参见 [支持矩阵和源盘保护](docs/COMPUTER_RECOVERY.md)。
+
 在“文件扫描”页选择稳定的本地普通文件或镜像（例如 `.img`、`.dd`、`.bin`），然后开始扫描。输入始终以 `rb` 打开，不支持直接扫描 USB 设备、原始块设备、目录或本程序工作数据库/日志。来源模型保存镜像路径，结果页显示十进制源内偏移和长度；不会创建提取副本，也不把签名记录当成成功恢复。可在本地采集副本上扫描，普通复制仍不等同于已删除数据恢复。
 
 - 按 1 MiB 块搜索并保留 7 字节重叠，支持跨块 PNG/JPEG 签名；结构检查通过的完整容器整体跳过，内部缩略图/嵌套签名不单独报告。无效或截断容器不隐藏后续签名。
@@ -121,13 +125,13 @@ macOS 使用 Command/Shift 多选；应用菜单的 Command+Q 经过任务停止
 
 无 Qt 环境可用标准 Python 运行核心测试；UI 测试会明确跳过。
 2026-11-03 详细 QA：100 项自动化及 12 项独立 Qt 流程通过，修复源保护、任务完成结果留存和终态文案等 6 个缺陷。修复前复现、18 张节点截图、执行指标及未验收边界见 [详细 QA 报告](docs/DETAILED_QA_20261103.md)。截图复现：`QT_QPA_PLATFORM=offscreen .venv/bin/python scripts/qa_capture.py`（Linux）。
-macOS 适配后追加详细测试：161 项自动化，两种架构各 14 项 Cocoa 流程与 20 张流程截图，修复 Finder 发现、最小窗口、长路径及构建验证等 8 处问题；[最新报告与修复后下载包](docs/MACOS_TEST_REPORT_20261103.md)。Windows 回归为 159 通过、2 项既有平台跳过。
+macOS 适配后追加详细测试：161 项自动化，两种架构各 14 项 Cocoa 流程与 20 张流程截图，修复 Finder 发现、最小窗口、长路径及构建验证等 8 处问题；[v0.3.0 报告与下载包](docs/MACOS_TEST_REPORT_20261103.md)。电脑恢复开发版增加至 270 项，Windows 为 268 通过、2 项既有平台跳过，macOS 双架构各 270 通过；每个平台另有 9 项电脑流程、12 张截图，见[电脑恢复测试报告](docs/COMPUTER_TEST_REPORT_20261104.md)。真实原始盘与 USB 仍待验收。
 可选界面检查：`python scripts/check_ui.py`，输出 `docs/interface-preview.png`。
 Windows 构建脚本：`scripts/build-windows.ps1`，必须在原生 Windows + Python 3.12 x64 上运行。脚本先运行发布测试门禁，再用 PyInstaller 6.12.0 生成目录式 EXE，实际启动 EXE 的 `--smoke-test --smoke-report` 隔离验证流程，通过后才生成 Windows ZIP 和 SHA256SUMS.txt。Linux 不能直接交叉生成 Windows EXE。
 
 macOS 构建脚本：`scripts/build-macos.sh`，必须在原生 macOS + 对应架构的 Python 3.12 上运行；先测试再构建，并验证 `.app` 内 Mach-O 架构、元数据及实际运行。CI 分别保存 Apple Silicon / Intel ZIP、校验值、离屏与 Cocoa 验证报告及真实窗口截图，见 [macOS 文档](docs/MACOS.md)。
 
-`.github/workflows/windows-release.yml` 在功能分支构建验证；版本标签 `v*` 触发时同时要求 Windows 与 macOS 双架构构建和打包后检查通过，才会发布预发布版本。验证覆盖 7 页导航、SQLite v3、PNG/JPEG 插件、扫描、预览与两项校验导出。测试报告与应用报告由 CI 保存；仅允许 Windows 上两个已声明的文件替换/符号链接权限测试跳过，其他失败或跳过均阻止发布。原生 runner 的自动检查不代表真实手机、高 DPI/桌面体验、签名公证或安装包验收已经完成。
+`.github/workflows/windows-release.yml` 在功能分支构建验证；版本标签 `v*` 触发时同时要求 Windows 与 macOS 双架构构建和打包后检查通过，才会发布预发布版本。验证覆盖 8 页导航、SQLite v3、PNG/JPEG 插件、扫描、预览、原有两项及电脑两项校验导出。测试报告与应用报告由 CI 保存；仅允许 Windows 上两个已声明的文件替换/符号链接权限测试跳过，其他失败或跳过均阻止发布。原生 runner 的自动检查不代表真实手机、高 DPI/桌面体验、签名公证或安装包验收已经完成。
 
 ## 工程结构
 
@@ -155,4 +159,4 @@ macOS 构建脚本：`scripts/build-macos.sh`，必须在原生 macOS + 对应�
 2. 后续扩展视频预览、视频/文档扫描及结构校验。
 
 源文件默认只读。索引读取、普通文件采集不等同于已删除数据恢复。
-文件系统分析、碎片重组、加密备份解析和 Rust 引擎均未实现。M3 扫描仅定位连续图片候选，不意味着恢复了已删除文件。
+电脑恢复新增受限的 NTFS/FAT32/exFAT 元数据解析和 NTFS 运行列表读取，不是通用文件系统修复或任意碎片重组。APFS/HFS+ 删除记录、加密来源解密、损坏分区修复及 Rust 引擎未实现。签名扫描仅定位连续图片候选，不能判断候选是否曾被删除。

@@ -9,6 +9,7 @@ from uuid import uuid4
 
 from core.candidate_io import CandidateAccessError, candidate_input, range_chunks, range_digest, snapshot
 from core.tasks import TaskCancelled
+from core.computer.io import DiskError
 
 
 class ExportError(RuntimeError):
@@ -18,13 +19,13 @@ class ExportError(RuntimeError):
 def copy_verified(item, target, token):
     owned = None
     try:
-        with item.path.open('rb') as source:
+        with item.open_source() as source:
             original = item.check(source)
             digest = hashlib.sha256()
             with target.open('xb') as output:
                 created = os.fstat(output.fileno())
                 owned = (created.st_dev, created.st_ino)
-                for data in range_chunks(source, item.offset, item.size, token):
+                for data in (item.chunks(source, token) if item.extents is not None else range_chunks(source, item.offset, item.size, token)):
                     output.write(data)
                     digest.update(data)
                 output.flush()
@@ -53,6 +54,11 @@ def export_batch(repository, task_id, candidate_ids, destination, data_dir, toke
     if not ids or len(ids) > 10000:
         raise ExportError('请选择 1 至 10,000 个候选。')
     destination = Path(destination).resolve()
+    from core.computer.service import check_access
+    try:
+        check_access(repository, ids, data_dir, destination)
+    except RuntimeError as error:
+        raise ExportError(str(error)) from error
     protected = [(Path(data_dir) / 'Acquisitions').resolve()]
     # Protect every known backup, even when this batch exports unrelated files.
     protected.extend(Path(path).resolve() for path in repository.source_locations('ios_backup'))
@@ -89,7 +95,7 @@ def export_batch(repository, task_id, candidate_ids, destination, data_dir, toke
             except TaskCancelled:
                 repository.finish_export(record, 'cancelled', error_code='TaskCancelled')
                 raise
-            except (CandidateAccessError, OSError, ExportError) as error:
+            except (CandidateAccessError, OSError, ExportError, DiskError) as error:
                 repository.finish_export(record, 'failed', error_code=type(error).__name__)
                 failed += 1
             token.report_progress(attempted, len(ids), exported, phase='export')
