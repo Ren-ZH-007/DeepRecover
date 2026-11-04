@@ -1,6 +1,6 @@
 # 电脑磁盘与镜像恢复
 
-0.4.0 开发功能，尚未随 v0.3.0 发布。新增“电脑恢复”导航与概览入口，保留手机采集和备份流程。Windows/macOS 均能读取原始 `.img/.dd/.raw/.bin` 文件；原始磁盘入口按本机权限读取 Windows PhysicalDrive/盘符卷、macOS disk/rdisk 设备，包含可枚举的 U 盘。
+[v0.4.0 预览版已发布](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.4.0)，提供 Windows 和 macOS 双架构包。新增“电脑恢复”导航与概览入口，保留手机采集和备份流程。Windows/macOS 均能读取原始 `.img/.dd/.raw/.bin` 文件；原始磁盘入口按本机权限读取 Windows PhysicalDrive/盘符卷、macOS disk/rdisk 设备，包含可枚举的 U 盘。
 
 ## 支持范围
 

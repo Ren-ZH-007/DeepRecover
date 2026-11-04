@@ -1,0 +1,298 @@
+{
+  "success": true,
+  "tag": "v0.4.0",
+  "source_commit": "5080c1fc98fa9790eecc40b419b03e36bb114942",
+  "release_url": "https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.4.0",
+  "build_url": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41757734624",
+  "published_at_utc": "2026-11-04T02:03:38Z",
+  "pre_release": true,
+  "assets": [
+    {
+      "name": "DeepRecover-v0.4.0-macos-arm64.zip",
+      "bytes": 38431475,
+      "sha256": "4541a3d28a68525297271b729f29eef9aba2ba5ab9d6d4e5120afa4c04c60a88",
+      "download_url": "https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.4.0/DeepRecover-v0.4.0-macos-arm64.zip",
+      "zip_crc": "passed",
+      "entries": 420,
+      "architecture": "arm64",
+      "mach_o": "passed",
+      "preserved_symlinks": 94
+    },
+    {
+      "name": "DeepRecover-v0.4.0-macos-x86_64.zip",
+      "bytes": 42179780,
+      "sha256": "0e86f1264977f73f3f9f95278e68058d60fc1e66da4beeb2e918e802331ab15e",
+      "download_url": "https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.4.0/DeepRecover-v0.4.0-macos-x86_64.zip",
+      "zip_crc": "passed",
+      "entries": 420,
+      "architecture": "x86_64",
+      "mach_o": "passed",
+      "preserved_symlinks": 94
+    },
+    {
+      "name": "DeepRecover-v0.4.0-windows-x64.zip",
+      "bytes": 51586846,
+      "sha256": "573c9563b6cafbb0c8bc1346a25be338aa4451988ce0ceb917e2efa0f2426c69",
+      "download_url": "https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.4.0/DeepRecover-v0.4.0-windows-x64.zip",
+      "zip_crc": "passed",
+      "entries": 216,
+      "architecture": "x64",
+      "pe_machine": "0x8664",
+      "qt_platform_and_jpeg_plugins": true
+    }
+  ],
+  "native_validation": {
+    "windows": {
+      "tests_passed": 268,
+      "skipped": 2,
+      "computer_workflows_passed": 9,
+      "computer_screenshots": 12,
+      "source_hashes_unchanged": true,
+      "real_disks_enumerated_or_opened": false,
+      "computer_qa_cases": [
+        {
+          "id": "CQA-01",
+          "result": "passed",
+          "filesystem": "NTFS",
+          "task_created_during_probe": false
+        },
+        {
+          "id": "CQA-02",
+          "result": "passed",
+          "deleted_records": 3,
+          "ready": 2,
+          "restricted": 1,
+          "fragmented_extents": 2
+        },
+        {
+          "id": "CQA-03",
+          "result": "passed",
+          "resident_png_decoded": true
+        },
+        {
+          "id": "CQA-04",
+          "result": "passed",
+          "verified_exports": 2,
+          "fragmented_logical_order": true
+        },
+        {
+          "id": "CQA-05",
+          "result": "passed",
+          "restricted_preview_rejected": true,
+          "restricted_export_rejected": true
+        },
+        {
+          "id": "CQA-06",
+          "result": "passed",
+          "candidates_after_reopen": 3,
+          "exports_after_reopen": 2,
+          "source_read_for_history": false
+        },
+        {
+          "id": "CQA-07",
+          "result": "passed",
+          "filesystem": "APFS",
+          "mode": "signature",
+          "deletion_state": "unknown"
+        },
+        {
+          "id": "CQA-08",
+          "result": "passed",
+          "same_device_guard_rejected": true,
+          "task_count_unchanged": true,
+          "real_disk_opened": false
+        },
+        {
+          "id": "CQA-09",
+          "result": "passed",
+          "minimum_window": [
+            880,
+            620
+          ],
+          "source_controls_readable": true,
+          "scan_control_readable": true
+        }
+      ],
+      "screenshot_font_check": {
+        "text": "DeepRecover 0123456789 电脑恢复 已删除图片 碎片文档 来源只读 本地处理 预览导出 历史结果",
+        "families": [
+          "Noto Sans CJK SC"
+        ],
+        "missing_glyphs": 0
+      },
+      "validation_artifact": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41757734624/artifacts/13288404754",
+      "executable_smoke": true
+    },
+    "arm64": {
+      "tests_passed": 270,
+      "skipped": 0,
+      "computer_workflows_passed": 9,
+      "computer_screenshots": 12,
+      "source_hashes_unchanged": true,
+      "real_disks_enumerated_or_opened": false,
+      "computer_qa_cases": [
+        {
+          "id": "CQA-01",
+          "result": "passed",
+          "filesystem": "NTFS",
+          "task_created_during_probe": false
+        },
+        {
+          "id": "CQA-02",
+          "result": "passed",
+          "deleted_records": 3,
+          "ready": 2,
+          "restricted": 1,
+          "fragmented_extents": 2
+        },
+        {
+          "id": "CQA-03",
+          "result": "passed",
+          "resident_png_decoded": true
+        },
+        {
+          "id": "CQA-04",
+          "result": "passed",
+          "verified_exports": 2,
+          "fragmented_logical_order": true
+        },
+        {
+          "id": "CQA-05",
+          "result": "passed",
+          "restricted_preview_rejected": true,
+          "restricted_export_rejected": true
+        },
+        {
+          "id": "CQA-06",
+          "result": "passed",
+          "candidates_after_reopen": 3,
+          "exports_after_reopen": 2,
+          "source_read_for_history": false
+        },
+        {
+          "id": "CQA-07",
+          "result": "passed",
+          "filesystem": "APFS",
+          "mode": "signature",
+          "deletion_state": "unknown"
+        },
+        {
+          "id": "CQA-08",
+          "result": "passed",
+          "same_device_guard_rejected": true,
+          "task_count_unchanged": true,
+          "real_disk_opened": false
+        },
+        {
+          "id": "CQA-09",
+          "result": "passed",
+          "minimum_window": [
+            880,
+            620
+          ],
+          "source_controls_readable": true,
+          "scan_control_readable": true
+        }
+      ],
+      "screenshot_font_check": {
+        "text": "DeepRecover 0123456789 电脑恢复 已删除图片 碎片文档 来源只读 本地处理 预览导出 历史结果",
+        "families": [
+          "Helvetica Neue",
+          "PingFang SC"
+        ],
+        "missing_glyphs": 0
+      },
+      "validation_artifact": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41757734624/artifacts/13288942618",
+      "cocoa_workflows_passed": 14,
+      "cocoa_screenshots": 20,
+      "packaged_cocoa_smoke": true
+    },
+    "x86_64": {
+      "tests_passed": 270,
+      "skipped": 0,
+      "computer_workflows_passed": 9,
+      "computer_screenshots": 12,
+      "source_hashes_unchanged": true,
+      "real_disks_enumerated_or_opened": false,
+      "computer_qa_cases": [
+        {
+          "id": "CQA-01",
+          "result": "passed",
+          "filesystem": "NTFS",
+          "task_created_during_probe": false
+        },
+        {
+          "id": "CQA-02",
+          "result": "passed",
+          "deleted_records": 3,
+          "ready": 2,
+          "restricted": 1,
+          "fragmented_extents": 2
+        },
+        {
+          "id": "CQA-03",
+          "result": "passed",
+          "resident_png_decoded": true
+        },
+        {
+          "id": "CQA-04",
+          "result": "passed",
+          "verified_exports": 2,
+          "fragmented_logical_order": true
+        },
+        {
+          "id": "CQA-05",
+          "result": "passed",
+          "restricted_preview_rejected": true,
+          "restricted_export_rejected": true
+        },
+        {
+          "id": "CQA-06",
+          "result": "passed",
+          "candidates_after_reopen": 3,
+          "exports_after_reopen": 2,
+          "source_read_for_history": false
+        },
+        {
+          "id": "CQA-07",
+          "result": "passed",
+          "filesystem": "APFS",
+          "mode": "signature",
+          "deletion_state": "unknown"
+        },
+        {
+          "id": "CQA-08",
+          "result": "passed",
+          "same_device_guard_rejected": true,
+          "task_count_unchanged": true,
+          "real_disk_opened": false
+        },
+        {
+          "id": "CQA-09",
+          "result": "passed",
+          "minimum_window": [
+            880,
+            620
+          ],
+          "source_controls_readable": true,
+          "scan_control_readable": true
+        }
+      ],
+      "screenshot_font_check": {
+        "text": "DeepRecover 0123456789 电脑恢复 已删除图片 碎片文档 来源只读 本地处理 预览导出 历史结果",
+        "families": [
+          "Helvetica Neue",
+          "PingFang SC"
+        ],
+        "missing_glyphs": 0
+      },
+      "validation_artifact": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41757734624/artifacts/13289181051",
+      "cocoa_workflows_passed": 14,
+      "cocoa_screenshots": 20,
+      "packaged_cocoa_smoke": true
+    }
+  },
+  "macos_signing": "local ad-hoc; no Developer ID certificate; not notarized",
+  "physical_device_acceptance": false,
+  "apfs_hfs_capability": "continuous JPG/PNG signature candidates only; no deleted metadata parser"
+}
