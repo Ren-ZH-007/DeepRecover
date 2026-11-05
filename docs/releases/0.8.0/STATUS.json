@@ -1,0 +1,335 @@
+{
+  "tag": "v0.8.0",
+  "source_commit": "bb14d60944270a3da4fece96718fdd5f54f1adb3",
+  "builds_verified": true,
+  "release_published": false,
+  "publication_status": "blocked",
+  "current_published_preview": "v0.7.0",
+  "checked_at_utc": "2026-11-05T06:13:47.973619+00:00",
+  "merged_pull_requests": [
+    18,
+    19
+  ],
+  "build_url": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41977483255",
+  "workflow_run_conclusion": "failure",
+  "native_validation": {
+    "windows": {
+      "source_commit": "bb14d60944270a3da4fece96718fdd5f54f1adb3",
+      "tests": {
+        "success": true,
+        "platform": "win32",
+        "run": 447,
+        "passed": 445,
+        "failures": 0,
+        "errors": 0,
+        "skipped": [
+          {
+            "test": "test_export.ExportTests.test_replaced_target_is_neither_verified_nor_deleted_as_owned_output",
+            "reason": "Windows may deny replacement of an open file"
+          },
+          {
+            "test": "test_qa_regressions.DetailedQaRegressions.test_manifest_symlink_cannot_escape_selected_backup",
+            "reason": "Creating symlinks may need Windows privileges"
+          }
+        ],
+        "unexpected_skips": [],
+        "expected_failures": 0,
+        "unexpected_successes": 0
+      },
+      "packaged_smoke": {
+        "executable": {
+          "success": true,
+          "version": "0.8.0",
+          "schema_version": 3,
+          "navigation_pages": 8,
+          "qt_platform": "offscreen",
+          "workspace_dialog_verified": true,
+          "computer_candidates": 2,
+          "computer_verified_exports": 2,
+          "video_scan_verified": true,
+          "video_scan_exports": 1,
+          "video_preview_verified": true,
+          "video_muted": true,
+          "video_buffer_released": true,
+          "video_frame_dimensions": [
+            96,
+            64
+          ],
+          "workspace_roundtrip_verified": true,
+          "environment_diagnostics_verified": true,
+          "verified_exports": 2,
+          "decoded_formats": [
+            "PNG",
+            "JPEG"
+          ]
+        }
+      },
+      "workflows": {
+        "diagnostics": {
+          "cases_passed": 4,
+          "screenshots_verified": 4
+        },
+        "computer": {
+          "cases_passed": 11,
+          "screenshots_verified": 18
+        },
+        "guided": {
+          "cases_passed": 5,
+          "screenshots_verified": 5
+        },
+        "video": {
+          "cases_passed": 7,
+          "screenshots_verified": 6
+        },
+        "video_signature": {
+          "cases_passed": 8,
+          "screenshots_verified": 8
+        }
+      },
+      "distribution_artifact": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41977483255/artifacts/13392920349",
+      "artifact_expires_at": "2027-02-03T05:59:56Z"
+    },
+    "arm64": {
+      "source_commit": "bb14d60944270a3da4fece96718fdd5f54f1adb3",
+      "tests": {
+        "success": true,
+        "platform": "darwin",
+        "run": 447,
+        "passed": 447,
+        "failures": 0,
+        "errors": 0,
+        "skipped": [],
+        "unexpected_skips": [],
+        "expected_failures": 0,
+        "unexpected_successes": 0
+      },
+      "packaged_smoke": {
+        "offscreen": {
+          "success": true,
+          "version": "0.8.0",
+          "schema_version": 3,
+          "navigation_pages": 8,
+          "qt_platform": "offscreen",
+          "workspace_dialog_verified": true,
+          "computer_candidates": 2,
+          "computer_verified_exports": 2,
+          "video_scan_verified": true,
+          "video_scan_exports": 1,
+          "video_preview_verified": true,
+          "video_muted": true,
+          "video_buffer_released": true,
+          "video_frame_dimensions": [
+            96,
+            64
+          ],
+          "workspace_roundtrip_verified": true,
+          "environment_diagnostics_verified": true,
+          "verified_exports": 2,
+          "decoded_formats": [
+            "PNG",
+            "JPEG"
+          ]
+        },
+        "cocoa": {
+          "success": true,
+          "version": "0.8.0",
+          "schema_version": 3,
+          "navigation_pages": 8,
+          "qt_platform": "cocoa",
+          "workspace_dialog_verified": true,
+          "computer_candidates": 2,
+          "computer_verified_exports": 2,
+          "video_scan_verified": true,
+          "video_scan_exports": 1,
+          "video_preview_verified": true,
+          "video_muted": true,
+          "video_buffer_released": true,
+          "video_frame_dimensions": [
+            96,
+            64
+          ],
+          "workspace_roundtrip_verified": true,
+          "environment_diagnostics_verified": true,
+          "native_quit_verified": true,
+          "verified_exports": 2,
+          "decoded_formats": [
+            "PNG",
+            "JPEG"
+          ]
+        }
+      },
+      "workflows": {
+        "diagnostics": {
+          "cases_passed": 4,
+          "screenshots_verified": 4
+        },
+        "computer": {
+          "cases_passed": 11,
+          "screenshots_verified": 18
+        },
+        "guided": {
+          "cases_passed": 5,
+          "screenshots_verified": 5
+        },
+        "video": {
+          "cases_passed": 7,
+          "screenshots_verified": 6
+        },
+        "video_signature": {
+          "cases_passed": 8,
+          "screenshots_verified": 8
+        },
+        "legacy_cocoa": {
+          "cases_passed": 14,
+          "screenshots_verified": 20
+        }
+      },
+      "distribution_artifact": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41977483255/artifacts/13392915165",
+      "artifact_expires_at": "2027-02-03T05:59:56Z"
+    },
+    "x86_64": {
+      "source_commit": "bb14d60944270a3da4fece96718fdd5f54f1adb3",
+      "tests": {
+        "success": true,
+        "platform": "darwin",
+        "run": 447,
+        "passed": 447,
+        "failures": 0,
+        "errors": 0,
+        "skipped": [],
+        "unexpected_skips": [],
+        "expected_failures": 0,
+        "unexpected_successes": 0
+      },
+      "packaged_smoke": {
+        "offscreen": {
+          "success": true,
+          "version": "0.8.0",
+          "schema_version": 3,
+          "navigation_pages": 8,
+          "qt_platform": "offscreen",
+          "workspace_dialog_verified": true,
+          "computer_candidates": 2,
+          "computer_verified_exports": 2,
+          "video_scan_verified": true,
+          "video_scan_exports": 1,
+          "video_preview_verified": true,
+          "video_muted": true,
+          "video_buffer_released": true,
+          "video_frame_dimensions": [
+            96,
+            64
+          ],
+          "workspace_roundtrip_verified": true,
+          "environment_diagnostics_verified": true,
+          "verified_exports": 2,
+          "decoded_formats": [
+            "PNG",
+            "JPEG"
+          ]
+        },
+        "cocoa": {
+          "success": true,
+          "version": "0.8.0",
+          "schema_version": 3,
+          "navigation_pages": 8,
+          "qt_platform": "cocoa",
+          "workspace_dialog_verified": true,
+          "computer_candidates": 2,
+          "computer_verified_exports": 2,
+          "video_scan_verified": true,
+          "video_scan_exports": 1,
+          "video_preview_verified": true,
+          "video_muted": true,
+          "video_buffer_released": true,
+          "video_frame_dimensions": [
+            96,
+            64
+          ],
+          "workspace_roundtrip_verified": true,
+          "environment_diagnostics_verified": true,
+          "native_quit_verified": true,
+          "verified_exports": 2,
+          "decoded_formats": [
+            "PNG",
+            "JPEG"
+          ]
+        }
+      },
+      "workflows": {
+        "diagnostics": {
+          "cases_passed": 4,
+          "screenshots_verified": 4
+        },
+        "computer": {
+          "cases_passed": 11,
+          "screenshots_verified": 18
+        },
+        "guided": {
+          "cases_passed": 5,
+          "screenshots_verified": 5
+        },
+        "video": {
+          "cases_passed": 7,
+          "screenshots_verified": 6
+        },
+        "video_signature": {
+          "cases_passed": 8,
+          "screenshots_verified": 8
+        },
+        "legacy_cocoa": {
+          "cases_passed": 14,
+          "screenshots_verified": 20
+        }
+      },
+      "distribution_artifact": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41977483255/artifacts/13392143413",
+      "artifact_expires_at": "2027-02-03T05:59:56Z"
+    }
+  },
+  "workflow_screenshots_verified": 163,
+  "additional_packaged_screenshots_verified": 2,
+  "packages": [
+    {
+      "architecture": "windows-x64",
+      "filename": "DeepRecover-v0.8.0-windows-x64.zip",
+      "bytes": 61241085,
+      "sha256": "166db4d925233b31c00e283390562186f074986cc5b004590cbd868d1ec30dc3",
+      "zip_crc": "passed",
+      "executable_architecture": "passed",
+      "kind": "Formal tag build artifact; not yet a GitHub Release"
+    },
+    {
+      "architecture": "macos-arm64",
+      "filename": "DeepRecover-v0.8.0-macos-arm64.zip",
+      "bytes": 47747417,
+      "sha256": "74d9cd40a14e6ed22a1ff67d44dd625e18c6585609d046bc40cc03d0ef168883",
+      "zip_crc": "passed",
+      "executable_architecture": "passed",
+      "kind": "Formal tag build artifact; not yet a GitHub Release"
+    },
+    {
+      "architecture": "macos-x86_64",
+      "filename": "DeepRecover-v0.8.0-macos-x86_64.zip",
+      "bytes": 52602967,
+      "sha256": "696559f6b7d318e3e0073a747a60d5611bdfd5181bc852ab244739651712d281",
+      "zip_crc": "passed",
+      "executable_architecture": "passed",
+      "kind": "Formal tag build artifact; not yet a GitHub Release"
+    }
+  ],
+  "automatic_publish": {
+    "started": false,
+    "job_url": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41977483255/job/127084101377",
+    "failure_reason": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
+    "retry_result": "Same billing/spending-limit failure before any step started"
+  },
+  "fallback_upload": {
+    "host": "uploads.github.com",
+    "http_status": 401,
+    "error": "Bad credentials",
+    "release_created": false
+  },
+  "resume": "Fix GitHub Actions account billing or spending allowance, then rerun only the failed publish job for run 41977483255. Existing artifacts and tag are unchanged.",
+  "physical_device_acceptance": "not_run",
+  "publication_attempts": 2
+}

@@ -1,6 +1,6 @@
 # M4 详细 QA 与缺陷回归记录
 
-后续版本的测试独立记录：v0.8.0 开发中的[视频签名扫描报告](VIDEO_SIGNATURE_TEST_REPORT_20261105.md)，以及已发布 v0.7.0 的[视频预览报告](VIDEO_PREVIEW_TEST_REPORT_20261105.md)。下文保留 M4 历史结果。
+后续版本的测试独立记录：已合并、发布待完成的 v0.8.0 [视频签名扫描报告](VIDEO_SIGNATURE_TEST_REPORT_20261105.md)，以及已发布 v0.7.0 的[视频预览报告](VIDEO_PREVIEW_TEST_REPORT_20261105.md)。下文保留 M4 历史结果。
 
 - 日期：2026-11-03
 - 环境：Linux x86_64，Python 3.12.14，PySide6 6.8.3，QT_QPA_PLATFORM=offscreen
