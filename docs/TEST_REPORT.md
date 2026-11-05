@@ -1,6 +1,6 @@
 # M4 详细 QA 与缺陷回归记录
 
-v0.9.0 开发中的 [PDF 扫描与预览测试](PDF_TEST_REPORT_20261105.md)独立记录，当前正式预览仍为 v0.8.0。
+已发布 v0.9.0 的 [PDF 扫描与预览测试](PDF_TEST_REPORT_20261105.md)独立记录，三平台构建与正式附件核验见[发布记录](releases/0.9.0/PUBLISHED.json)。
 
 后续版本的测试独立记录：已发布 v0.8.0 的[视频签名扫描报告](VIDEO_SIGNATURE_TEST_REPORT_20261105.md)，以及已发布 v0.7.0 的[视频预览报告](VIDEO_PREVIEW_TEST_REPORT_20261105.md)。下文保留 M4 历史结果。
 

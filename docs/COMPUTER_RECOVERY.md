@@ -1,10 +1,10 @@
 # 电脑磁盘与镜像恢复
 
-v0.9.0 开发版的签名模式新增 PDF，支持范围与分页预览见[PDF 说明](PDF_PREVIEW.md)。尚未发布，下面 v0.8.0 的下载与既有文件系统边界保持原有说明。
+v0.9.0 的签名模式新增 PDF，支持范围与分页预览见[PDF 说明](PDF_PREVIEW.md)，正式附件核验见[发布记录](releases/0.9.0/PUBLISHED.json)。下方文件系统元数据与原始盘隔离边界保持原有要求。
 
 v0.8.0 新增 MP4/MOV 连续签名与采样范围检查，签名模式支持 JPG/PNG/MP4/MOV。候选边界与限制见[说明](VIDEO_SIGNATURE_SCAN.md)，正式附件核验见[发布记录](releases/0.8.0/PUBLISHED.json)。
 
-[v0.8.0 预览版已发布](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.8.0)，提供 Windows 和 macOS 双架构包。提供“电脑恢复”导航与概览入口，保留手机采集和备份流程。Windows/macOS 均能读取原始 `.img/.dd/.raw/.bin` 文件；原始磁盘入口按本机权限读取 Windows PhysicalDrive/盘符卷、macOS disk/rdisk 设备，包含可枚举的 U 盘。
+[v0.9.0 预览版已发布](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.9.0)，提供 Windows 和 macOS 双架构包。提供“电脑恢复”导航与概览入口，保留手机采集和备份流程。Windows/macOS 均能读取原始 `.img/.dd/.raw/.bin` 文件；原始磁盘入口按本机权限读取 Windows PhysicalDrive/盘符卷、macOS disk/rdisk 设备，包含可枚举的 U 盘。
 
 ## 支持范围
 
@@ -14,10 +14,10 @@ v0.8.0 新增 MP4/MOV 连续签名与采样范围检查，签名模式支持 JPG
 | NTFS | 读取已删除 MFT 记录；支持 resident DATA 的 USA 修复、nonresident 碎片运行列表和碎片 MFT；以 `$Bitmap` 检查数据簇分配状态 |
 | FAT32 | 删除文件空内容或空闲单簇布局可进入校验流程；多簇删除后原链通常已消失，保留 `layout_unverified/partial`，不猜连续布局 |
 | exFAT | 校验 boot/删除 entryset，读取完整名称；仅 `NoFatChain` 明确连续且分配位图为空闲的布局可校验导出 |
-| APFS / HFS+ / 未知或损坏分区表 | 可选择整个源或可识别分区做连续 JPG/PNG/MP4/MOV 签名扫描；不解析其删除元数据 |
+| APFS / HFS+ / 未知或损坏分区表 | 可选择整个源或可识别分区做连续 JPG/PNG/MP4/MOV/PDF 签名扫描；不解析其删除元数据 |
 | BitLocker、FileVault、NTFS 压缩/加密/稀疏、属性扩展列表等 | 不解密、不猜测缺失布局；不支持的记录提示限制状态或拒绝元数据扫描 |
 
-删除记录模式支持任意扩展名，分类来自名称元数据；图片预览仅 JPG/PNG，视频预览按自包含 H.264 MP4/MOV 的[支持范围](VIDEO_PREVIEW.md)执行。签名模式检查连续 JPG/PNG 容器及受支持的 MP4/MOV 容器与采样范围。NTFS 暂以 `[$MFT record N]/文件名` 标识位置，不推测完整父目录；FAT32 短名称丢失的首字符显示 `_`，不伪造原字符。FAT32/exFAT 仅遍历现存目录，不追猜已删除目录的失效簇链。
+删除记录模式支持任意扩展名，分类来自名称元数据；图片预览仅 JPG/PNG，视频预览按自包含 H.264 MP4/MOV 的[支持范围](VIDEO_PREVIEW.md)执行，PDF 分页预览按[文档支持范围](PDF_PREVIEW.md)执行。签名模式检查连续 JPG/PNG 容器、受支持的 MP4/MOV 容器与采样范围，以及 PDF 结构与对象范围。NTFS 暂以 `[$MFT record N]/文件名` 标识位置，不推测完整父目录；FAT32 短名称丢失的首字符显示 `_`，不伪造原字符。FAT32/exFAT 仅遍历现存目录，不追猜已删除目录的失效簇链。
 
 ## 使用步骤
 

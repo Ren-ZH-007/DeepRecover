@@ -1,5 +1,5 @@
 {
-  "date_utc": "2026-11-05T10:22:11.901126+00:00",
+  "date_utc": "2026-11-05T10:39:03.229578+00:00",
   "platform": "linux",
   "architecture": "x86_64",
   "qt_platform": "offscreen",
@@ -77,7 +77,7 @@
   "screenshots": [
     {
       "file": "01-read-only-pdf-scan-scope.png",
-      "sha256": "20eb5a63e7717fc17d61290d1f9dd4dd6c5a7acd3ae5c520cf45ba09713417ff"
+      "sha256": "12340cfee7f684802d9d76ba1b848d5946b9852d29a6446cc35edfb8dfbb2466"
     },
     {
       "file": "02-pdf-structure-evidence.png",
@@ -97,11 +97,11 @@
     },
     {
       "file": "06-selection-releases-document.png",
-      "sha256": "0d5f736eefb2e81c82ea25324cdbff7c11ba3861d203edcda0cbb9683d12fd5a"
+      "sha256": "6cbfa49973077a88ad77b6b7d2b5c06f65a4ff44668611dff0929be077abf609"
     },
     {
       "file": "07-verified-pdf-range-export.png",
-      "sha256": "9aee8e226e137552b15da3af00f88936d79124b3cf05b79bf9e0729edc72c0a3"
+      "sha256": "2acfc79ad16a6a9ae2f4e5ef464261d322d97eea1d643905c215dd4f7150d8a1"
     },
     {
       "file": "08-encrypted-and-active-documents-rejected.png",
@@ -109,7 +109,7 @@
     },
     {
       "file": "09-history-with-missing-source.png",
-      "sha256": "c42c551f6d6f4b42dab2b87a4671c420137589d9c95a6195144639530c7a2e6f"
+      "sha256": "cbb8d997e6a7cf93d0cab77dcd6cdb0b433cbb32e888e13bda8c5dd2105de29d"
     }
   ]
 }

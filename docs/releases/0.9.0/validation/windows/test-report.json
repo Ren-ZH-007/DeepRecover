@@ -1,0 +1,21 @@
+{
+  "success": true,
+  "platform": "win32",
+  "run": 493,
+  "passed": 491,
+  "failures": 0,
+  "errors": 0,
+  "skipped": [
+    {
+      "test": "test_export.ExportTests.test_replaced_target_is_neither_verified_nor_deleted_as_owned_output",
+      "reason": "Windows may deny replacement of an open file"
+    },
+    {
+      "test": "test_qa_regressions.DetailedQaRegressions.test_manifest_symlink_cannot_escape_selected_backup",
+      "reason": "Creating symlinks may need Windows privileges"
+    }
+  ],
+  "unexpected_skips": [],
+  "expected_failures": 0,
+  "unexpected_successes": 0
+}
