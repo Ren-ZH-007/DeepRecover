@@ -472,7 +472,11 @@ class MainWindow(QMainWindow):
                     self.preview_label.setText('视频窗口已打开 · 静音\n播放已校验的内存内容，不修改来源。')
                 elif pdf:
                     from ui.preview.pdf import PdfPreviewDialog
-                    self.pdf_dialog = PdfPreviewDialog(result,self);self.pdf_dialog.show()
+                    self.pdf_dialog = PdfPreviewDialog(result,self)
+                    dialog = self.pdf_dialog
+                    dialog.finished.connect(lambda *_: self.preview_label.setText('PDF 预览已关闭；可重新选择并预览。')
+                        if self.pdf_dialog is dialog and self.preview_candidate_id == selected else None)
+                    self.pdf_dialog.show()
                     self.preview_label.setText('PDF 窗口已打开 · 静态预览\n已校验的内存内容，不修改来源。')
                 else:
                     self.preview_label.setPixmap(QPixmap.fromImage(result).scaled(280,240,Qt.AspectRatioMode.KeepAspectRatio,Qt.TransformationMode.SmoothTransformation))

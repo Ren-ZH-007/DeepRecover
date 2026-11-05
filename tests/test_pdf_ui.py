@@ -81,6 +81,7 @@ class PdfUiTests(unittest.TestCase):
         with patch('ui.preview.pdf.render_pdf',side_effect=slow):
             dialog.next_button.click();future=dialog._pending[0];self.assertTrue(started.wait(2))
             dialog.close()
+            self.assertIn('PDF 预览已关闭',self.window.preview_label.text())
             with self.assertRaises(TaskCancelled):future.result(2)
         self.assertTrue(dialog._closed);self.assertEqual(dialog.data,b'');self.assertIsNone(dialog._pending)
         self.assertTrue(dialog._image.isNull())
