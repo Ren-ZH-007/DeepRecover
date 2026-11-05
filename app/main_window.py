@@ -14,6 +14,8 @@ from storage.models.source import DataSource
 from core.scanner.signature.scanner import SignatureScanner, ScanError
 from core.candidate_io import CandidateAccessError
 from core.preview.images import preview_image
+from core.preview.video import prepare_video
+from storage.models.classification import category
 from core.export.service import export_batch, ExportError
 from ui.recovery.export_history import ExportHistory
 from ui.recovery.presentation import (candidate_status, content_check, deletion_evidence,
@@ -63,6 +65,7 @@ class MainWindow(QMainWindow):
         self.export_dialog = None
         self.evidence_dialog = None
         self.diagnostics_dialog = None
+        self.video_dialog = None
         self.setWindowTitle(f'DeepRecover · 本地数据工作台 · {VERSION}')
         self.setWindowIcon(brand_icon())
         self.resize(1280, 820)
@@ -93,6 +96,7 @@ class MainWindow(QMainWindow):
         self.build_pages()
         self.nav.currentRowChanged.connect(self.stack.setCurrentIndex)
         self.nav.currentRowChanged.connect(self.refresh_history)
+        self.nav.currentRowChanged.connect(lambda index: self.stop_video_preview() if index != 4 else None)
         self.nav.setCurrentRow(0)
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.poll)
@@ -268,11 +272,11 @@ class MainWindow(QMainWindow):
         self.result_table.setToolTip(f'{selection_modifier()} 可多选本页记录；分页或筛选会重置当前选择。')
         self.result_table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection); splitter.addWidget(self.result_table)
         preview = QFrame(); preview.setObjectName('previewPanel'); preview_box = QVBoxLayout(preview); preview_box.setContentsMargins(14,14,14,14); splitter.addWidget(preview)
-        label = QLabel('图片预览'); label.setObjectName('sectionTitle'); preview_box.addWidget(label)
-        self.preview_label = QLabel('选择一张 JPG / PNG\n查看本地图片预览'); self.preview_label.setObjectName('previewCanvas')
+        label = QLabel('图片 / 视频预览'); label.setObjectName('sectionTitle'); preview_box.addWidget(label)
+        self.preview_label = QLabel('选择 JPG/PNG 图片\n或 MP4/MOV 视频'); self.preview_label.setObjectName('previewCanvas')
         self.preview_label.setWordWrap(True); self.preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter); self.preview_label.setTextFormat(Qt.TextFormat.PlainText); self.preview_label.setMinimumWidth(210)
         self.result_table.itemSelectionChanged.connect(self.clear_preview); preview_box.addWidget(self.preview_label,1)
-        self.preview_button = self.button(preview_box,'预览选中图片',self.preview_selected,'secondary','image')
+        self.preview_button = self.button(preview_box,'预览选中图片 / 视频',self.preview_selected,'secondary','image')
         self.evidence_button = self.button(preview_box,'查看删除与检查依据',self.show_candidate_evidence,'secondary','shield')
         self.evidence_button.setEnabled(False)
         self.evidence_button.setToolTip('选中一项，分别查看删除依据、内容检查和独立导出记录说明。')
@@ -318,6 +322,7 @@ class MainWindow(QMainWindow):
     def run_task(self, kind, operation, on_success, *, persist_candidates=False, source=None, batch_size=100, with_task_id=False):
         if self.pending or self.computer_page.readonly_pending:
             self.statusBar().showMessage('已有任务执行中，请等待或在任务记录页停止。'); return
+        self.stop_video_preview()
         self.pending = (self.manager.submit(kind, operation, persist_candidates=persist_candidates,
                                             source=source, batch_size=batch_size, with_task_id=with_task_id), on_success)
         self.computer_page.refresh_controls()
@@ -360,7 +365,7 @@ class MainWindow(QMainWindow):
             if task['status'] == 'completed':
                 self.scan_progress.setValue(1000)
         task = self.repository.task(handle.id)
-        if task['kind'] == 'image_preview' and task['status'] != 'completed' and self.preview_candidate_id is not None:
+        if task['kind'] in ('image_preview', 'video_preview') and task['status'] != 'completed' and self.preview_candidate_id is not None:
             self.preview_label.setText(self.statusBar().currentMessage())
         if task['kind'] == 'export':
             outcome = {'completed':'导出完成','failed':'导出失败','cancelled':'导出已停止','interrupted':'导出中断'}.get(task['status'],task['status'])
@@ -384,14 +389,22 @@ class MainWindow(QMainWindow):
                 if 0 <= index.row() < len(self.current_candidates)]
 
     def clear_preview(self):
+        self.stop_video_preview()
         if self.evidence_dialog:
             self.evidence_dialog.close()
             self.evidence_dialog.deleteLater()
             self.evidence_dialog = None
         self.preview_candidate_id = None
         self.preview_label.clear()
-        self.preview_label.setText('选择一张 JPG/PNG，再点击预览。')
+        self.preview_label.setText('选择 JPG/PNG 图片或 MP4/MOV 视频，再点击预览。')
         self.evidence_button.setEnabled(len(self.selected_candidate_ids()) == 1)
+
+    def stop_video_preview(self):
+        if self.video_dialog:
+            dialog = self.video_dialog
+            dialog.close()
+            self.video_dialog = None
+            dialog.deleteLater()
 
     def show_candidate_evidence(self):
         rows = self.result_table.selectionModel().selectedRows()
@@ -426,18 +439,31 @@ class MainWindow(QMainWindow):
     def preview_selected(self):
         ids = self.selected_candidate_ids()
         if len(ids) != 1 or self.pending or self.computer_page.readonly_pending:
-            self.statusBar().showMessage('请选择一张图片，并等待当前任务结束。'); return
+            self.statusBar().showMessage('请选择一项图片或视频，并等待当前任务结束。'); return
         selected, task_id = ids[0], self.result_task_id
-        def complete(image, _):
-            if self.result_task_id == task_id and self.preview_candidate_id == selected:
-                self.preview_label.setPixmap(QPixmap.fromImage(image).scaled(280,240,Qt.AspectRatioMode.KeepAspectRatio,Qt.TransformationMode.SmoothTransformation))
+        candidate = self.repository.candidate(selected)
+        video = candidate is not None and category(candidate.get('file_type')) == 'video'
+        self.stop_video_preview()
+        def complete(result, _):
+            if self.result_task_id == task_id and self.preview_candidate_id == selected and self.selected_candidate_ids() == [selected]:
+                if video:
+                    from ui.preview.video import VideoPreviewDialog
+                    self.video_dialog = VideoPreviewDialog(result, self)
+                    dialog = self.video_dialog
+                    dialog.finished.connect(lambda *_: self.preview_label.setText('视频预览已关闭；可重新选择并预览。')
+                        if self.video_dialog is dialog and self.preview_candidate_id == selected else None)
+                    self.video_dialog.show()
+                    self.preview_label.setText('视频窗口已打开 · 静音\n播放已校验的内存内容，不修改来源。')
+                else:
+                    self.preview_label.setPixmap(QPixmap.fromImage(result).scaled(280,240,Qt.AspectRatioMode.KeepAspectRatio,Qt.TransformationMode.SmoothTransformation))
                 self.preview_label.setToolTip('本地解码预览；不更改候选状态，不表示已删除数据恢复成功。')
         def begin(_):
             if self.result_task_id != task_id or self.selected_candidate_ids() != [selected]:
                 self.statusBar().showMessage('选中项已变化，请重新预览。'); return
             self.preview_candidate_id = selected
-            self.preview_label.clear(); self.preview_label.setText('正在校验来源并解码图片…')
-            self.run_task('image_preview',lambda token: preview_image(self.repository,selected,self.config.data_dir,token),complete)
+            self.preview_label.clear(); self.preview_label.setText('正在校验视频来源与预览范围…' if video else '正在校验来源并解码图片…')
+            self.run_task('video_preview' if video else 'image_preview',
+                lambda token: (prepare_video if video else preview_image)(self.repository,selected,self.config.data_dir,token),complete)
         if self.requires_computer_preflight(ids):
             self.preview_label.clear(); self.preview_label.setText('正在检查源盘与工作目录隔离…')
             self.computer_page._readonly(lambda: check_computer_access(self.repository,tuple(ids),self.config.data_dir), begin,
@@ -668,11 +694,12 @@ class MainWindow(QMainWindow):
                 self.history_table.selectRow(row)
 
     def cancel_task(self):
+        self.stop_video_preview()
         if self.pending:
             self.pending[0].cancel()
             if self.repository.task(self.pending[0].id)['kind'] == 'signature_scan':
                 self.statusBar().showMessage('已请求停止扫描；已入库的候选记录会保留。')
-            elif self.repository.task(self.pending[0].id)['kind'] in ('export','image_preview'):
+            elif self.repository.task(self.pending[0].id)['kind'] in ('export','image_preview','video_preview'):
                 self.statusBar().showMessage('已请求停止；此前已校验的导出文件和记录会保留。')
             elif self.repository.task(self.pending[0].id)['kind'] == 'computer_scan':
                 self.statusBar().showMessage('已请求停止电脑扫描；已提交的部分候选保留，当前读取结束后停止。')
@@ -680,6 +707,9 @@ class MainWindow(QMainWindow):
                 self.statusBar().showMessage('已请求停止；正在进行的 ADB pull 最长等待 60 秒，其他 ADB 调用最长 15 秒。')
 
     def closeEvent(self, event):
+        if self.video_dialog and self.video_dialog._releasing:
+            self.statusBar().showMessage('正在释放视频解码资源，请稍后再次关闭。')
+            event.ignore(); return
         if not self.computer_page.prepare_close():
             self.statusBar().showMessage('正在结束只读磁盘预检，请等待当前系统调用返回后再次关闭。')
             event.ignore(); return
@@ -695,6 +725,7 @@ class MainWindow(QMainWindow):
             self.evidence_dialog.close()
         if self.diagnostics_dialog:
             self.diagnostics_dialog.close()
+        self.stop_video_preview()
         self.timer.stop()
         self.manager.shutdown()
         workspace_lock = getattr(self, '_workspace_lock', None)
