@@ -2,12 +2,12 @@
 
 个人自用、本地运行的手机与电脑数据恢复工作台。目标平台：Windows 10/11 x64、macOS 13+（Apple Silicon / Intel），Python 3.12 + PySide6 + SQLite。
 
-**当前预览版本：[v0.5.0](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.5.0)，已发布 Windows 和 macOS 双架构包，新增引导式来源选择、图形化工作目录和中文结果依据。** 电脑功能的范围与使用方法见 [电脑恢复](docs/COMPUTER_RECOVERY.md)，macOS 启动说明见 [macOS 适配](docs/MACOS.md)。
+**当前预览版本：[v0.6.0](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.6.0)，已发布 Windows 和 macOS 双架构包，新增本机环境检查、脱敏本地报告与 M5 验收清单。** 电脑功能的范围与使用方法见 [电脑恢复](docs/COMPUTER_RECOVERY.md)，macOS 启动说明见 [macOS 适配](docs/MACOS.md)。
 依据《DeepRecover_当前对话归档与研发方案_20261102.md》创建。
 
-0.5.0 的图形化工作目录、物理磁盘来源树、三步预检及中文结果依据见[使用与验证说明](docs/GUIDED_RECOVERY.md)，正式附件下载后校验见[发布记录](docs/releases/0.5.0/PUBLISHED.json)。
+0.5.0 的图形化工作目录、物理磁盘来源树、三步预检及中文结果依据见[使用与验证说明](docs/GUIDED_RECOVERY.md)，该版本附件校验见[历史发布记录](docs/releases/0.5.0/PUBLISHED.json)。
 
-0.6.0 开发功能：设置页新增本机环境检查和脱敏本地报告，为 M5 实机验收提供准备工具；当前发布版仍为上方 v0.5.0。诊断不运行 ADB、不枚举设备或读取源内容，也不自动完成实机验收，操作及记录模板见 [M5 验收清单](docs/M5_ACCEPTANCE.md)，验证与截图见[测试报告](docs/M5_PREPARATION_TEST_REPORT_20261105.md)。
+0.6.0 已发布：设置页新增本机环境检查和脱敏本地报告，为 M5 实机验收提供准备工具。正式附件下载后校验见[发布记录](docs/releases/0.6.0/PUBLISHED.json)。诊断不运行 ADB、不枚举设备或读取源内容，也不自动完成实机验收，操作及记录模板见 [M5 验收清单](docs/M5_ACCEPTANCE.md)，验证与截图见[测试报告](docs/M5_PREPARATION_TEST_REPORT_20261105.md)。
 
 ## 已实现
 
@@ -30,14 +30,16 @@
 
 ## 下载预览包
 
-- [Windows x64](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.5.0/DeepRecover-v0.5.0-windows-x64.zip)
-- [macOS Apple Silicon](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.5.0/DeepRecover-v0.5.0-macos-arm64.zip)
-- [macOS Intel](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.5.0/DeepRecover-v0.5.0-macos-x86_64.zip)
-- [SHA256SUMS.txt](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.5.0/SHA256SUMS.txt)
+- [Windows x64](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.6.0/DeepRecover-v0.6.0-windows-x64.zip)
+- [macOS Apple Silicon](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.6.0/DeepRecover-v0.6.0-macos-arm64.zip)
+- [macOS Intel](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.6.0/DeepRecover-v0.6.0-macos-x86_64.zip)
+- [SHA256SUMS.txt](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.6.0/SHA256SUMS.txt)
 
 Windows 解压后运行目录中的 `DeepRecover.exe`，保留整个 `DeepRecover` 文件夹及 `_internal` 文件，不能只复制 EXE。macOS 按芯片类型下载，解压后将整个 `DeepRecover.app` 拖入“应用程序”。预览包无需另外安装 Python，Windows 包不是安装程序；源码归档则按下方步骤配置 Python。macOS 包未提供 Developer ID 签名或 Apple 公证，详见 [macOS 说明](docs/MACOS.md)。
 
 v0.5.0 界面截图：[选择工作目录](docs/qa/guided-20261104/arm64/01-workspace-before-initialization.png)、[物理磁盘分组](docs/qa/guided-20261104/arm64/14-grouped-physical-sources.png)、[结果依据](docs/qa/guided-20261104/arm64/02a-deleted-record-evidence.png)。
+
+v0.6.0 诊断截图：[环境检查](docs/qa/m5-20261105/arm64/01-local-environment-check.png)、[保存本地报告](docs/qa/m5-20261105/arm64/02-sanitized-report-saved.png)。
 
 ## Windows 启动
 

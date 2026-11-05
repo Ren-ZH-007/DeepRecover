@@ -1,6 +1,6 @@
 # 电脑磁盘与镜像恢复
 
-[v0.5.0 预览版已发布](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.5.0)，提供 Windows 和 macOS 双架构包。提供“电脑恢复”导航与概览入口，保留手机采集和备份流程。Windows/macOS 均能读取原始 `.img/.dd/.raw/.bin` 文件；原始磁盘入口按本机权限读取 Windows PhysicalDrive/盘符卷、macOS disk/rdisk 设备，包含可枚举的 U 盘。
+[v0.6.0 预览版已发布](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.6.0)，提供 Windows 和 macOS 双架构包。提供“电脑恢复”导航与概览入口，保留手机采集和备份流程。Windows/macOS 均能读取原始 `.img/.dd/.raw/.bin` 文件；原始磁盘入口按本机权限读取 Windows PhysicalDrive/盘符卷、macOS disk/rdisk 设备，包含可枚举的 U 盘。
 
 ## 支持范围
 
@@ -18,6 +18,8 @@
 ## 使用步骤
 
 0.5.0 启动时可图形化选择工作目录，也可继续使用 `DEEPRECOVER_DATA_DIR`。扫描原始盘前请选择另一块物理磁盘上的工作目录；设置页和电脑页可在任务结束后切换，旧历史不自动迁移。来源树及结果依据说明见[引导式操作说明](GUIDED_RECOVERY.md)。
+
+0.6.0 设置页的“检查本机环境”可保存不含来源路径/设备标识的本地报告。报告不代替磁盘预检，也不自动通过实机验收；检查步骤见 [M5 清单](M5_ACCEPTANCE.md)。
 
 1. 打开“电脑恢复”，选择镜像，或检测后明确选择本机磁盘/U 盘；检测不会自动开始扫描。
 2. 等待只读分区预检，选择范围及“解析删除记录”或“签名候选”。不支持的文件系统会说明限制。

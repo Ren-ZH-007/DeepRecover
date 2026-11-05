@@ -1,0 +1,486 @@
+{
+  "success": true,
+  "tag": "v0.6.0",
+  "source_commit": "02b3d525cb68de4f9f5918fcb4ae81bf90147a62",
+  "release_url": "https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.6.0",
+  "build_url": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41945573496",
+  "published_at_utc": "2026-11-05T01:03:50Z",
+  "published_at_asia_shanghai": "2026-11-05T09:03:50+08:00",
+  "pre_release": true,
+  "assets": [
+    {
+      "name": "DeepRecover-v0.6.0-macos-arm64.zip",
+      "bytes": 38492225,
+      "sha256": "1e060da5a023645274e5744d3c7d9683a993e89b3ce2423300d052675474f3f6",
+      "download_url": "https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.6.0/DeepRecover-v0.6.0-macos-arm64.zip",
+      "zip_crc": "passed",
+      "entries": 420,
+      "architecture": "arm64",
+      "mach_o": "passed",
+      "preserved_symlinks": 94
+    },
+    {
+      "name": "DeepRecover-v0.6.0-macos-x86_64.zip",
+      "bytes": 42238450,
+      "sha256": "2392601ec64f19eef447c955482aeacdacce27a42f8039b6d7dbc886b2002d5d",
+      "download_url": "https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.6.0/DeepRecover-v0.6.0-macos-x86_64.zip",
+      "zip_crc": "passed",
+      "entries": 420,
+      "architecture": "x86_64",
+      "mach_o": "passed",
+      "preserved_symlinks": 94
+    },
+    {
+      "name": "DeepRecover-v0.6.0-windows-x64.zip",
+      "bytes": 51647182,
+      "sha256": "abdec192213a6e7533f1abcd216db0cf240794b0825820a9bfc98653cb84629b",
+      "download_url": "https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.6.0/DeepRecover-v0.6.0-windows-x64.zip",
+      "zip_crc": "passed",
+      "entries": 216,
+      "architecture": "x64",
+      "pe_machine": "0x8664",
+      "qt_platform_and_jpeg_plugins": true
+    }
+  ],
+  "native_validation": {
+    "windows": {
+      "source_commit": "02b3d525cb68de4f9f5918fcb4ae81bf90147a62",
+      "validation_artifact": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41945573496/artifacts/13378796101",
+      "tests": {
+        "success": true,
+        "platform": "win32",
+        "run": 392,
+        "passed": 390,
+        "failures": 0,
+        "errors": 0,
+        "skipped": [
+          {
+            "test": "test_export.ExportTests.test_replaced_target_is_neither_verified_nor_deleted_as_owned_output",
+            "reason": "Windows may deny replacement of an open file"
+          },
+          {
+            "test": "test_qa_regressions.DetailedQaRegressions.test_manifest_symlink_cannot_escape_selected_backup",
+            "reason": "Creating symlinks may need Windows privileges"
+          }
+        ],
+        "unexpected_skips": [],
+        "expected_failures": 0,
+        "unexpected_successes": 0
+      },
+      "workflows": {
+        "diagnostics": {
+          "cases_passed": 4,
+          "screenshots_verified": 4
+        },
+        "computer": {
+          "cases_passed": 11,
+          "screenshots_verified": 18
+        },
+        "guided": {
+          "cases_passed": 5,
+          "screenshots_verified": 5
+        }
+      },
+      "packaged_smoke": {
+        "executable": {
+          "success": true,
+          "version": "0.6.0",
+          "schema_version": 3,
+          "navigation_pages": 8,
+          "qt_platform": "offscreen",
+          "workspace_dialog_verified": true,
+          "computer_candidates": 2,
+          "computer_verified_exports": 2,
+          "workspace_roundtrip_verified": true,
+          "environment_diagnostics_verified": true,
+          "verified_exports": 2,
+          "decoded_formats": [
+            "PNG",
+            "JPEG"
+          ]
+        }
+      },
+      "diagnostics_database_and_source_unchanged": true,
+      "diagnostics_adb_executed": false,
+      "diagnostics_devices_enumerated": false,
+      "diagnostics_raw_devices_opened": false,
+      "diagnostics_cases": [
+        {
+          "id": "DQA-01",
+          "result": "passed",
+          "real_collect_service": true,
+          "no_report_before_explicit_save": true,
+          "database_and_tasks_unchanged": true,
+          "manual_acceptance_not_run": true
+        },
+        {
+          "id": "DQA-02",
+          "result": "passed",
+          "real_write_service": true,
+          "one_new_local_report": true,
+          "database_and_tasks_unchanged": true,
+          "report_contains_no_source_path": true
+        },
+        {
+          "id": "DQA-03",
+          "result": "passed",
+          "save_exception_redacted": true,
+          "existing_report_not_overwritten": true,
+          "database_and_tasks_unchanged": true
+        },
+        {
+          "id": "DQA-04",
+          "result": "passed",
+          "collect_exception_redacted": true,
+          "stale_report_cleared": true,
+          "database_and_tasks_unchanged": true
+        }
+      ]
+    },
+    "arm64": {
+      "source_commit": "02b3d525cb68de4f9f5918fcb4ae81bf90147a62",
+      "validation_artifact": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41945573496/artifacts/13377378999",
+      "tests": {
+        "success": true,
+        "platform": "darwin",
+        "run": 392,
+        "passed": 392,
+        "failures": 0,
+        "errors": 0,
+        "skipped": [],
+        "unexpected_skips": [],
+        "expected_failures": 0,
+        "unexpected_successes": 0
+      },
+      "workflows": {
+        "diagnostics": {
+          "cases_passed": 4,
+          "screenshots_verified": 4
+        },
+        "computer": {
+          "cases_passed": 11,
+          "screenshots_verified": 18
+        },
+        "guided": {
+          "cases_passed": 5,
+          "screenshots_verified": 5
+        },
+        "legacy_cocoa": {
+          "cases_passed": 14,
+          "screenshots_verified": 20
+        }
+      },
+      "packaged_smoke": {
+        "offscreen": {
+          "success": true,
+          "version": "0.6.0",
+          "schema_version": 3,
+          "navigation_pages": 8,
+          "qt_platform": "offscreen",
+          "workspace_dialog_verified": true,
+          "computer_candidates": 2,
+          "computer_verified_exports": 2,
+          "workspace_roundtrip_verified": true,
+          "environment_diagnostics_verified": true,
+          "verified_exports": 2,
+          "decoded_formats": [
+            "PNG",
+            "JPEG"
+          ]
+        },
+        "cocoa": {
+          "success": true,
+          "version": "0.6.0",
+          "schema_version": 3,
+          "navigation_pages": 8,
+          "qt_platform": "cocoa",
+          "workspace_dialog_verified": true,
+          "computer_candidates": 2,
+          "computer_verified_exports": 2,
+          "workspace_roundtrip_verified": true,
+          "environment_diagnostics_verified": true,
+          "native_quit_verified": true,
+          "verified_exports": 2,
+          "decoded_formats": [
+            "PNG",
+            "JPEG"
+          ]
+        }
+      },
+      "diagnostics_database_and_source_unchanged": true,
+      "diagnostics_adb_executed": false,
+      "diagnostics_devices_enumerated": false,
+      "diagnostics_raw_devices_opened": false,
+      "diagnostics_cases": [
+        {
+          "id": "DQA-01",
+          "result": "passed",
+          "real_collect_service": true,
+          "no_report_before_explicit_save": true,
+          "database_and_tasks_unchanged": true,
+          "manual_acceptance_not_run": true
+        },
+        {
+          "id": "DQA-02",
+          "result": "passed",
+          "real_write_service": true,
+          "one_new_local_report": true,
+          "database_and_tasks_unchanged": true,
+          "report_contains_no_source_path": true
+        },
+        {
+          "id": "DQA-03",
+          "result": "passed",
+          "save_exception_redacted": true,
+          "existing_report_not_overwritten": true,
+          "database_and_tasks_unchanged": true
+        },
+        {
+          "id": "DQA-04",
+          "result": "passed",
+          "collect_exception_redacted": true,
+          "stale_report_cleared": true,
+          "database_and_tasks_unchanged": true
+        }
+      ],
+      "native_macos_metadata_only": {
+        "success": true,
+        "platform": "darwin",
+        "architecture": "arm64",
+        "metadata_queries_only": true,
+        "raw_reads": false,
+        "root_physical_disk_count": 1,
+        "work_directory_physical_disk_count": 1,
+        "root_and_work_directory_overlap": true,
+        "same_device_rejected": true,
+        "schemas": {
+          "root": {
+            "physical_stores": {
+              "entry_types": [
+                "dict"
+              ],
+              "identifier_keys": [
+                "APFSPhysicalStore"
+              ]
+            },
+            "volume_disk_value_type": "NoneType",
+            "snapshot": true
+          },
+          "work_directory": {
+            "physical_stores": {
+              "entry_types": [
+                "dict"
+              ],
+              "identifier_keys": [
+                "APFSPhysicalStore"
+              ]
+            },
+            "volume_disk_value_type": "NoneType",
+            "snapshot": false
+          },
+          "apfs_list_physical_stores": {
+            "entry_types": [
+              "dict"
+            ],
+            "identifier_keys": [
+              "DeviceIdentifier"
+            ]
+          }
+        },
+        "inventory": {
+          "source_count": 20,
+          "kinds": {
+            "physical": 2,
+            "partition": 3,
+            "apfs_container": 3,
+            "auxiliary": 8,
+            "apfs_volume": 3,
+            "snapshot": 1
+          },
+          "known_physical_groups": 2,
+          "system_sources": 17,
+          "metadata_queries_only": true
+        }
+      }
+    },
+    "x86_64": {
+      "source_commit": "02b3d525cb68de4f9f5918fcb4ae81bf90147a62",
+      "validation_artifact": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41945573496/artifacts/13377693608",
+      "tests": {
+        "success": true,
+        "platform": "darwin",
+        "run": 392,
+        "passed": 392,
+        "failures": 0,
+        "errors": 0,
+        "skipped": [],
+        "unexpected_skips": [],
+        "expected_failures": 0,
+        "unexpected_successes": 0
+      },
+      "workflows": {
+        "diagnostics": {
+          "cases_passed": 4,
+          "screenshots_verified": 4
+        },
+        "computer": {
+          "cases_passed": 11,
+          "screenshots_verified": 18
+        },
+        "guided": {
+          "cases_passed": 5,
+          "screenshots_verified": 5
+        },
+        "legacy_cocoa": {
+          "cases_passed": 14,
+          "screenshots_verified": 20
+        }
+      },
+      "packaged_smoke": {
+        "offscreen": {
+          "success": true,
+          "version": "0.6.0",
+          "schema_version": 3,
+          "navigation_pages": 8,
+          "qt_platform": "offscreen",
+          "workspace_dialog_verified": true,
+          "computer_candidates": 2,
+          "computer_verified_exports": 2,
+          "workspace_roundtrip_verified": true,
+          "environment_diagnostics_verified": true,
+          "verified_exports": 2,
+          "decoded_formats": [
+            "PNG",
+            "JPEG"
+          ]
+        },
+        "cocoa": {
+          "success": true,
+          "version": "0.6.0",
+          "schema_version": 3,
+          "navigation_pages": 8,
+          "qt_platform": "cocoa",
+          "workspace_dialog_verified": true,
+          "computer_candidates": 2,
+          "computer_verified_exports": 2,
+          "workspace_roundtrip_verified": true,
+          "environment_diagnostics_verified": true,
+          "native_quit_verified": true,
+          "verified_exports": 2,
+          "decoded_formats": [
+            "PNG",
+            "JPEG"
+          ]
+        }
+      },
+      "diagnostics_database_and_source_unchanged": true,
+      "diagnostics_adb_executed": false,
+      "diagnostics_devices_enumerated": false,
+      "diagnostics_raw_devices_opened": false,
+      "diagnostics_cases": [
+        {
+          "id": "DQA-01",
+          "result": "passed",
+          "real_collect_service": true,
+          "no_report_before_explicit_save": true,
+          "database_and_tasks_unchanged": true,
+          "manual_acceptance_not_run": true
+        },
+        {
+          "id": "DQA-02",
+          "result": "passed",
+          "real_write_service": true,
+          "one_new_local_report": true,
+          "database_and_tasks_unchanged": true,
+          "report_contains_no_source_path": true
+        },
+        {
+          "id": "DQA-03",
+          "result": "passed",
+          "save_exception_redacted": true,
+          "existing_report_not_overwritten": true,
+          "database_and_tasks_unchanged": true
+        },
+        {
+          "id": "DQA-04",
+          "result": "passed",
+          "collect_exception_redacted": true,
+          "stale_report_cleared": true,
+          "database_and_tasks_unchanged": true
+        }
+      ],
+      "native_macos_metadata_only": {
+        "success": true,
+        "platform": "darwin",
+        "architecture": "x86_64",
+        "metadata_queries_only": true,
+        "raw_reads": false,
+        "root_physical_disk_count": 1,
+        "work_directory_physical_disk_count": 1,
+        "root_and_work_directory_overlap": true,
+        "same_device_rejected": true,
+        "schemas": {
+          "root": {
+            "physical_stores": {
+              "entry_types": [
+                "dict"
+              ],
+              "identifier_keys": [
+                "APFSPhysicalStore"
+              ]
+            },
+            "volume_disk_value_type": "NoneType",
+            "snapshot": true
+          },
+          "work_directory": {
+            "physical_stores": {
+              "entry_types": [
+                "dict"
+              ],
+              "identifier_keys": [
+                "APFSPhysicalStore"
+              ]
+            },
+            "volume_disk_value_type": "NoneType",
+            "snapshot": false
+          },
+          "apfs_list_physical_stores": {
+            "entry_types": [
+              "dict"
+            ],
+            "identifier_keys": [
+              "DeviceIdentifier"
+            ]
+          }
+        },
+        "inventory": {
+          "source_count": 11,
+          "kinds": {
+            "physical": 1,
+            "partition": 2,
+            "apfs_container": 1,
+            "apfs_volume": 2,
+            "auxiliary": 4,
+            "snapshot": 1
+          },
+          "known_physical_groups": 1,
+          "system_sources": 11,
+          "metadata_queries_only": true
+        }
+      }
+    }
+  },
+  "workflow_screenshots_verified": 121,
+  "additional_packaged_screenshots_verified": 2,
+  "screenshot_checks": {
+    "sha256_matches_evidence": true,
+    "png_crc": true,
+    "qt_decode": true,
+    "nonblank_pixel_samples": true
+  },
+  "macos_signing": "local ad-hoc; no Developer ID certificate; not notarized",
+  "physical_device_acceptance": "not_run",
+  "native_macos_metadata_queried": true,
+  "raw_devices_opened_by_application": false,
+  "apfs_hfs_capability": "continuous JPG/PNG signature candidates only; no deleted metadata parser"
+}
