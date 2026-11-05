@@ -6,7 +6,7 @@ from PySide6.QtMultimedia import QMediaPlayer, QVideoFrame, QVideoSink
 from PySide6.QtWidgets import QDialog, QHBoxLayout, QLabel, QPushButton, QSlider, QVBoxLayout
 
 from app.theme import STYLE
-from core.preview.video import MAX_DURATION_MS, MAX_HEIGHT, MAX_WIDTH
+from core.preview.video import MAX_DURATION_MS, dimensions_allowed
 
 
 def time_label(milliseconds):
@@ -73,11 +73,13 @@ class VideoPreviewDialog(QDialog):
         if self._closed or self._failed or not frame.isValid():
             return
         size = frame.size()
-        if not 0 < size.width() <= MAX_WIDTH or not 0 < size.height() <= MAX_HEIGHT:
+        if not dimensions_allowed(size.width(), size.height()):
             self.fail('解码后的尺寸超出预览上限，已停止。'); return
         image = frame.toImage()
         if image.isNull():
             self.fail(); return
+        if not dimensions_allowed(image.width(), image.height()):
+            self.fail('旋转后的画面尺寸超出 1080p 预览上限，已停止。'); return
         self._image = image
         self.frame_count += 1
         self._render()

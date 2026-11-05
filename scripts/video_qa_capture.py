@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import struct
 import sys
 import tempfile
 from unittest.mock import patch
@@ -59,8 +60,8 @@ def run(output):
                 QTest.qWait(20)
             raise AssertionError('Video verification timed out')
 
-        def open_video():
-            window.result_table.selectRow(0); window.preview_selected()
+        def open_video(row=0):
+            window.result_table.selectRow(row); window.preview_selected()
             assert window.pending is not None
             window.pending[0].future.result(15); window.poll()
             dialog = window.video_dialog; assert dialog is not None
@@ -131,6 +132,23 @@ def run(output):
             assert list((config.data_dir / 'Recovered').iterdir()) == []
             record('VQA-06', history_does_not_prepare_video=True, candidate_unchanged=True,
                 sources_unchanged=True, no_preview_files=True, no_export_files=True)
+
+            rotated = bytearray(fixture); body = rotated.index(b'tkhd') + 4
+            assert rotated[body] == 0
+            struct.pack_into('>9i', rotated, body + 40, 0, -65536, 0, 65536, 0, 0, 0, 0, 1073741824)
+            portrait_path = config.data_dir / 'Acquisitions/portrait-clip'; portrait_path.write_bytes(rotated)
+            portrait = Candidate('android_file', '手机竖屏旋转.mp4', 'mp4', len(rotated), source_id=source.id,
+                local_path=str(portrait_path), source_stat=snapshot(portrait_path.stat()),
+                sha256=hashlib.sha256(rotated).hexdigest(), integrity='not_checked')
+            repo.add_candidate(task, portrait); window.open_results(task)
+            dialog = open_video(2)
+            assert (dialog._image.width(), dialog._image.height()) == (64, 96)
+            capture('06-phone-portrait-rotation.png', dialog)
+            dialog.close()
+            assert portrait_path.read_bytes() == bytes(rotated)
+            assert repo.candidate(portrait.id)['status'] == 'candidate'
+            record('VQA-07', rotation_metadata_applied=True, portrait_frame_decoded=True,
+                portrait_source_and_candidate_unchanged=True)
         finally:
             window.close(); app.processEvents()
 

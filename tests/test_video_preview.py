@@ -24,6 +24,15 @@ def video_fixture():
     return files('app').joinpath('assets/preview-test.mp4').read_bytes()
 
 
+def rotated_video_fixture():
+    data = bytearray(video_fixture())
+    body = data.index(b'tkhd') + 4
+    assert data[body] == 0
+    # Standard 90-degree QuickTime track display matrix; media bytes unchanged.
+    struct.pack_into('>9i', data, body + 40, 0, -65536, 0, 65536, 0, 0, 0, 0, 1073741824)
+    return bytes(data)
+
+
 def atom(kind, payload):
     return struct.pack('>I4s', len(payload) + 8, kind) + payload
 
@@ -180,6 +189,10 @@ class VideoPreparationTests(unittest.TestCase):
             with self.subTest(values=values), self.assertRaises(CandidateAccessError):
                 inspect_video(container(**values), CancellationToken())
 
+    def test_1080p_limit_allows_portrait_orientation(self):
+        preview = inspect_video(container(width=1080, height=1920), CancellationToken())
+        self.assertEqual((preview.width, preview.height), (1080, 1920))
+
     def test_box_budget_and_cancellation_during_container_walk(self):
         token = CancellationToken(); token.cancel()
         with self.assertRaises(TaskCancelled): inspect_video(video_fixture(), token)
@@ -301,6 +314,13 @@ class VideoPreviewUiTests(unittest.TestCase):
         _, _, _, dialog = self.opened()
         self.window.close()
         self.assertTrue(dialog._closed); self.assertFalse(dialog.isVisible())
+
+    def test_phone_rotation_metadata_is_applied_to_actual_preview_frame(self):
+        task, _, _ = self.android(data=rotated_video_fixture())
+        self.window.open_results(task); self.window.result_table.selectRow(0)
+        self.window.preview_selected(); self.finish()
+        dialog = self.window.video_dialog; self.wait_frame(dialog)
+        self.assertEqual((dialog._image.width(), dialog._image.height()), (64, 96))
 
     def test_pagination_or_starting_another_task_closes_the_video(self):
         task, _, _, dialog = self.opened()

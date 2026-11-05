@@ -15,6 +15,11 @@ MAX_HEIGHT = 1080
 MAX_BOXES = 10000
 
 
+def dimensions_allowed(width, height):
+    """1080p in either orientation, including a rotated phone frame."""
+    return 0 < min(width, height) <= MAX_HEIGHT and max(width, height) <= MAX_WIDTH
+
+
 @dataclass(frozen=True)
 class VideoPreview:
     data: bytes
@@ -174,8 +179,8 @@ def inspect_video(data, token):
             if codec != b'avc1' or sample_end - sample_start < 78:
                 _reject('首版视频预览仅支持 H.264 编码的 MP4/MOV。')
             width, height = struct.unpack_from('>HH', view, sample_start + 24)
-            if not 0 < width <= MAX_WIDTH or not 0 < height <= MAX_HEIGHT:
-                _reject('视频尺寸无效或超过 1920×1080 预览上限。')
+            if not dimensions_allowed(width, height):
+                _reject('视频尺寸无效或超过横屏/竖屏 1080p 预览上限。')
             extensions = boxes(sample_start + 78, sample_end)
             allowed(extensions, {b'avcC', b'pasp', b'btrt', b'colr', b'clap', b'fiel', b'free'})
             config_start, config_end = one(extensions, b'avcC')
