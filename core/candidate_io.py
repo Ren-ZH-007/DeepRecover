@@ -6,6 +6,8 @@ from pathlib import Path
 import re
 import stat
 
+from core.scanner.validation import checked_signature
+
 
 class CandidateAccessError(RuntimeError):
     pass
@@ -114,8 +116,11 @@ def candidate_input(repository, candidate_id, data_dir):
         from core.computer.service import check_access, ComputerError
         if candidate['status'] != 'candidate' or not expected_hash or not isinstance(expected_stat, dict):
             raise CandidateAccessError('电脑候选缺少完整布局或来源校验信息，请重新扫描。')
-        required = 'metadata_checked' if kind == 'computer_deleted' else 'structure_checked'
-        if candidate['integrity'] != required or (kind == 'computer_deleted' and candidate.get('deletion_state') != 'deleted_record'):
+        if kind == 'computer_deleted':
+            checked = candidate['integrity'] == 'metadata_checked' and candidate.get('deletion_state') == 'deleted_record'
+        else:
+            checked = checked_signature(candidate['integrity'], candidate['file_type'])
+        if not checked:
             raise CandidateAccessError('此电脑候选的记录或布局尚未验证，不能导出为完整文件。')
         if expected_stat.get('kind') not in ('image', 'device') or type(expected_stat.get('size')) is not int:
             raise CandidateAccessError('电脑来源身份格式无效。')
@@ -128,7 +133,7 @@ def candidate_input(repository, candidate_id, data_dir):
         return CandidateInput(candidate, source, path, extents[0][0] if extents else 0,
                               size, expected_hash, expected_stat, extents)
     elif kind == 'signature_scan' and source['kind'] == 'image':
-        if candidate['integrity'] != 'structure_checked' or candidate['status'] != 'candidate':
+        if not checked_signature(candidate['integrity'], candidate['file_type']) or candidate['status'] != 'candidate':
             raise CandidateAccessError('只允许预览或导出结构检查通过的扫描候选。')
         if not expected_stat or not expected_hash:
             raise CandidateAccessError('旧扫描缺少来源校验信息，请重新扫描。')

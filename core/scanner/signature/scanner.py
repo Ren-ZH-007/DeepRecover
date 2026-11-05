@@ -2,16 +2,13 @@ from pathlib import Path
 import os
 import stat
 
-from core.scanner.image.validation import validate
+from core.scanner.validation import validate, find_signature, CHECKED, INVALID, SIGNATURES
 from storage.models.candidate import Candidate, CandidateStatus
 from core.candidate_io import snapshot, range_digest
 
 
 class ScanError(RuntimeError):
     pass
-
-
-SIGNATURES = ((b'\x89PNG\r\n\x1a\n', 'png'), (b'\xff\xd8\xff', 'jpg'))
 
 
 class SignatureScanner:
@@ -56,26 +53,26 @@ class SignatureScanner:
                     cursor = max(0, skip - base)
                     while cursor < len(data):
                         token.checkpoint()
-                        matches = [(data.find(signature, cursor), kind) for signature, kind in SIGNATURES]
-                        matches = [(at, kind) for at, kind in matches if at >= 0]
-                        if not matches:
+                        match = find_signature(data, cursor)
+                        if match is None:
                             break
-                        at, kind = min(matches)
+                        at, kind = match
                         offset = base + at
                         if count >= self.max_candidates:
                             raise ScanError('候选数量达到上限，扫描未完成；请缩小输入范围。')
                         validation = validate(container, offset, total, kind, token, self.max_file_size, self.max_decoded)
                         count += 1
                         token.report_progress(offset, total, count)
-                        partial = validation.integrity in ('truncated', 'validation_limit')
-                        digest = range_digest(container, offset, validation.size, token) if validation.integrity == 'structure_checked' else None
+                        ready = validation.integrity in CHECKED
+                        kind = getattr(validation, 'file_type', kind)
+                        digest = range_digest(container, offset, validation.size, token) if ready else None
                         yield Candidate(source='signature_scan', name=f'offset_{offset:016x}.{kind}',
                             file_type=kind, size=validation.size, original_path=str(source), offset=offset,
-                            integrity=validation.integrity,
+                            integrity=validation.integrity, structure_details=getattr(validation, 'details', None),
                             sha256=digest, source_stat=snapshot(original),
-                            status=CandidateStatus.PARTIAL if partial else (
-                                CandidateStatus.FAILED if validation.integrity == 'invalid_structure' else CandidateStatus.CANDIDATE))
-                        skip = offset + (validation.size if validation.integrity == 'structure_checked' else 1)
+                            status=CandidateStatus.CANDIDATE if ready else (
+                                CandidateStatus.FAILED if validation.integrity in INVALID else CandidateStatus.PARTIAL))
+                        skip = offset + (validation.size if ready else 1)
                         cursor = skip - base
                     position += len(block)
                     if skip > position:

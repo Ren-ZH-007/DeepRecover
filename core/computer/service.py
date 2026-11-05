@@ -5,8 +5,7 @@ from core.computer.content import checked_extents, extent_digest, MAX_FILE_SIZE
 from core.computer.devices import ensure_different_device
 from core.computer.io import DiskReader, DiskError
 from core.computer.partitions import Partition, PartitionError, source_partitions
-from core.scanner.image.validation import validate
-from core.scanner.signature.scanner import SIGNATURES
+from core.scanner.validation import validate, find_signature, CHECKED, INVALID
 from storage.models.candidate import Candidate, CandidateStatus
 
 
@@ -113,10 +112,11 @@ class ComputerScanner:
                     token.report_progress(progress.processed, partition.size, progress.count, phase='computer')
                     yield Candidate(source='computer_deleted' if mode == 'deleted' else 'computer_signature',
                         name=name, file_type=extension, size=size, original_path=record['original_path'],
-                        offset=extents[0][0] if extents else None, status=CandidateStatus(status), integrity=integrity,
+                        offset=extents[0][0] if extents else record.get('offset'), status=CandidateStatus(status), integrity=integrity,
                         sha256=digest, source_stat=original, extents=extents,
                         file_system=record.get('file_system', partition.file_system),
-                        deletion_state=record.get('deletion_state', 'unknown'), record_id=record.get('record_id'))
+                        deletion_state=record.get('deletion_state', 'unknown'), record_id=record.get('record_id'),
+                        structure_details=record.get('structure_details'))
                 reader.check(original); token.checkpoint()
                 token.report_progress(partition.size, partition.size, progress.count, phase='computer')
         except (OSError, ValueError) as error:
@@ -132,18 +132,19 @@ class ComputerScanner:
             cursor = max(0, skip - base)
             while cursor < len(data):
                 token.checkpoint()
-                matches = [(data.find(signature, cursor), kind) for signature, kind in SIGNATURES]
-                matches = [(at, kind) for at, kind in matches if at >= 0]
-                if not matches: break
-                at, kind = min(matches); offset = base + at
+                match = find_signature(data, cursor)
+                if match is None: break
+                at, kind = match; offset = base + at
                 if count >= self.max_candidates: raise ComputerError('签名候选数量达到上限，扫描仅部分完成。')
                 result = validate(reader, offset, end, kind, token, 64 * 1024 * 1024, 256 * 1024 * 1024)
                 count += 1
-                ready = result.integrity == 'structure_checked'
+                ready = result.integrity in CHECKED
+                kind = getattr(result, 'file_type', kind)
                 yield {'name': f'offset_{offset:016x}.{kind}', 'original_path': str(reader.path),
-                    'size': result.size, 'extents': [(offset, result.size)] if ready else [],
-                    'integrity': result.integrity, 'status': 'candidate' if ready else ('failed' if result.integrity == 'invalid_structure' else 'partial'),
-                    'file_system': partition.file_system, 'deletion_state': 'unknown'}
+                    'size': result.size, 'offset': offset, 'extents': [(offset, result.size)] if ready else [],
+                    'integrity': result.integrity, 'status': 'candidate' if ready else ('failed' if result.integrity in INVALID else 'partial'),
+                    'file_system': partition.file_system, 'deletion_state': 'unknown',
+                    'structure_details': getattr(result, 'details', None)}
                 skip = offset + (result.size if ready else 1); cursor = skip - base
             position += len(block)
             if skip > position: position, carry = skip, b''

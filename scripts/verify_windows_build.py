@@ -20,6 +20,8 @@ def validate_report(path, expected_version):
         'workspace_dialog_verified': True,
         'workspace_roundtrip_verified': True,
         'environment_diagnostics_verified': True,
+        'video_scan_verified': True,
+        'video_scan_exports': 1,
         'video_preview_verified': True,
         'video_muted': True,
         'video_buffer_released': True,

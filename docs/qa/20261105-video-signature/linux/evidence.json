@@ -1,0 +1,107 @@
+{
+  "date_utc": "2026-11-05T05:37:09.979893+00:00",
+  "platform": "linux",
+  "architecture": "x86_64",
+  "qt_platform": "offscreen",
+  "cases": [
+    {
+      "id": "VSQA-01",
+      "result": "passed",
+      "ui_scan": true,
+      "exact_offsets_and_lengths": true,
+      "deletion_unknown": true
+    },
+    {
+      "id": "VSQA-02",
+      "result": "passed",
+      "video_filter": true,
+      "persisted_check_details": true,
+      "no_decode_claim": true
+    },
+    {
+      "id": "VSQA-03",
+      "result": "passed",
+      "mp4_actual_frame": true,
+      "mov_actual_frame": true,
+      "source_url_empty": true,
+      "muted": true,
+      "buffers_released": true
+    },
+    {
+      "id": "VSQA-04",
+      "result": "passed",
+      "exact_export_bytes": true,
+      "source_target_sha256_equal": true,
+      "independent_export_records": true
+    },
+    {
+      "id": "VSQA-05",
+      "result": "passed",
+      "computer_pipeline": true,
+      "identical_range_hashes": true
+    },
+    {
+      "id": "VSQA-06",
+      "result": "passed",
+      "fragmented_encrypted_external_unknown_truncated_distinguished": true,
+      "no_unverified_hashes": true
+    },
+    {
+      "id": "VSQA-07",
+      "result": "passed",
+      "all_unverified_exports_failed": true,
+      "no_media_outputs": true
+    },
+    {
+      "id": "VSQA-08",
+      "result": "passed",
+      "history_without_source": true,
+      "candidate_records_unchanged": true,
+      "source_hashes_unchanged": true
+    }
+  ],
+  "screenshot_font_check": {
+    "text": "DeepRecover 0123456789 电脑恢复 已删除图片 碎片文档 来源只读 本地处理 预览导出 历史结果",
+    "families": [
+      "Noto Sans CJK SC"
+    ],
+    "missing_glyphs": 0
+  },
+  "synthetic_sources_only": true,
+  "raw_devices_opened": false,
+  "network_media_sources_opened": false,
+  "screenshots": [
+    {
+      "file": "01-read-only-scan-scope.png",
+      "sha256": "a377e58599a633a9229331261bf66cb6014af648afd541df51d002cad217ae51"
+    },
+    {
+      "file": "02-video-filter-and-source-ranges.png",
+      "sha256": "bea1bdd465139a468201d53694da04284e6c5f2364dbefdbcf3d3e7c24765e53"
+    },
+    {
+      "file": "03-container-and-sample-evidence.png",
+      "sha256": "2eaa4fed917d21bed9557d9b4666f296290984d7b1be3f28b06255faf4f67b2c"
+    },
+    {
+      "file": "04-scanned-mp4-decoded-frame.png",
+      "sha256": "b5690992a7bb40cf9e6b311206c8b0bfc37a60eeaaaaf12c67f7772af332d6ee"
+    },
+    {
+      "file": "05-scanned-mov-decoded-frame.png",
+      "sha256": "b5690992a7bb40cf9e6b311206c8b0bfc37a60eeaaaaf12c67f7772af332d6ee"
+    },
+    {
+      "file": "06-verified-range-exports.png",
+      "sha256": "0f077bb477c7409a78e30dd33723271d4242c1dda17d9328314a9c5192a26908"
+    },
+    {
+      "file": "07-unknown-boundary-rejected.png",
+      "sha256": "a6a5dd0ac94b72e43e1ed55bfd73cedf9ffc6c176e44c5befba9f27a0d494be1"
+    },
+    {
+      "file": "08-history-with-missing-source.png",
+      "sha256": "b32c485b77beb2e999ee2a37d2d876bfec978227cc83c45b520e8757b642159e"
+    }
+  ]
+}

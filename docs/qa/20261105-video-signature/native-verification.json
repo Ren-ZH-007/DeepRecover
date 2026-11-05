@@ -1,0 +1,2966 @@
+{
+  "success": true,
+  "pull_request": "https://github.com/Ren-ZH-007/DeepRecover/pull/18",
+  "functional_commit": "34e231584472fdcdbb331cdc2d1904c26da3c43c",
+  "native_validation": {
+    "windows": {
+      "artifact": "windows-validation-34e231584472fdcdbb331cdc2d1904c26da3c43c",
+      "checkout_commit": "34e231584472fdcdbb331cdc2d1904c26da3c43c",
+      "pull_request_functional_commit": "34e231584472fdcdbb331cdc2d1904c26da3c43c",
+      "build_url": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41975529355",
+      "tests": {
+        "success": true,
+        "platform": "win32",
+        "run": 447,
+        "passed": 445,
+        "failures": 0,
+        "errors": 0,
+        "skipped": [
+          {
+            "test": "test_export.ExportTests.test_replaced_target_is_neither_verified_nor_deleted_as_owned_output",
+            "reason": "Windows may deny replacement of an open file"
+          },
+          {
+            "test": "test_qa_regressions.DetailedQaRegressions.test_manifest_symlink_cannot_escape_selected_backup",
+            "reason": "Creating symlinks may need Windows privileges"
+          }
+        ],
+        "unexpected_skips": [],
+        "expected_failures": 0,
+        "unexpected_successes": 0
+      },
+      "workflows": {
+        "diagnostics": {
+          "cases_passed": 4,
+          "screenshots_verified": 4,
+          "cases": [
+            {
+              "id": "DQA-01",
+              "result": "passed",
+              "real_collect_service": true,
+              "no_report_before_explicit_save": true,
+              "database_and_tasks_unchanged": true,
+              "manual_acceptance_not_run": true
+            },
+            {
+              "id": "DQA-02",
+              "result": "passed",
+              "real_write_service": true,
+              "one_new_local_report": true,
+              "database_and_tasks_unchanged": true,
+              "report_contains_no_source_path": true
+            },
+            {
+              "id": "DQA-03",
+              "result": "passed",
+              "save_exception_redacted": true,
+              "existing_report_not_overwritten": true,
+              "database_and_tasks_unchanged": true
+            },
+            {
+              "id": "DQA-04",
+              "result": "passed",
+              "collect_exception_redacted": true,
+              "stale_report_cleared": true,
+              "database_and_tasks_unchanged": true
+            }
+          ],
+          "screenshots": [
+            {
+              "file": "01-local-environment-check.png",
+              "sha256": "d1897c5ed6ec12ce13b3e1dc3e79dc8c193c1f914646276890f25ed53703b2b7",
+              "width": 760,
+              "height": 760,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "02-sanitized-report-saved.png",
+              "sha256": "0ccc09b7a8722c3a99c62136d8f6a8aeb457b5131dcc584d0a2a078a9ba6887f",
+              "width": 760,
+              "height": 760,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "03-report-error-redacted.png",
+              "sha256": "76ecca08e43af514e3cb53caa3bcfdc3d1367ff43552c3f4094016d1c725ea1b",
+              "width": 760,
+              "height": 760,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "04-check-error-redacted.png",
+              "sha256": "81720b427b9bcdbbba04505f74e7d60a8558bd7842bbd15455d894a2ed135280",
+              "width": 760,
+              "height": 760,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            }
+          ]
+        },
+        "computer": {
+          "cases_passed": 11,
+          "screenshots_verified": 18,
+          "cases": [
+            {
+              "id": "CQA-01",
+              "result": "passed",
+              "filesystem": "NTFS",
+              "task_created_during_probe": false
+            },
+            {
+              "id": "CQA-02",
+              "result": "passed",
+              "deleted_records": 3,
+              "ready": 2,
+              "restricted": 1,
+              "fragmented_extents": 2
+            },
+            {
+              "id": "CQA-03",
+              "result": "passed",
+              "resident_png_decoded": true
+            },
+            {
+              "id": "CQA-04",
+              "result": "passed",
+              "verified_exports": 2,
+              "fragmented_logical_order": true
+            },
+            {
+              "id": "CQA-05",
+              "result": "passed",
+              "restricted_preview_rejected": true,
+              "restricted_export_rejected": true
+            },
+            {
+              "id": "CQA-06",
+              "result": "passed",
+              "candidates_after_reopen": 3,
+              "exports_after_reopen": 2,
+              "source_read_for_history": false
+            },
+            {
+              "id": "CQA-07",
+              "result": "passed",
+              "filesystem": "APFS",
+              "mode": "signature",
+              "deletion_state": "unknown"
+            },
+            {
+              "id": "CQA-11",
+              "result": "passed",
+              "deleted_record_explained": true,
+              "signature_deletion_state_unknown": true,
+              "content_check_separate": true,
+              "export_evidence_separate": true,
+              "stored_candidate_unchanged": true
+            },
+            {
+              "id": "CQA-08",
+              "result": "passed",
+              "same_device_guard_rejected": true,
+              "task_count_unchanged": true,
+              "real_disk_opened": false,
+              "mocked_apfs_store_schema": "APFSPhysicalStore",
+              "work_directory_help_visible": true
+            },
+            {
+              "id": "CQA-09",
+              "result": "passed",
+              "minimum_window": [
+                880,
+                620
+              ],
+              "source_controls_readable": true,
+              "scan_control_readable": true
+            },
+            {
+              "id": "CQA-10",
+              "result": "passed",
+              "physical_groups": true,
+              "auxiliary_and_snapshots_hidden_by_metadata": true,
+              "unknown_source_visible": true,
+              "selected_source_bound_by_path": true,
+              "filter_invalidates_preflight": true,
+              "inventory": "synthetic",
+              "task_count_unchanged": true
+            }
+          ],
+          "screenshots": [
+            {
+              "file": "01-ntfs-readonly-preflight.png",
+              "sha256": "47afd8bb4f79744a347386947d53882fdbe585f5adb9a5e54d2a19783926c802",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "02-ntfs-deleted-records.png",
+              "sha256": "f33d50314f3f2635e082498471ccbd806a4e17e5a566352ba4553d731a537a91",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "02a-deleted-record-evidence.png",
+              "sha256": "dfe3bd3d93fb2b5030c49985a6479854b85e92d6da1a0c59efb59aef9a395923",
+              "width": 680,
+              "height": 680,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "03-resident-png-preview.png",
+              "sha256": "d4dcc3fc944c0a76f1942f9d08f853bcdef9ab9d267b88cc39ef62ace1262679",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "04-verified-deleted-exports.png",
+              "sha256": "7765c673bcc7035a35534721962d4a43f62a00456f9dcd4c0c20d3c9d327cf81",
+              "width": 1100,
+              "height": 600,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "05-restricted-preview-rejected.png",
+              "sha256": "2ac8ae01092dc9d152133762a14b45ccef45f1ac9126d299e52f4b2c21de818a",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "06-restricted-export-rejected.png",
+              "sha256": "59faaf3dec7de5131e936cbb948cb0bd7a2c66f045fe5029a28890d34ca5b482",
+              "width": 1100,
+              "height": 600,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "07-history-reopened.png",
+              "sha256": "7765c673bcc7035a35534721962d4a43f62a00456f9dcd4c0c20d3c9d327cf81",
+              "width": 1100,
+              "height": 600,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "08-apfs-signature-capability.png",
+              "sha256": "fd4f65c2b5074b796982439630bcd44814baf856b9d4a7c7e877ba57623d9a74",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "09-apfs-unknown-deletion-state.png",
+              "sha256": "b1e38a6ad5ff3f0e6565b8e9554fbd87e9010f8c57f36695d11f405251efd390",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "09a-signature-unknown-evidence.png",
+              "sha256": "78549a8752db52c7029cbcd0c42d13acfd8230f84cda9104112857ea33ef8958",
+              "width": 680,
+              "height": 680,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "10-raw-workspace-isolation-refused.png",
+              "sha256": "32dc01d1f63417bf0341016e28a3d9d67dd0032f3699a7b53bf0be2d5a0c88e1",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "10a-work-directory-guidance.png",
+              "sha256": "1cca6a772c89e24d561a65267ab30ae693734ad9e1879a292d1c561f57c74283",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "11-minimum-computer-source-controls.png",
+              "sha256": "50131fbabe836f76b02d0098b7bc50e0127cec16345275769d5d2532de167f5f",
+              "width": 880,
+              "height": 620,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "12-minimum-computer-scan-controls.png",
+              "sha256": "6cc8fc8c21742b982bb46ff60e1484d5332cdf8bf4d24e6dac916b8a023e30c1",
+              "width": 880,
+              "height": 620,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "14-grouped-physical-sources.png",
+              "sha256": "c99f450d134ab498436dd0d190551c135ed48ee56429ddfc52bb503c098b1094",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "15-explicit-auxiliary-sources.png",
+              "sha256": "731ce5754c4f535e807adad5e5981ff8f837a450aad3798219d7ba39808649ed",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "16-filter-invalidates-old-source.png",
+              "sha256": "c9f063efdcae305c69006b6391ea5498f72618baeed83eb4386b25b83a40ab0d",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            }
+          ]
+        },
+        "guided": {
+          "cases_passed": 5,
+          "screenshots_verified": 5,
+          "cases": [
+            {
+              "id": "GQA-01",
+              "result": "passed",
+              "no_database_or_logs_before_selection": true,
+              "opened_selected_workspace": true
+            },
+            {
+              "id": "GQA-02",
+              "result": "passed",
+              "actual_signature_candidates": 1,
+              "readable_content_state": true
+            },
+            {
+              "id": "GQA-03",
+              "result": "passed",
+              "old_database_unchanged": true,
+              "old_log_unchanged": true,
+              "history_not_copied": true
+            },
+            {
+              "id": "GQA-04",
+              "result": "passed",
+              "existing_workspace_history_reopened": true
+            },
+            {
+              "id": "GQA-05",
+              "result": "passed",
+              "busy_picker_not_opened": true,
+              "workspace_unchanged": true
+            }
+          ],
+          "screenshots": [
+            {
+              "file": "01-workspace-before-initialization.png",
+              "sha256": "a6e192f67446f71bc5ca0218311204257581a3ed741ba1789841b6f0a9538e32",
+              "width": 660,
+              "height": 330,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "02-original-workspace-history.png",
+              "sha256": "2c9fda930cf39dadd7125ac7c03dee72bb8adf0ce1c2b28ec88ffb40ae226dcf",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "03-fresh-workspace-no-history-copy.png",
+              "sha256": "1a0869a0e3d1e9fe7eb6b6bafbc27500f676c8889a4f33fc07019fd643eb5a73",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "04-existing-workspace-history-reopened.png",
+              "sha256": "c0e45902a0e98505ecca82a9e2d3abf994a3283fe61ee73c3b4b04bcd2fb6a16",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "05-busy-workspace-switch-blocked.png",
+              "sha256": "e5eab5b879fd0d1e54a3e03801503f75588abdac97e88435d47cda39cb4670ad",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            }
+          ]
+        },
+        "video": {
+          "cases_passed": 7,
+          "screenshots_verified": 6,
+          "cases": [
+            {
+              "id": "VQA-01",
+              "result": "passed",
+              "actual_frame_decoded": true,
+              "source_url_empty": true,
+              "memory_device_only": true,
+              "audio_track_present": true,
+              "no_audio_output": true
+            },
+            {
+              "id": "VQA-02",
+              "result": "passed",
+              "actual_playback_advanced": true,
+              "pause_verified": true,
+              "seek_frame_decoded": true
+            },
+            {
+              "id": "VQA-03",
+              "result": "passed",
+              "selection_stops_player": true,
+              "compressed_buffer_released": true,
+              "decoded_frame_released": true
+            },
+            {
+              "id": "VQA-04",
+              "result": "passed",
+              "external_reference_refused_before_decoder": true,
+              "no_backend_started": true
+            },
+            {
+              "id": "VQA-05",
+              "result": "passed",
+              "injected_decoder_error_redacted": true,
+              "stale_frame_cleared": true,
+              "buffer_released": true
+            },
+            {
+              "id": "VQA-06",
+              "result": "passed",
+              "history_does_not_prepare_video": true,
+              "candidate_unchanged": true,
+              "sources_unchanged": true,
+              "no_preview_files": true,
+              "no_export_files": true
+            },
+            {
+              "id": "VQA-07",
+              "result": "passed",
+              "rotation_metadata_applied": true,
+              "portrait_frame_decoded": true,
+              "portrait_source_and_candidate_unchanged": true
+            }
+          ],
+          "screenshots": [
+            {
+              "file": "01-actual-video-first-frame.png",
+              "sha256": "1ed1ef5c9b9bc09805a772ef053bc5b19a7b4cfcfee4134696cf6173a6fba6c1",
+              "width": 800,
+              "height": 560,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "02-playback-pause-and-seek.png",
+              "sha256": "0b866907b718739426c35dd786cf3729f6da7d537afb589cc45272c3aaf5ad44",
+              "width": 800,
+              "height": 560,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "03-selection-change-releases-video.png",
+              "sha256": "4882995b3429eec8bb343064986c6d2097d50994883d7ad1c5200affe6f472b8",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "04-external-reference-rejected.png",
+              "sha256": "b54a68862d788d6da65003f5f3a03abba1962d1fdc52e7571201446cacb81c87",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "05-decoder-error-clears-frame.png",
+              "sha256": "c7ec6c102416bab29c4c4ffdb23af73e3e5596fe53db835062cb270aa1974f91",
+              "width": 800,
+              "height": 560,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "06-phone-portrait-rotation.png",
+              "sha256": "92061002e5dd4d0f1f599933c7ecd2ee70bae10a8b7650d3c3947e6e1b389b74",
+              "width": 800,
+              "height": 560,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            }
+          ]
+        },
+        "video_signature": {
+          "cases_passed": 8,
+          "screenshots_verified": 8,
+          "cases": [
+            {
+              "id": "VSQA-01",
+              "result": "passed",
+              "ui_scan": true,
+              "exact_offsets_and_lengths": true,
+              "deletion_unknown": true
+            },
+            {
+              "id": "VSQA-02",
+              "result": "passed",
+              "video_filter": true,
+              "persisted_check_details": true,
+              "no_decode_claim": true
+            },
+            {
+              "id": "VSQA-03",
+              "result": "passed",
+              "mp4_actual_frame": true,
+              "mov_actual_frame": true,
+              "source_url_empty": true,
+              "muted": true,
+              "buffers_released": true
+            },
+            {
+              "id": "VSQA-04",
+              "result": "passed",
+              "exact_export_bytes": true,
+              "source_target_sha256_equal": true,
+              "independent_export_records": true
+            },
+            {
+              "id": "VSQA-05",
+              "result": "passed",
+              "computer_pipeline": true,
+              "identical_range_hashes": true
+            },
+            {
+              "id": "VSQA-06",
+              "result": "passed",
+              "fragmented_encrypted_external_unknown_truncated_distinguished": true,
+              "no_unverified_hashes": true
+            },
+            {
+              "id": "VSQA-07",
+              "result": "passed",
+              "all_unverified_exports_failed": true,
+              "no_media_outputs": true
+            },
+            {
+              "id": "VSQA-08",
+              "result": "passed",
+              "history_without_source": true,
+              "candidate_records_unchanged": true,
+              "source_hashes_unchanged": true
+            }
+          ],
+          "screenshots": [
+            {
+              "file": "01-read-only-scan-scope.png",
+              "sha256": "e23ec5ffffe941212b177196c472bf3a8f3eb75b20c0db1e7398ecf4c7922f4e",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "02-video-filter-and-source-ranges.png",
+              "sha256": "039b1136debe4fe5932323f432b03bdd6c687ed003807f12f2208f5654802c71",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "03-container-and-sample-evidence.png",
+              "sha256": "48a8aec9ef98fc6a5be7a4c05c3123c8d1ff2ad9bf85e8137e3299578bd11c3a",
+              "width": 640,
+              "height": 500,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "04-scanned-mp4-decoded-frame.png",
+              "sha256": "1ed1ef5c9b9bc09805a772ef053bc5b19a7b4cfcfee4134696cf6173a6fba6c1",
+              "width": 800,
+              "height": 560,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "05-scanned-mov-decoded-frame.png",
+              "sha256": "1ed1ef5c9b9bc09805a772ef053bc5b19a7b4cfcfee4134696cf6173a6fba6c1",
+              "width": 800,
+              "height": 560,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "06-verified-range-exports.png",
+              "sha256": "8e4a4ed94cd70d2a7511a9b1d54e378f9ead51985d509ad0c539346defcb4977",
+              "width": 1100,
+              "height": 600,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "07-unknown-boundary-rejected.png",
+              "sha256": "30383d9c9f046e6bd6d8cfe7abca98911052b47926670d31c8ba7c954224eceb",
+              "width": 640,
+              "height": 500,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "08-history-with-missing-source.png",
+              "sha256": "e70b5ddc18b6391df655952f5a5dbcc22ae287de1089691f3713933746c587a7",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            }
+          ]
+        }
+      },
+      "diagnostics_database_and_source_unchanged": true,
+      "diagnostics_raw_devices_opened": false,
+      "diagnostics_devices_enumerated": false,
+      "diagnostics_adb_executed": false,
+      "source_hashes_unchanged": true,
+      "video_candidates_unchanged": true,
+      "video_preview_files_created": false,
+      "video_network_media_sources_opened": false,
+      "smoke": {
+        "executable": {
+          "success": true,
+          "version": "0.8.0",
+          "schema_version": 3,
+          "navigation_pages": 8,
+          "qt_platform": "offscreen",
+          "workspace_dialog_verified": true,
+          "computer_candidates": 2,
+          "computer_verified_exports": 2,
+          "video_scan_verified": true,
+          "video_scan_exports": 1,
+          "video_preview_verified": true,
+          "video_muted": true,
+          "video_buffer_released": true,
+          "video_frame_dimensions": [
+            96,
+            64
+          ],
+          "workspace_roundtrip_verified": true,
+          "environment_diagnostics_verified": true,
+          "verified_exports": 2,
+          "decoded_formats": [
+            "PNG",
+            "JPEG"
+          ]
+        }
+      }
+    },
+    "arm64": {
+      "artifact": "macos-arm64-validation-4488ecb653d93d702e219f9f47f770af09863d97",
+      "checkout_commit": "4488ecb653d93d702e219f9f47f770af09863d97",
+      "pull_request_functional_commit": "34e231584472fdcdbb331cdc2d1904c26da3c43c",
+      "build_url": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41975535337",
+      "tests": {
+        "success": true,
+        "platform": "darwin",
+        "run": 447,
+        "passed": 447,
+        "failures": 0,
+        "errors": 0,
+        "skipped": [],
+        "unexpected_skips": [],
+        "expected_failures": 0,
+        "unexpected_successes": 0
+      },
+      "workflows": {
+        "diagnostics": {
+          "cases_passed": 4,
+          "screenshots_verified": 4,
+          "cases": [
+            {
+              "id": "DQA-01",
+              "result": "passed",
+              "real_collect_service": true,
+              "no_report_before_explicit_save": true,
+              "database_and_tasks_unchanged": true,
+              "manual_acceptance_not_run": true
+            },
+            {
+              "id": "DQA-02",
+              "result": "passed",
+              "real_write_service": true,
+              "one_new_local_report": true,
+              "database_and_tasks_unchanged": true,
+              "report_contains_no_source_path": true
+            },
+            {
+              "id": "DQA-03",
+              "result": "passed",
+              "save_exception_redacted": true,
+              "existing_report_not_overwritten": true,
+              "database_and_tasks_unchanged": true
+            },
+            {
+              "id": "DQA-04",
+              "result": "passed",
+              "collect_exception_redacted": true,
+              "stale_report_cleared": true,
+              "database_and_tasks_unchanged": true
+            }
+          ],
+          "screenshots": [
+            {
+              "file": "01-local-environment-check.png",
+              "sha256": "76d29332b422d36fee873c3fb5c2dde9afaf6f7b8eddfaf427fc0fbc3a454371",
+              "width": 760,
+              "height": 656,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "02-sanitized-report-saved.png",
+              "sha256": "9d2b0f9c6572c153add57a0d7206f8fcac519e2ec779409b5ab704855967dbb2",
+              "width": 760,
+              "height": 656,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "03-report-error-redacted.png",
+              "sha256": "ed639bb8abc2323d07c307b2fe66998f63fbffa85cc3484b70de1c2c1b32c5a4",
+              "width": 760,
+              "height": 656,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "04-check-error-redacted.png",
+              "sha256": "3e4ce8b0d8fd7ed8154ff4b171dcc68f3a2b8343165474bb13fdd5eb024b5ab9",
+              "width": 760,
+              "height": 656,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            }
+          ]
+        },
+        "computer": {
+          "cases_passed": 11,
+          "screenshots_verified": 18,
+          "cases": [
+            {
+              "id": "CQA-01",
+              "result": "passed",
+              "filesystem": "NTFS",
+              "task_created_during_probe": false
+            },
+            {
+              "id": "CQA-02",
+              "result": "passed",
+              "deleted_records": 3,
+              "ready": 2,
+              "restricted": 1,
+              "fragmented_extents": 2
+            },
+            {
+              "id": "CQA-03",
+              "result": "passed",
+              "resident_png_decoded": true
+            },
+            {
+              "id": "CQA-04",
+              "result": "passed",
+              "verified_exports": 2,
+              "fragmented_logical_order": true
+            },
+            {
+              "id": "CQA-05",
+              "result": "passed",
+              "restricted_preview_rejected": true,
+              "restricted_export_rejected": true
+            },
+            {
+              "id": "CQA-06",
+              "result": "passed",
+              "candidates_after_reopen": 3,
+              "exports_after_reopen": 2,
+              "source_read_for_history": false
+            },
+            {
+              "id": "CQA-07",
+              "result": "passed",
+              "filesystem": "APFS",
+              "mode": "signature",
+              "deletion_state": "unknown"
+            },
+            {
+              "id": "CQA-11",
+              "result": "passed",
+              "deleted_record_explained": true,
+              "signature_deletion_state_unknown": true,
+              "content_check_separate": true,
+              "export_evidence_separate": true,
+              "stored_candidate_unchanged": true
+            },
+            {
+              "id": "CQA-08",
+              "result": "passed",
+              "same_device_guard_rejected": true,
+              "task_count_unchanged": true,
+              "real_disk_opened": false,
+              "mocked_apfs_store_schema": "APFSPhysicalStore",
+              "work_directory_help_visible": true
+            },
+            {
+              "id": "CQA-09",
+              "result": "passed",
+              "minimum_window": [
+                880,
+                620
+              ],
+              "source_controls_readable": true,
+              "scan_control_readable": true
+            },
+            {
+              "id": "CQA-10",
+              "result": "passed",
+              "physical_groups": true,
+              "auxiliary_and_snapshots_hidden_by_metadata": true,
+              "unknown_source_visible": true,
+              "selected_source_bound_by_path": true,
+              "filter_invalidates_preflight": true,
+              "inventory": "synthetic",
+              "task_count_unchanged": true
+            }
+          ],
+          "screenshots": [
+            {
+              "file": "01-ntfs-readonly-preflight.png",
+              "sha256": "c4d52ab1ecd99974fcc1edc0aa2c19f150fb5c8b6181e4b3a0fb0eaa9d944f09",
+              "width": 1024,
+              "height": 656,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "02-ntfs-deleted-records.png",
+              "sha256": "37f970bdcd058e1940c70ba009f720728909fe27eaa57d80f10afd95d442a1ef",
+              "width": 1024,
+              "height": 656,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "02a-deleted-record-evidence.png",
+              "sha256": "fd1f6fddf81a559e2b5953cccb2e3c9adfc2f319dec9eab4125962e3f61d570f",
+              "width": 680,
+              "height": 656,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "03-resident-png-preview.png",
+              "sha256": "d5fc4c69c57202b6f7b40b27476248dc759f8b3dc0ddbe3836e5cb2f54fcb40c",
+              "width": 1024,
+              "height": 656,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "04-verified-deleted-exports.png",
+              "sha256": "6f8c826878e32c7ef50a056d2d43aea5b34b636c133713b8a5b3cbe9ebff7b9d",
+              "width": 1024,
+              "height": 600,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "05-restricted-preview-rejected.png",
+              "sha256": "2ae92fb979013cc33b812d8f5193b29bf2aeafde2a085eec9518158ea38b29d4",
+              "width": 1024,
+              "height": 656,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "06-restricted-export-rejected.png",
+              "sha256": "171be4d294bb3e76d0a96347e57dd33c7e356afe1227ee14860b0eb764080e27",
+              "width": 1024,
+              "height": 600,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "07-history-reopened.png",
+              "sha256": "6f8c826878e32c7ef50a056d2d43aea5b34b636c133713b8a5b3cbe9ebff7b9d",
+              "width": 1024,
+              "height": 600,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "08-apfs-signature-capability.png",
+              "sha256": "2d48b4f3241fe84a472bccc92a64d01961e5bb3566819973ec76f6c18033d87a",
+              "width": 1024,
+              "height": 656,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "09-apfs-unknown-deletion-state.png",
+              "sha256": "f80ba93b45c296e6d80888e2f2b01eccae47472fa14f2b9d8cf232cc273a5660",
+              "width": 1024,
+              "height": 656,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "09a-signature-unknown-evidence.png",
+              "sha256": "bff275128753476549b07c8fe0271bab7cca5d9cd089962ca7f83d78b935f616",
+              "width": 680,
+              "height": 656,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "10-raw-workspace-isolation-refused.png",
+              "sha256": "2d751147eb7f0499d2307bf6775ce24f81ca92773626b37abec47c774b30b7b9",
+              "width": 1024,
+              "height": 656,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "10a-work-directory-guidance.png",
+              "sha256": "705443fe395bf074ac0d264f62655349c9d32fe26da693030276fe2df6fea9ed",
+              "width": 1024,
+              "height": 656,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "11-minimum-computer-source-controls.png",
+              "sha256": "d02ea10d5cbb37f26ea52d5d0e5515b4c2c338e99c3bfaf7ff1910e6336077ce",
+              "width": 880,
+              "height": 620,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "12-minimum-computer-scan-controls.png",
+              "sha256": "e8d98f8cd9cd5082425cf3e715a5f98eeb2985fa94f7ad148bfb01dfd5b7170d",
+              "width": 880,
+              "height": 620,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "14-grouped-physical-sources.png",
+              "sha256": "4d2d1eadf9aeef7aa6c84661764c2ae3edccfb85a11638f9b67c7fa1a4cb946b",
+              "width": 1280,
+              "height": 656,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "15-explicit-auxiliary-sources.png",
+              "sha256": "7e6ddc85b7814d0bd00479987c37b3234f865ade317e3528ec33243afba19ae8",
+              "width": 1280,
+              "height": 656,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "16-filter-invalidates-old-source.png",
+              "sha256": "b90580c0c2991714328f184544a18b5b2decba160bd8b815aa992031a1816b02",
+              "width": 1280,
+              "height": 656,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            }
+          ]
+        },
+        "guided": {
+          "cases_passed": 5,
+          "screenshots_verified": 5,
+          "cases": [
+            {
+              "id": "GQA-01",
+              "result": "passed",
+              "no_database_or_logs_before_selection": true,
+              "opened_selected_workspace": true
+            },
+            {
+              "id": "GQA-02",
+              "result": "passed",
+              "actual_signature_candidates": 1,
+              "readable_content_state": true
+            },
+            {
+              "id": "GQA-03",
+              "result": "passed",
+              "old_database_unchanged": true,
+              "old_log_unchanged": true,
+              "history_not_copied": true
+            },
+            {
+              "id": "GQA-04",
+              "result": "passed",
+              "existing_workspace_history_reopened": true
+            },
+            {
+              "id": "GQA-05",
+              "result": "passed",
+              "busy_picker_not_opened": true,
+              "workspace_unchanged": true
+            }
+          ],
+          "screenshots": [
+            {
+              "file": "01-workspace-before-initialization.png",
+              "sha256": "2e27cd5fe425b60f1f8b4fb80d49543eeb21fe40557082db6327aebf674b5fb5",
+              "width": 660,
+              "height": 330,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "02-original-workspace-history.png",
+              "sha256": "c7b97a7f037fba800d7cc02f23b557f603826e5316285cc9d8318f4999ec65fb",
+              "width": 1024,
+              "height": 656,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "03-fresh-workspace-no-history-copy.png",
+              "sha256": "51d61ce86fab04b7136299eb733ac7c6dc26b5c6999f463bcdac92271d641772",
+              "width": 1024,
+              "height": 656,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "04-existing-workspace-history-reopened.png",
+              "sha256": "419ba56c6492b5527a63ad03f36e8dbb83e166b944ccaa14eb20dd5c2aa01a6e",
+              "width": 1024,
+              "height": 656,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "05-busy-workspace-switch-blocked.png",
+              "sha256": "88dfe2b467dce66c8c2f9e776c68c27eaedd2f3ca551c057132d07ad4460e6a6",
+              "width": 1024,
+              "height": 656,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            }
+          ]
+        },
+        "video": {
+          "cases_passed": 7,
+          "screenshots_verified": 6,
+          "cases": [
+            {
+              "id": "VQA-01",
+              "result": "passed",
+              "actual_frame_decoded": true,
+              "source_url_empty": true,
+              "memory_device_only": true,
+              "audio_track_present": true,
+              "no_audio_output": true
+            },
+            {
+              "id": "VQA-02",
+              "result": "passed",
+              "actual_playback_advanced": true,
+              "pause_verified": true,
+              "seek_frame_decoded": true
+            },
+            {
+              "id": "VQA-03",
+              "result": "passed",
+              "selection_stops_player": true,
+              "compressed_buffer_released": true,
+              "decoded_frame_released": true
+            },
+            {
+              "id": "VQA-04",
+              "result": "passed",
+              "external_reference_refused_before_decoder": true,
+              "no_backend_started": true
+            },
+            {
+              "id": "VQA-05",
+              "result": "passed",
+              "injected_decoder_error_redacted": true,
+              "stale_frame_cleared": true,
+              "buffer_released": true
+            },
+            {
+              "id": "VQA-06",
+              "result": "passed",
+              "history_does_not_prepare_video": true,
+              "candidate_unchanged": true,
+              "sources_unchanged": true,
+              "no_preview_files": true,
+              "no_export_files": true
+            },
+            {
+              "id": "VQA-07",
+              "result": "passed",
+              "rotation_metadata_applied": true,
+              "portrait_frame_decoded": true,
+              "portrait_source_and_candidate_unchanged": true
+            }
+          ],
+          "screenshots": [
+            {
+              "file": "01-actual-video-first-frame.png",
+              "sha256": "cfbaf420e5d1707e464a2f583be2cbf57e3f821125f26a0bbf7d1478ed4e8f9a",
+              "width": 800,
+              "height": 560,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "02-playback-pause-and-seek.png",
+              "sha256": "e15e071bbc029cff2ea8070600b72718f655cb1e6b3c9a5cfe3a14db19fb62d3",
+              "width": 800,
+              "height": 560,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "03-selection-change-releases-video.png",
+              "sha256": "6a59ee2ccdc109e9e2726e3cc3f4812ef8a475286c9d43bab8795e06cbddbd41",
+              "width": 1024,
+              "height": 656,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "04-external-reference-rejected.png",
+              "sha256": "7f5e2be7efc004ab573810e5d45bd78e48dfe9494b2120a19d9849827ede4d72",
+              "width": 1024,
+              "height": 656,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "05-decoder-error-clears-frame.png",
+              "sha256": "e1b8d53a6499d8d3306ca6b3bce39a0d6463daef7e577b27e716b7778ca6ad89",
+              "width": 800,
+              "height": 560,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "06-phone-portrait-rotation.png",
+              "sha256": "bcf27b2f6bcce542b27259c073af5ed177da1d6188e5d3497001d87c43b2b92d",
+              "width": 800,
+              "height": 560,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            }
+          ]
+        },
+        "video_signature": {
+          "cases_passed": 8,
+          "screenshots_verified": 8,
+          "cases": [
+            {
+              "id": "VSQA-01",
+              "result": "passed",
+              "ui_scan": true,
+              "exact_offsets_and_lengths": true,
+              "deletion_unknown": true
+            },
+            {
+              "id": "VSQA-02",
+              "result": "passed",
+              "video_filter": true,
+              "persisted_check_details": true,
+              "no_decode_claim": true
+            },
+            {
+              "id": "VSQA-03",
+              "result": "passed",
+              "mp4_actual_frame": true,
+              "mov_actual_frame": true,
+              "source_url_empty": true,
+              "muted": true,
+              "buffers_released": true
+            },
+            {
+              "id": "VSQA-04",
+              "result": "passed",
+              "exact_export_bytes": true,
+              "source_target_sha256_equal": true,
+              "independent_export_records": true
+            },
+            {
+              "id": "VSQA-05",
+              "result": "passed",
+              "computer_pipeline": true,
+              "identical_range_hashes": true
+            },
+            {
+              "id": "VSQA-06",
+              "result": "passed",
+              "fragmented_encrypted_external_unknown_truncated_distinguished": true,
+              "no_unverified_hashes": true
+            },
+            {
+              "id": "VSQA-07",
+              "result": "passed",
+              "all_unverified_exports_failed": true,
+              "no_media_outputs": true
+            },
+            {
+              "id": "VSQA-08",
+              "result": "passed",
+              "history_without_source": true,
+              "candidate_records_unchanged": true,
+              "source_hashes_unchanged": true
+            }
+          ],
+          "screenshots": [
+            {
+              "file": "01-read-only-scan-scope.png",
+              "sha256": "341450a31c5e5048fc372d682cc222ad5c1213bd09be2f0cac5a0dbf0e40c86b",
+              "width": 1024,
+              "height": 656,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "02-video-filter-and-source-ranges.png",
+              "sha256": "b55cf99a9b2b83d0d01c6edf01716a496fdd83bd5004a27a044d649b10ddc240",
+              "width": 1024,
+              "height": 656,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "03-container-and-sample-evidence.png",
+              "sha256": "0ee2a2dc017236bfbad7f166d5a9d8ee1981dc37b01398dd69e1cbb056868827",
+              "width": 640,
+              "height": 500,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "04-scanned-mp4-decoded-frame.png",
+              "sha256": "cfbaf420e5d1707e464a2f583be2cbf57e3f821125f26a0bbf7d1478ed4e8f9a",
+              "width": 800,
+              "height": 560,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "05-scanned-mov-decoded-frame.png",
+              "sha256": "9c10ceacfd3b514493941a3a141f7c9297b5b34a473e0928a1635630cc9a2d02",
+              "width": 800,
+              "height": 560,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "06-verified-range-exports.png",
+              "sha256": "9f1c744818e5210c12cfd434ad22b5b756890346ecef2b32a565a3320e901df5",
+              "width": 1024,
+              "height": 600,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "07-unknown-boundary-rejected.png",
+              "sha256": "d4a5d1f59df4eb58a3d0b14e108de11f25467a8a4e144719484a6114faf36696",
+              "width": 640,
+              "height": 500,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "08-history-with-missing-source.png",
+              "sha256": "821fc6a0489a20f4b9af27e1249e3c81a069ad9e281db7ce54e2c19b67af6754",
+              "width": 1024,
+              "height": 656,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            }
+          ]
+        },
+        "legacy_cocoa": {
+          "cases_passed": 14,
+          "screenshots_verified": 20,
+          "cases": [
+            {
+              "id": "QA-01",
+              "result": "passed",
+              "observed": "Unauthorized device made no shell/pull request"
+            },
+            {
+              "id": "QA-02",
+              "result": "passed",
+              "copied": 2,
+              "source_phone_hashes_unchanged": true
+            },
+            {
+              "id": "QA-03",
+              "result": "passed",
+              "indexed": 2,
+              "closed_wal_sidecars_created": false,
+              "backup_hashes_unchanged": true
+            },
+            {
+              "id": "QA-04",
+              "result": "passed",
+              "total_candidates": 103,
+              "cross_block_first_offset": 1048571,
+              "last_page_integrity": [
+                "structure_checked",
+                "structure_checked",
+                "truncated"
+              ]
+            },
+            {
+              "id": "QA-05",
+              "result": "passed",
+              "filtered_candidates": 102,
+              "decoded_preview": true
+            },
+            {
+              "id": "QA-06",
+              "result": "passed",
+              "verified_exports": 102,
+              "manifest_exported": 102
+            },
+            {
+              "id": "QA-07",
+              "result": "passed",
+              "changed_copy_preview_rejected": true,
+              "source_phone_unchanged": true
+            },
+            {
+              "id": "QA-08",
+              "result": "passed",
+              "unrelated_backup_destination_rejected": true,
+              "source_backup_unchanged": true
+            },
+            {
+              "id": "QA-09",
+              "result": "passed",
+              "live_wal_rejected": true,
+              "source_and_shm_hashes_unchanged": true
+            },
+            {
+              "id": "QA-10",
+              "result": "passed",
+              "exported_before_cancel": 1,
+              "not_attempted": 101,
+              "gate": "Worker paused after the first real audit commit; UI stop invoked"
+            },
+            {
+              "id": "QA-11",
+              "result": "passed",
+              "history_exports_after_reopen": 102,
+              "unfinished_task": "interrupted"
+            },
+            {
+              "id": "QA-12",
+              "result": "passed",
+              "requested_size": [
+                880,
+                620
+              ],
+              "actual_size": [
+                880,
+                620
+              ],
+              "export_control_visible": true,
+              "home_actions_readable": true
+            },
+            {
+              "id": "QA-13",
+              "result": "passed",
+              "unicode_and_spaces_in_source_and_destination": true,
+              "verified_exports": 2,
+              "source_unchanged": true
+            },
+            {
+              "id": "QA-14",
+              "result": "passed",
+              "quit_cancels_then_waits": true,
+              "history_closes_after_job_finishes": true
+            }
+          ],
+          "screenshots": [
+            {
+              "file": "02-overview.png",
+              "sha256": "33ac5176fb0d10f3b9646357829a2a24145b36d0a06db0f24ec1f8819a1c0abb",
+              "width": 1024,
+              "height": 653,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "03-android-unauthorized.png",
+              "sha256": "a8926fc381494e430b0b0851478301e9df4260c31a5fce377bb354b4593627e9",
+              "width": 1024,
+              "height": 653,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "04-android-selected-files.png",
+              "sha256": "09b1aa8392cb997cb6057d0c4c4e2c868409d6dae5d40271fe15281973b63972",
+              "width": 1024,
+              "height": 653,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "05-ios-index-readonly.png",
+              "sha256": "4fb2602e416fc05aa6fcf43b35080510c1d168944a1618b3f293c8a070e1c3b3",
+              "width": 1024,
+              "height": 653,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "05b-scan-source-selected.png",
+              "sha256": "79826e69e63ee656f44098b133be61052481dd1e93e3f384c8d44f6fe837af41",
+              "width": 1024,
+              "height": 653,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "06-scan-page-2.png",
+              "sha256": "cf054f79c381f2f5f1bec26c5b760f0e061c2457c4e7472b7fe7436b7783e4db",
+              "width": 1024,
+              "height": 653,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "07-preview-and-filter.png",
+              "sha256": "60e82c7a607f9a2b8601ea0464c90adc7ef47704a7254011b213413aa528f144",
+              "width": 1024,
+              "height": 653,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "08-verified-export-page-2.png",
+              "sha256": "4368a9445594729d8c37e1a3446f9d04c422438096d6c0b98992b506a435c633",
+              "width": 1024,
+              "height": 600,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "09-source-change-blocked.png",
+              "sha256": "c6d6facc0392e0df475f38f2e209a83b549add511e2b5d181cec28bd914f789d",
+              "width": 1024,
+              "height": 653,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "10-after-backup-write-blocked.png",
+              "sha256": "3bc20a7de0a7bc0e968bc4dba0ff9d3c976bef99317c7ba8f72c9bed1d5a2d3c",
+              "width": 1024,
+              "height": 653,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "11-wal-index-rejected.png",
+              "sha256": "da5a733c8e7fea5241da4bfd9de3afb7b6ee761a79c102313fa5af3224957174",
+              "width": 1024,
+              "height": 653,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "12-cancelled-export-audit.png",
+              "sha256": "004657047009ecdca8bc0e09acffe445d68cfadac5849739f8aaab1a0762c423",
+              "width": 1024,
+              "height": 600,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "13-history-after-reopen.png",
+              "sha256": "478bfb6c12feaac10494d2fb5978c3fa46d6c6a2016299158170f0e1e6db97f2",
+              "width": 1024,
+              "height": 656,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "16-settings-local-paths.png",
+              "sha256": "2cb97aefe21985ce7458fab7b022de54be0fc045fbed9177ebec150c639aad28",
+              "width": 1024,
+              "height": 656,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "14a-minimum-overview.png",
+              "sha256": "281156ca6dd2caef8235a0a822321d86a3e970ae3f96f7f2ef320f6d46a689d5",
+              "width": 880,
+              "height": 620,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "14-minimum-window.png",
+              "sha256": "c1d0081404738e7737324faf9956f5d55d8717f670ee3d153404ba747f77f70e",
+              "width": 880,
+              "height": 620,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "17a-unicode-source-layout.png",
+              "sha256": "fa2e59e909d291d60b62da1f9b66fa1c36d025ca7d74f81cbd5dddae2af4c06a",
+              "width": 880,
+              "height": 620,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "17-unicode-source-preview.png",
+              "sha256": "872b0bea3631f63325bb7a85d958810870a42a4d7784bc1ab731d8a13b361e62",
+              "width": 880,
+              "height": 620,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "18-unicode-export-history.png",
+              "sha256": "684ca4e3c795bcc5cb2444f30a75f81bb5e8e2276e06fae8611ad17f1d989b19",
+              "width": 1024,
+              "height": 600,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "19-exit-waits-for-task.png",
+              "sha256": "460bae796cf486146b27f8357f31f407875cc520c492ba3cc148a86f0f9025a7",
+              "width": 880,
+              "height": 620,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            }
+          ]
+        }
+      },
+      "diagnostics_database_and_source_unchanged": true,
+      "diagnostics_raw_devices_opened": false,
+      "diagnostics_devices_enumerated": false,
+      "diagnostics_adb_executed": false,
+      "source_hashes_unchanged": true,
+      "video_candidates_unchanged": true,
+      "video_preview_files_created": false,
+      "video_network_media_sources_opened": false,
+      "smoke": {
+        "offscreen": {
+          "success": true,
+          "version": "0.8.0",
+          "schema_version": 3,
+          "navigation_pages": 8,
+          "qt_platform": "offscreen",
+          "workspace_dialog_verified": true,
+          "computer_candidates": 2,
+          "computer_verified_exports": 2,
+          "video_scan_verified": true,
+          "video_scan_exports": 1,
+          "video_preview_verified": true,
+          "video_muted": true,
+          "video_buffer_released": true,
+          "video_frame_dimensions": [
+            96,
+            64
+          ],
+          "workspace_roundtrip_verified": true,
+          "environment_diagnostics_verified": true,
+          "verified_exports": 2,
+          "decoded_formats": [
+            "PNG",
+            "JPEG"
+          ]
+        },
+        "cocoa": {
+          "success": true,
+          "version": "0.8.0",
+          "schema_version": 3,
+          "navigation_pages": 8,
+          "qt_platform": "cocoa",
+          "workspace_dialog_verified": true,
+          "computer_candidates": 2,
+          "computer_verified_exports": 2,
+          "video_scan_verified": true,
+          "video_scan_exports": 1,
+          "video_preview_verified": true,
+          "video_muted": true,
+          "video_buffer_released": true,
+          "video_frame_dimensions": [
+            96,
+            64
+          ],
+          "workspace_roundtrip_verified": true,
+          "environment_diagnostics_verified": true,
+          "native_quit_verified": true,
+          "verified_exports": 2,
+          "decoded_formats": [
+            "PNG",
+            "JPEG"
+          ]
+        }
+      },
+      "additional_packaged_screenshots": [
+        {
+          "file": "cocoa-overview.png",
+          "sha256": "1e8385c9141b905be1aff76bb9c189849f32851a7c3af85b74cf53a16d71c808",
+          "width": 1024,
+          "height": 656,
+          "png_crc": "passed",
+          "qt_decode": "passed",
+          "nonblank_samples": "passed"
+        }
+      ],
+      "bundle_validation": {
+        "success": true,
+        "architecture": "arm64",
+        "version": "0.8.0",
+        "runner_macos": "15.8.2",
+        "python": "3.12.10",
+        "minimum_macos": "13.0",
+        "bundle_identifier": "com.deeprecover.workbench",
+        "mach_o_archs": "arm64",
+        "signing": "local ad-hoc; no Developer ID certificate; not notarized",
+        "offscreen_smoke": true,
+        "cocoa_smoke": true,
+        "zip_roundtrip_verified": true,
+        "physical_device_acceptance": false
+      },
+      "native_macos_metadata_only": {
+        "success": true,
+        "platform": "darwin",
+        "architecture": "arm64",
+        "metadata_queries_only": true,
+        "raw_reads": false,
+        "root_physical_disk_count": 1,
+        "work_directory_physical_disk_count": 1,
+        "root_and_work_directory_overlap": true,
+        "same_device_rejected": true,
+        "schemas": {
+          "root": {
+            "physical_stores": {
+              "entry_types": [
+                "dict"
+              ],
+              "identifier_keys": [
+                "APFSPhysicalStore"
+              ]
+            },
+            "volume_disk_value_type": "NoneType",
+            "snapshot": true
+          },
+          "work_directory": {
+            "physical_stores": {
+              "entry_types": [
+                "dict"
+              ],
+              "identifier_keys": [
+                "APFSPhysicalStore"
+              ]
+            },
+            "volume_disk_value_type": "NoneType",
+            "snapshot": false
+          },
+          "apfs_list_physical_stores": {
+            "entry_types": [
+              "dict"
+            ],
+            "identifier_keys": [
+              "DeviceIdentifier"
+            ]
+          }
+        },
+        "inventory": {
+          "source_count": 20,
+          "kinds": {
+            "physical": 2,
+            "partition": 3,
+            "apfs_container": 3,
+            "auxiliary": 8,
+            "apfs_volume": 3,
+            "snapshot": 1
+          },
+          "known_physical_groups": 2,
+          "system_sources": 17,
+          "metadata_queries_only": true
+        }
+      }
+    },
+    "x86_64": {
+      "artifact": "macos-x86_64-validation-4488ecb653d93d702e219f9f47f770af09863d97",
+      "checkout_commit": "4488ecb653d93d702e219f9f47f770af09863d97",
+      "pull_request_functional_commit": "34e231584472fdcdbb331cdc2d1904c26da3c43c",
+      "build_url": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41975535337",
+      "tests": {
+        "success": true,
+        "platform": "darwin",
+        "run": 447,
+        "passed": 447,
+        "failures": 0,
+        "errors": 0,
+        "skipped": [],
+        "unexpected_skips": [],
+        "expected_failures": 0,
+        "unexpected_successes": 0
+      },
+      "workflows": {
+        "diagnostics": {
+          "cases_passed": 4,
+          "screenshots_verified": 4,
+          "cases": [
+            {
+              "id": "DQA-01",
+              "result": "passed",
+              "real_collect_service": true,
+              "no_report_before_explicit_save": true,
+              "database_and_tasks_unchanged": true,
+              "manual_acceptance_not_run": true
+            },
+            {
+              "id": "DQA-02",
+              "result": "passed",
+              "real_write_service": true,
+              "one_new_local_report": true,
+              "database_and_tasks_unchanged": true,
+              "report_contains_no_source_path": true
+            },
+            {
+              "id": "DQA-03",
+              "result": "passed",
+              "save_exception_redacted": true,
+              "existing_report_not_overwritten": true,
+              "database_and_tasks_unchanged": true
+            },
+            {
+              "id": "DQA-04",
+              "result": "passed",
+              "collect_exception_redacted": true,
+              "stale_report_cleared": true,
+              "database_and_tasks_unchanged": true
+            }
+          ],
+          "screenshots": [
+            {
+              "file": "01-local-environment-check.png",
+              "sha256": "25280eee95bc3586ceea3a70c188e03d0cec3c9ca732396d6367588375bbc443",
+              "width": 760,
+              "height": 760,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "02-sanitized-report-saved.png",
+              "sha256": "c4ec1efcd60568a6a129133f897ad31bde78fc445d405e4dcc392e5df3078462",
+              "width": 760,
+              "height": 760,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "03-report-error-redacted.png",
+              "sha256": "99845c0d1b0942c2f71824e28d26623a1e2d67b28f502ac03fc3f632b7c4440e",
+              "width": 760,
+              "height": 760,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "04-check-error-redacted.png",
+              "sha256": "9913c9b75d65291f5fe736c83f369a4e6355262965db6f6809dada22512275ea",
+              "width": 760,
+              "height": 760,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            }
+          ]
+        },
+        "computer": {
+          "cases_passed": 11,
+          "screenshots_verified": 18,
+          "cases": [
+            {
+              "id": "CQA-01",
+              "result": "passed",
+              "filesystem": "NTFS",
+              "task_created_during_probe": false
+            },
+            {
+              "id": "CQA-02",
+              "result": "passed",
+              "deleted_records": 3,
+              "ready": 2,
+              "restricted": 1,
+              "fragmented_extents": 2
+            },
+            {
+              "id": "CQA-03",
+              "result": "passed",
+              "resident_png_decoded": true
+            },
+            {
+              "id": "CQA-04",
+              "result": "passed",
+              "verified_exports": 2,
+              "fragmented_logical_order": true
+            },
+            {
+              "id": "CQA-05",
+              "result": "passed",
+              "restricted_preview_rejected": true,
+              "restricted_export_rejected": true
+            },
+            {
+              "id": "CQA-06",
+              "result": "passed",
+              "candidates_after_reopen": 3,
+              "exports_after_reopen": 2,
+              "source_read_for_history": false
+            },
+            {
+              "id": "CQA-07",
+              "result": "passed",
+              "filesystem": "APFS",
+              "mode": "signature",
+              "deletion_state": "unknown"
+            },
+            {
+              "id": "CQA-11",
+              "result": "passed",
+              "deleted_record_explained": true,
+              "signature_deletion_state_unknown": true,
+              "content_check_separate": true,
+              "export_evidence_separate": true,
+              "stored_candidate_unchanged": true
+            },
+            {
+              "id": "CQA-08",
+              "result": "passed",
+              "same_device_guard_rejected": true,
+              "task_count_unchanged": true,
+              "real_disk_opened": false,
+              "mocked_apfs_store_schema": "APFSPhysicalStore",
+              "work_directory_help_visible": true
+            },
+            {
+              "id": "CQA-09",
+              "result": "passed",
+              "minimum_window": [
+                880,
+                620
+              ],
+              "source_controls_readable": true,
+              "scan_control_readable": true
+            },
+            {
+              "id": "CQA-10",
+              "result": "passed",
+              "physical_groups": true,
+              "auxiliary_and_snapshots_hidden_by_metadata": true,
+              "unknown_source_visible": true,
+              "selected_source_bound_by_path": true,
+              "filter_invalidates_preflight": true,
+              "inventory": "synthetic",
+              "task_count_unchanged": true
+            }
+          ],
+          "screenshots": [
+            {
+              "file": "01-ntfs-readonly-preflight.png",
+              "sha256": "fd6d4239cada78c77d8544204ae478c76045dee7b15030d92824f0831cdfbb79",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "02-ntfs-deleted-records.png",
+              "sha256": "2a54df8455c930e9f32afe24ba1f0d33e1b4476a539e90642992fd9c645aa9f0",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "02a-deleted-record-evidence.png",
+              "sha256": "d8aa90d4ba268ab9a000f53d06e0fc9fa6a801b68983c24d5036e59d9f7622c8",
+              "width": 680,
+              "height": 680,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "03-resident-png-preview.png",
+              "sha256": "478e85daf2eed90dfd1fb5bd6aa8289a58b18f965f2443f7f3090edadc4ec451",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "04-verified-deleted-exports.png",
+              "sha256": "db6d4fca81970ff4af963ac24b6db92ace9b3b477acdd0ea7c39eb1d882664a8",
+              "width": 1100,
+              "height": 600,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "05-restricted-preview-rejected.png",
+              "sha256": "eb6167a7a251cebe7d2374c3956975d225d02c95a02926021473f38a1e67e055",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "06-restricted-export-rejected.png",
+              "sha256": "88b179aaedd257cb703931009d9727c141d1f2a2aafb3d69731cc1159314ffa7",
+              "width": 1100,
+              "height": 600,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "07-history-reopened.png",
+              "sha256": "db6d4fca81970ff4af963ac24b6db92ace9b3b477acdd0ea7c39eb1d882664a8",
+              "width": 1100,
+              "height": 600,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "08-apfs-signature-capability.png",
+              "sha256": "03fddc9a2b736f584b07670ef38822da426578e57677686bc050629133b5bd90",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "09-apfs-unknown-deletion-state.png",
+              "sha256": "613bf85f37c2fac6c87e20252059a6c5ee3b913c3dc877628eb7fc16371a3378",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "09a-signature-unknown-evidence.png",
+              "sha256": "382eb419c0cb8fe46674d81dc753e9134c0993f174282f2222f15d13200ae7ad",
+              "width": 680,
+              "height": 680,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "10-raw-workspace-isolation-refused.png",
+              "sha256": "ff928d65bebfbbfec8d559f03d9d5b667826c84e8d64875d6b611cf836fc9249",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "10a-work-directory-guidance.png",
+              "sha256": "70cbada879419a45cee53824d39107234aa9dabc7eb4cff4928de7f058a1cc96",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "11-minimum-computer-source-controls.png",
+              "sha256": "f2a3f061567c533e15841142cd703132811b215cb4a39af723af036dc2e4b58d",
+              "width": 880,
+              "height": 620,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "12-minimum-computer-scan-controls.png",
+              "sha256": "ad30e321383168bff9e1228841497826ff39dab1862cc5002c38ce7decf66784",
+              "width": 880,
+              "height": 620,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "14-grouped-physical-sources.png",
+              "sha256": "a1a07ceb10bb5421862358f4e3d3ed0e90884951a8abbafed2fb72701fb29bcd",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "15-explicit-auxiliary-sources.png",
+              "sha256": "3f84df719d64a0e44daf480e1326049d71e804c7c2a34053b814d9edbce04ff9",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "16-filter-invalidates-old-source.png",
+              "sha256": "99398316b39f2921026a5b3e0d91575b245c1708c41059a612ed5a6298fe8a0b",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            }
+          ]
+        },
+        "guided": {
+          "cases_passed": 5,
+          "screenshots_verified": 5,
+          "cases": [
+            {
+              "id": "GQA-01",
+              "result": "passed",
+              "no_database_or_logs_before_selection": true,
+              "opened_selected_workspace": true
+            },
+            {
+              "id": "GQA-02",
+              "result": "passed",
+              "actual_signature_candidates": 1,
+              "readable_content_state": true
+            },
+            {
+              "id": "GQA-03",
+              "result": "passed",
+              "old_database_unchanged": true,
+              "old_log_unchanged": true,
+              "history_not_copied": true
+            },
+            {
+              "id": "GQA-04",
+              "result": "passed",
+              "existing_workspace_history_reopened": true
+            },
+            {
+              "id": "GQA-05",
+              "result": "passed",
+              "busy_picker_not_opened": true,
+              "workspace_unchanged": true
+            }
+          ],
+          "screenshots": [
+            {
+              "file": "01-workspace-before-initialization.png",
+              "sha256": "c97ce9d882041a70a046b263d70d52f78a7601eefd83d9613abc3b7bda4a0dba",
+              "width": 660,
+              "height": 330,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "02-original-workspace-history.png",
+              "sha256": "83f9fc94d80f17cf9449fdd2dbc7e2a18b490c680bee3f9f34ce7ac173548ed9",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "03-fresh-workspace-no-history-copy.png",
+              "sha256": "c2cdb808f8adebfad070f102b328c1d1044ada7c3f162e9dda36db964e361f23",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "04-existing-workspace-history-reopened.png",
+              "sha256": "5f2bcf68834ffa6dc9f85041be139ddab69078aa3d3835beddea0fef370161fd",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "05-busy-workspace-switch-blocked.png",
+              "sha256": "5a7e3b867349a2cf66142b62e9fe3b75b67e780c9373e7ecf2cf4c69bc71b536",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            }
+          ]
+        },
+        "video": {
+          "cases_passed": 7,
+          "screenshots_verified": 6,
+          "cases": [
+            {
+              "id": "VQA-01",
+              "result": "passed",
+              "actual_frame_decoded": true,
+              "source_url_empty": true,
+              "memory_device_only": true,
+              "audio_track_present": true,
+              "no_audio_output": true
+            },
+            {
+              "id": "VQA-02",
+              "result": "passed",
+              "actual_playback_advanced": true,
+              "pause_verified": true,
+              "seek_frame_decoded": true
+            },
+            {
+              "id": "VQA-03",
+              "result": "passed",
+              "selection_stops_player": true,
+              "compressed_buffer_released": true,
+              "decoded_frame_released": true
+            },
+            {
+              "id": "VQA-04",
+              "result": "passed",
+              "external_reference_refused_before_decoder": true,
+              "no_backend_started": true
+            },
+            {
+              "id": "VQA-05",
+              "result": "passed",
+              "injected_decoder_error_redacted": true,
+              "stale_frame_cleared": true,
+              "buffer_released": true
+            },
+            {
+              "id": "VQA-06",
+              "result": "passed",
+              "history_does_not_prepare_video": true,
+              "candidate_unchanged": true,
+              "sources_unchanged": true,
+              "no_preview_files": true,
+              "no_export_files": true
+            },
+            {
+              "id": "VQA-07",
+              "result": "passed",
+              "rotation_metadata_applied": true,
+              "portrait_frame_decoded": true,
+              "portrait_source_and_candidate_unchanged": true
+            }
+          ],
+          "screenshots": [
+            {
+              "file": "01-actual-video-first-frame.png",
+              "sha256": "f5a1e8b3c9036dd7c4063c8698b9a23557255d4467f6a2b156197f1f79ba161e",
+              "width": 800,
+              "height": 560,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "02-playback-pause-and-seek.png",
+              "sha256": "79112c7e838136d429ab326ff682be22400017e1cd0ca9a6e7526a0c00860f90",
+              "width": 800,
+              "height": 560,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "03-selection-change-releases-video.png",
+              "sha256": "dcc9967f9984752ba2242b52c051773c8383945e8eed9e44ebead8466baf77aa",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "04-external-reference-rejected.png",
+              "sha256": "11ab3efcbb3b551f75a54143337e7c79b584de6fbbb1fb2c0442d922b42aef19",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "05-decoder-error-clears-frame.png",
+              "sha256": "5abbf06598bb36ceb7d65a2e03ea6fbe1587067a63ead01c28d720a672add5be",
+              "width": 800,
+              "height": 560,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "06-phone-portrait-rotation.png",
+              "sha256": "9dd38cbe624d13d74894398c7a0188ee33b7e2008c827e78d57457272d4bb0d8",
+              "width": 800,
+              "height": 560,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            }
+          ]
+        },
+        "video_signature": {
+          "cases_passed": 8,
+          "screenshots_verified": 8,
+          "cases": [
+            {
+              "id": "VSQA-01",
+              "result": "passed",
+              "ui_scan": true,
+              "exact_offsets_and_lengths": true,
+              "deletion_unknown": true
+            },
+            {
+              "id": "VSQA-02",
+              "result": "passed",
+              "video_filter": true,
+              "persisted_check_details": true,
+              "no_decode_claim": true
+            },
+            {
+              "id": "VSQA-03",
+              "result": "passed",
+              "mp4_actual_frame": true,
+              "mov_actual_frame": true,
+              "source_url_empty": true,
+              "muted": true,
+              "buffers_released": true
+            },
+            {
+              "id": "VSQA-04",
+              "result": "passed",
+              "exact_export_bytes": true,
+              "source_target_sha256_equal": true,
+              "independent_export_records": true
+            },
+            {
+              "id": "VSQA-05",
+              "result": "passed",
+              "computer_pipeline": true,
+              "identical_range_hashes": true
+            },
+            {
+              "id": "VSQA-06",
+              "result": "passed",
+              "fragmented_encrypted_external_unknown_truncated_distinguished": true,
+              "no_unverified_hashes": true
+            },
+            {
+              "id": "VSQA-07",
+              "result": "passed",
+              "all_unverified_exports_failed": true,
+              "no_media_outputs": true
+            },
+            {
+              "id": "VSQA-08",
+              "result": "passed",
+              "history_without_source": true,
+              "candidate_records_unchanged": true,
+              "source_hashes_unchanged": true
+            }
+          ],
+          "screenshots": [
+            {
+              "file": "01-read-only-scan-scope.png",
+              "sha256": "5f3a0c27c25371723257393f7b65c7b9a82fa6616eead5e5e3d57068025e6afa",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "02-video-filter-and-source-ranges.png",
+              "sha256": "2af7bcd1f811af1ef9f8c4f16b9458753156c1a2eb4204de36543accb0e3086d",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "03-container-and-sample-evidence.png",
+              "sha256": "19e1094b993441f48006aa022b684b97681a9e8ed9bde310eaa4c4b68d24e4c3",
+              "width": 640,
+              "height": 500,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "04-scanned-mp4-decoded-frame.png",
+              "sha256": "c7961fc5148b23936b5e0fcb6344901463b3009dbcdb2158b000a0200953c26a",
+              "width": 800,
+              "height": 560,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "05-scanned-mov-decoded-frame.png",
+              "sha256": "c7961fc5148b23936b5e0fcb6344901463b3009dbcdb2158b000a0200953c26a",
+              "width": 800,
+              "height": 560,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "06-verified-range-exports.png",
+              "sha256": "52679ddec5a39bc3df6ac01d85c28980e586eed6cc48aac41ff1b3f77e0d26b0",
+              "width": 1100,
+              "height": 600,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "07-unknown-boundary-rejected.png",
+              "sha256": "4db83e649e931998c5c3592b6044252512d81ddd971890e6c104a17fa51262a8",
+              "width": 640,
+              "height": 500,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "08-history-with-missing-source.png",
+              "sha256": "aed6bbe172653cc0fbdcfa43d27ddfe0b65c0db0097e8cb0b93a4cfa533ba611",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            }
+          ]
+        },
+        "legacy_cocoa": {
+          "cases_passed": 14,
+          "screenshots_verified": 20,
+          "cases": [
+            {
+              "id": "QA-01",
+              "result": "passed",
+              "observed": "Unauthorized device made no shell/pull request"
+            },
+            {
+              "id": "QA-02",
+              "result": "passed",
+              "copied": 2,
+              "source_phone_hashes_unchanged": true
+            },
+            {
+              "id": "QA-03",
+              "result": "passed",
+              "indexed": 2,
+              "closed_wal_sidecars_created": false,
+              "backup_hashes_unchanged": true
+            },
+            {
+              "id": "QA-04",
+              "result": "passed",
+              "total_candidates": 103,
+              "cross_block_first_offset": 1048571,
+              "last_page_integrity": [
+                "structure_checked",
+                "structure_checked",
+                "truncated"
+              ]
+            },
+            {
+              "id": "QA-05",
+              "result": "passed",
+              "filtered_candidates": 102,
+              "decoded_preview": true
+            },
+            {
+              "id": "QA-06",
+              "result": "passed",
+              "verified_exports": 102,
+              "manifest_exported": 102
+            },
+            {
+              "id": "QA-07",
+              "result": "passed",
+              "changed_copy_preview_rejected": true,
+              "source_phone_unchanged": true
+            },
+            {
+              "id": "QA-08",
+              "result": "passed",
+              "unrelated_backup_destination_rejected": true,
+              "source_backup_unchanged": true
+            },
+            {
+              "id": "QA-09",
+              "result": "passed",
+              "live_wal_rejected": true,
+              "source_and_shm_hashes_unchanged": true
+            },
+            {
+              "id": "QA-10",
+              "result": "passed",
+              "exported_before_cancel": 1,
+              "not_attempted": 101,
+              "gate": "Worker paused after the first real audit commit; UI stop invoked"
+            },
+            {
+              "id": "QA-11",
+              "result": "passed",
+              "history_exports_after_reopen": 102,
+              "unfinished_task": "interrupted"
+            },
+            {
+              "id": "QA-12",
+              "result": "passed",
+              "requested_size": [
+                880,
+                620
+              ],
+              "actual_size": [
+                880,
+                620
+              ],
+              "export_control_visible": true,
+              "home_actions_readable": true
+            },
+            {
+              "id": "QA-13",
+              "result": "passed",
+              "unicode_and_spaces_in_source_and_destination": true,
+              "verified_exports": 2,
+              "source_unchanged": true
+            },
+            {
+              "id": "QA-14",
+              "result": "passed",
+              "quit_cancels_then_waits": true,
+              "history_closes_after_job_finishes": true
+            }
+          ],
+          "screenshots": [
+            {
+              "file": "02-overview.png",
+              "sha256": "510c30b6579378b2af9b952126f7d8d4abfdda14000a4a814d5f7884980307a2",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "03-android-unauthorized.png",
+              "sha256": "363b594c8ceca8257e9c348ad9e462b92dcd90ac20b0ec917695e120295760f7",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "04-android-selected-files.png",
+              "sha256": "7d87699073f5d4259dd38c672dff731c9a26265d43506fe17a80e34d4651e006",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "05-ios-index-readonly.png",
+              "sha256": "2f7eb864fd6a8cff251b0a9fa41d57e9e2ce81a096483dacdf6488e9b4c66574",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "05b-scan-source-selected.png",
+              "sha256": "cf009c225e9abf1659e0fe91802fb1d1170b9baad4285cef0dda6be1935a9297",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "06-scan-page-2.png",
+              "sha256": "304cf6d7fc377a42f1ed56f4010f84418f52449e63646b37ad5793d1e65b8a8f",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "07-preview-and-filter.png",
+              "sha256": "766b426dad4cd4074d36e6db33c9d596c44b6e8df3611094027dcf1c14e85fba",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "08-verified-export-page-2.png",
+              "sha256": "483e289c65465653cc3087ff03cfc2e076dbcba95874ce5978eb9807d638189e",
+              "width": 1100,
+              "height": 600,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "09-source-change-blocked.png",
+              "sha256": "12dd012daec935198765def6800edb47bb149575f83a020fa8c2f1634c883a65",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "10-after-backup-write-blocked.png",
+              "sha256": "5508c83a576205ce7a66667a935ccf95014781cf20b6355c96d83bac7a09afee",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "11-wal-index-rejected.png",
+              "sha256": "41f7186316b356ba9c93652398fb407d44fbe56fd4220b42009fe3f7da2e9bda",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "12-cancelled-export-audit.png",
+              "sha256": "9c86dbbac6c18f60e4088d3ee9e5a928ba1dcf23e0507fb066dd169a942b45a7",
+              "width": 1100,
+              "height": 600,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "13-history-after-reopen.png",
+              "sha256": "8b02a34c1ca08927ee5c2ebe2b9713c4ddb8f096e6a285c403068a79686f3578",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "16-settings-local-paths.png",
+              "sha256": "ddef1d673c77760b88cdf424ffd195d8d0c817fa51f0d132178913a09ef5d75d",
+              "width": 1280,
+              "height": 820,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "14a-minimum-overview.png",
+              "sha256": "4d33351ec7c7691dd405882a6087e7f5ea2c04e4789ce69a87b4191681a54660",
+              "width": 880,
+              "height": 620,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "14-minimum-window.png",
+              "sha256": "4810a0017c335f3efc64ba9e13e4926bcd339edefa21e581a2b46550614ea9de",
+              "width": 880,
+              "height": 620,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "17a-unicode-source-layout.png",
+              "sha256": "df6d1e28ce43a19963a43b354a3aba612e0a76aa8c906cf2ab58c0ce9b20f3cc",
+              "width": 880,
+              "height": 620,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "17-unicode-source-preview.png",
+              "sha256": "a418c4ff931fa5652099aa0243d54c3e46e63ad25fe6bdc45025ac56d35bd2e3",
+              "width": 880,
+              "height": 620,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "18-unicode-export-history.png",
+              "sha256": "269ea5b74187ccd247c0736a66e7bce16b1fda25f26e690ba052026c61a267a6",
+              "width": 1100,
+              "height": 600,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            },
+            {
+              "file": "19-exit-waits-for-task.png",
+              "sha256": "0ff32f19898c9df6f10079cfe87f84f2eeab02933e6a6dc081b95905fc4621d0",
+              "width": 880,
+              "height": 620,
+              "png_crc": "passed",
+              "qt_decode": "passed",
+              "nonblank_samples": "passed"
+            }
+          ]
+        }
+      },
+      "diagnostics_database_and_source_unchanged": true,
+      "diagnostics_raw_devices_opened": false,
+      "diagnostics_devices_enumerated": false,
+      "diagnostics_adb_executed": false,
+      "source_hashes_unchanged": true,
+      "video_candidates_unchanged": true,
+      "video_preview_files_created": false,
+      "video_network_media_sources_opened": false,
+      "smoke": {
+        "offscreen": {
+          "success": true,
+          "version": "0.8.0",
+          "schema_version": 3,
+          "navigation_pages": 8,
+          "qt_platform": "offscreen",
+          "workspace_dialog_verified": true,
+          "computer_candidates": 2,
+          "computer_verified_exports": 2,
+          "video_scan_verified": true,
+          "video_scan_exports": 1,
+          "video_preview_verified": true,
+          "video_muted": true,
+          "video_buffer_released": true,
+          "video_frame_dimensions": [
+            96,
+            64
+          ],
+          "workspace_roundtrip_verified": true,
+          "environment_diagnostics_verified": true,
+          "verified_exports": 2,
+          "decoded_formats": [
+            "PNG",
+            "JPEG"
+          ]
+        },
+        "cocoa": {
+          "success": true,
+          "version": "0.8.0",
+          "schema_version": 3,
+          "navigation_pages": 8,
+          "qt_platform": "cocoa",
+          "workspace_dialog_verified": true,
+          "computer_candidates": 2,
+          "computer_verified_exports": 2,
+          "video_scan_verified": true,
+          "video_scan_exports": 1,
+          "video_preview_verified": true,
+          "video_muted": true,
+          "video_buffer_released": true,
+          "video_frame_dimensions": [
+            96,
+            64
+          ],
+          "workspace_roundtrip_verified": true,
+          "environment_diagnostics_verified": true,
+          "native_quit_verified": true,
+          "verified_exports": 2,
+          "decoded_formats": [
+            "PNG",
+            "JPEG"
+          ]
+        }
+      },
+      "additional_packaged_screenshots": [
+        {
+          "file": "cocoa-overview.png",
+          "sha256": "1c670974d32768ee62ba0d4ab47c35e0ea0450fa507fce15798bd2b302ee0382",
+          "width": 1280,
+          "height": 820,
+          "png_crc": "passed",
+          "qt_decode": "passed",
+          "nonblank_samples": "passed"
+        }
+      ],
+      "bundle_validation": {
+        "success": true,
+        "architecture": "x86_64",
+        "version": "0.8.0",
+        "runner_macos": "15.7.9",
+        "python": "3.12.10",
+        "minimum_macos": "13.0",
+        "bundle_identifier": "com.deeprecover.workbench",
+        "mach_o_archs": "x86_64",
+        "signing": "local ad-hoc; no Developer ID certificate; not notarized",
+        "offscreen_smoke": true,
+        "cocoa_smoke": true,
+        "zip_roundtrip_verified": true,
+        "physical_device_acceptance": false
+      },
+      "native_macos_metadata_only": {
+        "success": true,
+        "platform": "darwin",
+        "architecture": "x86_64",
+        "metadata_queries_only": true,
+        "raw_reads": false,
+        "root_physical_disk_count": 1,
+        "work_directory_physical_disk_count": 1,
+        "root_and_work_directory_overlap": true,
+        "same_device_rejected": true,
+        "schemas": {
+          "root": {
+            "physical_stores": {
+              "entry_types": [
+                "dict"
+              ],
+              "identifier_keys": [
+                "APFSPhysicalStore"
+              ]
+            },
+            "volume_disk_value_type": "NoneType",
+            "snapshot": true
+          },
+          "work_directory": {
+            "physical_stores": {
+              "entry_types": [
+                "dict"
+              ],
+              "identifier_keys": [
+                "APFSPhysicalStore"
+              ]
+            },
+            "volume_disk_value_type": "NoneType",
+            "snapshot": false
+          },
+          "apfs_list_physical_stores": {
+            "entry_types": [
+              "dict"
+            ],
+            "identifier_keys": [
+              "DeviceIdentifier"
+            ]
+          }
+        },
+        "inventory": {
+          "source_count": 11,
+          "kinds": {
+            "physical": 1,
+            "partition": 2,
+            "apfs_container": 1,
+            "apfs_volume": 2,
+            "auxiliary": 4,
+            "snapshot": 1
+          },
+          "known_physical_groups": 1,
+          "system_sources": 11,
+          "metadata_queries_only": true
+        }
+      }
+    }
+  },
+  "workflow_screenshots_verified": 163,
+  "additional_packaged_screenshots_verified": 2,
+  "real_hardware_acceptance": "not_run",
+  "scope": "Native CI and local synthetic workflows; no physical device acceptance"
+}

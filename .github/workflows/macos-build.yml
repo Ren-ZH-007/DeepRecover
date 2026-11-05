@@ -81,6 +81,11 @@ jobs:
         env:
           QT_QPA_PLATFORM: cocoa
         run: .venv/bin/python scripts/video_qa_capture.py --output 'build/macos-${{ matrix.arch }}/video-qa'
+      - name: Video signature scan, actual decode, verified export and history
+        shell: bash
+        env:
+          QT_QPA_PLATFORM: cocoa
+        run: .venv/bin/python scripts/video_signature_qa_capture.py --output 'build/macos-${{ matrix.arch }}/video-signature-qa'
       - name: Preserve native validation evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -100,6 +105,7 @@ jobs:
             build/macos-${{ matrix.arch }}/guided-qa/
             build/macos-${{ matrix.arch }}/diagnostics-qa/
             build/macos-${{ matrix.arch }}/video-qa/
+            build/macos-${{ matrix.arch }}/video-signature-qa/
           if-no-files-found: warn
       - name: Preserve complete native app distribution
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

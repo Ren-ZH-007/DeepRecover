@@ -30,6 +30,8 @@ class PackagedEntryTests(unittest.TestCase):
             self.assertTrue(data['workspace_dialog_verified'])
             self.assertTrue(data['workspace_roundtrip_verified'])
             self.assertTrue(data['environment_diagnostics_verified'])
+            self.assertTrue(data['video_scan_verified'])
+            self.assertEqual(data['video_scan_exports'], 1)
             self.assertTrue(data['video_preview_verified'])
             self.assertTrue(data['video_muted'])
             self.assertTrue(data['video_buffer_released'])

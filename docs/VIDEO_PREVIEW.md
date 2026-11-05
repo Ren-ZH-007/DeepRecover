@@ -1,5 +1,7 @@
 # 本地视频预览
 
+v0.8.0 开发版可从[MP4/MOV 连续签名扫描](VIDEO_SIGNATURE_SCAN.md)的通过候选进入本预览流程，播放限制保持不变；尚未正式发布。下方 v0.7.0 范围保留为发布记录。
+
 [v0.7.0 预览版已发布](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.7.0)，提供 Windows 和 macOS 双架构包。本轮增加播放预览，不增加视频签名扫描、视频碎片重组或文件修复能力。
 
 ## 操作
