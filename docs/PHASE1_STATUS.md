@@ -1,5 +1,7 @@
 # 第一阶段进度 — M4 图片预览与校验导出
 
+2026-11-05 v0.9.0 开发中：PDF 连续签名与静态分页/缩放预览，源只读、本地处理，支持范围及拒绝条件见[PDF 说明](PDF_PREVIEW.md)，本轮验证见[测试报告](PDF_TEST_REPORT_20261105.md)。当前正式预览仍为 v0.8.0；M5 实机按要求跳过并保留未执行状态。
+
 2026-11-05 [v0.8.0 预览版已发布](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.8.0)：新增 MP4/MOV 连续签名与容器/采样范围检查，贯通来源追踪、分页筛选、静音预览、校验导出和历史。正式三平台构建及附件核验见[发布记录](releases/0.8.0/PUBLISHED.json)，支持边界见[说明](VIDEO_SIGNATURE_SCAN.md)与[本轮测试](VIDEO_SIGNATURE_TEST_REPORT_20261105.md)。不推断尾随数据、碎片或删除状态，M5 实机验收仍未执行。
 
 2026-11-05 视频预览（[v0.7.0 预览版已发布](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.7.0)）：新增自包含 H.264 MP4/MOV 的内存静音预览、播放/暂停与进度拖动，沿用来源、原始盘隔离和候选状态边界，见[视频预览](VIDEO_PREVIEW.md)。本轮不增加视频扫描/修复能力，也不改变下方历史 M4 记录或 M5 实机待验收状态。正式附件核验见[发布记录](releases/0.7.0/PUBLISHED.json)。

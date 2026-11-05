@@ -6,6 +6,9 @@ import logging
 from app.version import VERSION
 
 def main():
+    if '--pdf-render-worker' in sys.argv:
+        from core.preview.pdf_worker import main as pdf_worker_main
+        return pdf_worker_main()
     if '--smoke-test' in sys.argv:
         parser = argparse.ArgumentParser(description='DeepRecover packaged application verification')
         parser.add_argument('--smoke-test', action='store_true')
@@ -193,6 +196,43 @@ def _verify_packaged(app, window, report_path, screenshot_path=None):
         assert clip.read_bytes() == video_image and repo.candidate(video_candidate_id) == before_candidate
         result.update(video_preview_verified=True, video_muted=True, video_buffer_released=True,
                       video_frame_dimensions=[96, 64])
+        # Exercise the actual packaged PDF worker (including windowed Windows
+        # stdin/stdout handles), static pages, zoom and verified range export.
+        pdf_bytes = files('app').joinpath('assets/preview-test.pdf').read_bytes()
+        pdf_path = window.config.data_dir / 'synthetic-pdf.img'
+        pdf_source_bytes = b'pdf-prefix' + pdf_bytes + b'unrelated-tail'
+        pdf_path.write_bytes(pdf_source_bytes)
+        pdf_scan = window.manager.submit('signature_scan', lambda token: SignatureScanner().scan(pdf_path, token),
+            source=DataSource('image', str(pdf_path)), persist_candidates=True, batch_size=1)
+        assert pdf_scan.future.result(15) == 1
+        pdf_id = repo.candidate_ids(pdf_scan.id)[0]
+        pdf_candidate = repo.candidate(pdf_id)
+        assert pdf_candidate['integrity'] == 'pdf_structure_checked'
+        assert pdf_candidate['offset'] == len(b'pdf-prefix') and pdf_candidate['size'] == len(pdf_bytes)
+        window.open_results(pdf_scan.id); window.result_table.selectRow(0); window.preview_selected()
+        assert window.pending is not None
+        window.pending[0].future.result(15); window.poll()
+        pdf = window.pdf_dialog
+        assert pdf is not None and pdf.isVisible() and pdf.pages == 2
+        assert (pdf._image.width(), pdf._image.height()) == (768, 1024)
+        first_color = pdf._image.pixelColor(100, 500)
+        pdf.next_button.click(); pdf._pending[0].result(15); pdf.poll()
+        assert pdf.page == 1 and pdf._image.pixelColor(100, 500) != first_color
+        pdf.zoom_combo.setCurrentIndex(pdf.zoom_combo.findData(50))
+        pdf._pending[0].result(15); pdf.poll()
+        assert (pdf._image.width(), pdf._image.height()) == (384, 512)
+        pdf.close()
+        assert pdf.data == b'' and pdf._image.isNull() and pdf._pending is None
+        pdf_export = window.manager.submit('export', lambda token, task_id: export_batch(repo, task_id,
+            [pdf_id], window.config.data_dir / 'Recovered', window.config.data_dir, token), with_task_id=True)
+        pdf_export.future.result(15)
+        pdf_records = repo.exports(pdf_export.id)
+        assert len(pdf_records) == 1 and pdf_records[0]['status'] == 'exported'
+        assert pdf_records[0]['source_sha256'] == pdf_records[0]['target_sha256'] == hashlib.sha256(pdf_bytes).hexdigest()
+        assert Path(pdf_records[0]['output_path']).read_bytes() == pdf_bytes
+        assert repo.candidate(pdf_id) == pdf_candidate and pdf_path.read_bytes() == pdf_source_bytes
+        result.update(pdf_scan_verified=True, pdf_preview_verified=True, pdf_page_count=2,
+                      pdf_verified_exports=1, pdf_worker_verified=True, pdf_buffer_released=True)
         previous_directory = window.config.data_dir
         session = app.workspace_session
         fresh = session.activate(validate_workspace(previous_directory / 'workspace-roundtrip'))
@@ -205,6 +245,9 @@ def _verify_packaged(app, window, report_path, screenshot_path=None):
         assert window.repository.candidate(video_candidate_id) == before_candidate
         assert window.repository.exports(video_export.id) == video_records
         assert clip.read_bytes() == video_image
+        assert window.repository.candidate(pdf_id) == pdf_candidate
+        assert window.repository.exports(pdf_export.id) == pdf_records
+        assert pdf_path.read_bytes() == pdf_source_bytes
         assert source.read_bytes() == original
         result['workspace_roundtrip_verified'] = True
         # Exercise the user-facing diagnostics in the actual packaged process.

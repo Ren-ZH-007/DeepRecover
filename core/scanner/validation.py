@@ -1,15 +1,17 @@
 """Shared signature discovery and format-specific validation policy."""
 from core.scanner.image.validation import validate as validate_image
 from core.scanner.video.validation import validate as validate_video
+from core.scanner.pdf.validation import validate as validate_pdf
 
-SIGNATURES = ((b'\x89PNG\r\n\x1a\n', 'png'), (b'\xff\xd8\xff', 'jpg'), (b'ftyp', 'mp4'))
-CHECKED = frozenset({'structure_checked', 'video_structure_checked'})
-INVALID = frozenset({'invalid_structure', 'video_invalid_structure'})
+SIGNATURES = ((b'\x89PNG\r\n\x1a\n', 'png'), (b'\xff\xd8\xff', 'jpg'), (b'ftyp', 'mp4'), (b'%PDF-', 'pdf'))
+CHECKED = frozenset({'structure_checked', 'video_structure_checked', 'pdf_structure_checked'})
+INVALID = frozenset({'invalid_structure', 'video_invalid_structure', 'pdf_invalid_structure'})
 
 
 def checked_signature(integrity, file_type):
     return (integrity == 'structure_checked' and file_type in ('png', 'jpg', 'jpeg')) or (
-        integrity == 'video_structure_checked' and file_type in ('mp4', 'mov'))
+        integrity == 'video_structure_checked' and file_type in ('mp4', 'mov')) or (
+        integrity == 'pdf_structure_checked' and file_type == 'pdf')
 
 
 def find_signature(data, cursor):
@@ -25,6 +27,8 @@ def find_signature(data, cursor):
 
 
 def validate(stream, start, source_size, file_type, token, max_size, max_decoded):
+    if file_type == 'pdf':
+        return validate_pdf(stream, start, source_size, token, max_size)
     if file_type == 'mp4':
         return validate_video(stream, start, source_size, token, max_size)
     return validate_image(stream, start, source_size, file_type, token, max_size, max_decoded)

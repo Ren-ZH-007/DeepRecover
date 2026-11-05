@@ -46,6 +46,16 @@ def content_check(value):
         'video_fragmented': ('分段视频暂不支持', '检测到分段容器；本版不拼接分段或猜测碎片范围。', 'warning'),
         'video_encrypted': ('加密视频暂不支持', '检测到加密容器或媒体标记；不尝试解密。', 'warning'),
         'video_external_reference': ('视频含外部引用', '媒体依赖外部来源或其他引用；不会访问其地址。', 'warning'),
+        'pdf_structure_checked': ('PDF 结构与对象范围检查通过', '已核对传统交叉引用表、对象范围、流长度和页树；范围止于已校验 EOF 行。未渲染全部页面，不证明内容完整或曾被删除。', 'info'),
+        'pdf_truncated': ('PDF 内容截断', '未找到完整的受支持结构与 EOF 边界，不能预览或导出。', 'warning'),
+        'pdf_invalid_structure': ('PDF 结构检查失败', '交叉引用、对象范围、流长度或页树不符合当前支持的结构要求。', 'danger'),
+        'pdf_validation_limit': ('达到 PDF 检查限制', '超过 16 MiB、200 页、对象、语法或解压上限，未完成验证。', 'warning'),
+        'pdf_boundary_unknown': ('PDF 边界未确认', '检查范围末尾仍可能存在后续内容，不能将其作为完整候选。', 'warning'),
+        'pdf_unsupported': ('暂不支持此 PDF 布局', '首版支持传统交叉引用表；交叉引用流、对象流及其他未支持布局保留为受限项。', 'warning'),
+        'pdf_incremental': ('PDF 增量修订暂不支持', '不能将较早修订或缺少上下文的后续修订作为最终文档。', 'warning'),
+        'pdf_encrypted': ('加密 PDF 暂不支持', '检测到加密标记，不尝试密码或解密。', 'warning'),
+        'pdf_active_content': ('PDF 含活动内容', '脚本、表单、附件等活动内容不在静态预览范围内，不执行这些内容。', 'warning'),
+        'pdf_external_reference': ('PDF 含外部引用', '不读取引用的外部文档、文件或网络地址。', 'warning'),
         'missing': ('来源文件缺失', '索引时未找到可访问的来源文件；历史记录仍可查看。', 'danger'),
         'truncated': ('内容截断', '检查尚未完成就到达来源结尾，当前长度不是完整文件边界。', 'warning'),
         'invalid_structure': ('结构检查失败', '图片容器不符合支持的结构要求。', 'danger'),
@@ -106,9 +116,10 @@ def task_kind(value):
         'android_acquisition': ('采集授权文件', '将选中的现存普通文件复制到本地工作目录。', 'neutral'),
         'ios_discovery': ('发现 iPhone 备份', '查找本地备份目录。', 'neutral'),
         'ios_manifest': ('索引 iPhone 备份', '只读索引备份中的文件记录。', 'neutral'),
-        'signature_scan': ('图片 / 视频签名扫描', '寻找连续 JPG / PNG / MP4 / MOV 签名候选，不能判断删除状态。', 'neutral'),
+        'signature_scan': ('图片 / 视频 / PDF 签名扫描', '寻找连续 JPG / PNG / MP4 / MOV / PDF 签名候选，不能判断删除状态。', 'neutral'),
         'computer_scan': ('电脑磁盘 / 镜像扫描', '根据所选模式检查删除记录或图片 / 视频签名候选。', 'neutral'),
         'image_preview': ('图片预览', '在内存中校验并解码选中图片。', 'neutral'),
+        'pdf_preview': ('PDF 预览准备', '只读校验来源并在独立进程渲染静态页面，不代表全部内容完整。', 'neutral'),
         'video_preview': ('视频预览准备', '只读校验来源并准备内存播放内容；不代表完成解码或恢复。', 'neutral'),
         'export': ('校验导出', '将选中来源字节写入独立批次并比对摘要。', 'neutral'),
     }, ('其他任务', '任务类型由历史记录保存，当前版本没有对应说明。', 'neutral'))
@@ -168,3 +179,12 @@ def video_check_details(candidate):
     if any(type(n) is not int or not 1 <= n <= 200000 for n in counts):
         return ''
     return f'检查版本 1 · {counts[0]} 个轨道 · {counts[1]} 个采样 · {counts[2]} 个块 · {counts[3]} 个媒体盒。边界：最后必需盒末尾；未逐帧解码。'
+
+
+def pdf_check_details(candidate):
+    details=candidate.get('structure_details')
+    if candidate.get('integrity')!='pdf_structure_checked' or not isinstance(details,dict):return ''
+    if details.get('check_version')!=1 or details.get('boundary_basis')!='checked_eof_line' or details.get('rendered') is not False:return ''
+    pages,objects=details.get('pages'),details.get('objects')
+    if type(pages) is not int or type(objects) is not int or not 1<=pages<=200 or not 1<=objects<=10000:return ''
+    return f'检查版本 1 · {pages} 页 · {objects} 个对象 · 单一修订。边界：已校验 EOF 行；未渲染全部页面。'

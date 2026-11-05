@@ -2,7 +2,7 @@ name: Windows and macOS build and release
 
 on:
   push:
-    branches: [feature/ui-refresh-release, feature/macos-support, feature/computer-recovery, fix/macos-apfs-preflight, feature/guided-recovery, feature/m5-readiness, feature/video-preview, feature/video-signature-scan]
+    branches: [feature/ui-refresh-release, feature/macos-support, feature/computer-recovery, fix/macos-apfs-preflight, feature/guided-recovery, feature/m5-readiness, feature/video-preview, feature/video-signature-scan, feature/pdf-preview]
     tags: ['v*']
     paths-ignore: ['docs/**', 'README.md']
   workflow_dispatch:
@@ -80,6 +80,12 @@ jobs:
           QT_QPA_PLATFORM: offscreen
           QT_QPA_FONTDIR: ${{ github.workspace }}/build/qa-fonts
         run: .venv/Scripts/python.exe scripts/video_signature_qa_capture.py --output build/video-signature-qa
+      - name: Static PDF scan, isolated rendering, export and history
+        shell: pwsh
+        env:
+          QT_QPA_PLATFORM: offscreen
+          QT_QPA_FONTDIR: ${{ github.workspace }}/build/qa-fonts
+        run: .venv/Scripts/python.exe scripts/pdf_qa_capture.py --output build/pdf-qa
       - name: Preserve test and executable evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -87,12 +93,14 @@ jobs:
           name: windows-validation-${{ github.sha }}
           path: |
             build/test-report.json
+            build/pdf-render-failure.pdf
             build/executable-smoke.json
             build/computer-qa/
             build/guided-qa/
             build/diagnostics-qa/
             build/video-qa/
             build/video-signature-qa/
+            build/pdf-qa/
           if-no-files-found: warn
       - name: Preserve complete distribution
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
