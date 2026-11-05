@@ -20,6 +20,10 @@ def validate_report(path, expected_version):
         'workspace_dialog_verified': True,
         'workspace_roundtrip_verified': True,
         'environment_diagnostics_verified': True,
+        'video_preview_verified': True,
+        'video_muted': True,
+        'video_buffer_released': True,
+        'video_frame_dimensions': [96, 64],
     }
     for name, value in expected.items():
         if type(data.get(name)) is not type(value) or data.get(name) != value:

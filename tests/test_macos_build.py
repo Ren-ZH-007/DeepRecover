@@ -41,6 +41,8 @@ class MacOSBuildVerificationTests(unittest.TestCase):
         self.payload.update(computer_candidates=2, computer_verified_exports=2)
         self.payload.update(workspace_dialog_verified=True, workspace_roundtrip_verified=True)
         self.payload.update(environment_diagnostics_verified=True)
+        self.payload.update(video_preview_verified=True, video_muted=True,
+                            video_buffer_released=True, video_frame_dimensions=[96, 64])
 
     def write_info(self):
         with (self.bundle / 'Contents/Info.plist').open('wb') as stream:

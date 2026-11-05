@@ -141,6 +141,47 @@ def _verify_packaged(app, window, report_path, screenshot_path=None):
         assert [Path(r['output_path']).read_bytes() for r in computer_records] == payloads
         assert source.read_bytes() == original
         result.update(computer_candidates=2, computer_verified_exports=2)
+        # Verify the packaged multimedia backend with original synthetic media.
+        from importlib.resources import files
+        from time import monotonic
+        from PySide6.QtCore import QThread
+        from core.candidate_io import snapshot
+        from storage.models.candidate import Candidate
+        fixture = files('app').joinpath('assets/preview-test.mp4').read_bytes()
+        clip = window.config.data_dir / 'Acquisitions/synthetic-video'; clip.write_bytes(fixture)
+        video_source = DataSource('android', 'synthetic-smoke-device')
+        video_task = repo.create_task('android_acquisition', video_source)
+        video_candidate = Candidate('android_file', 'synthetic.mp4', 'mp4', len(fixture),
+            source_id=video_source.id, local_path=str(clip), sha256=hashlib.sha256(fixture).hexdigest(),
+            source_stat=snapshot(clip.stat()), integrity='not_checked')
+        repo.add_candidate(video_task, video_candidate); repo.update_task(video_task, 'completed')
+        before_candidate = repo.candidate(video_candidate.id)
+        window.open_results(video_task); window.result_table.selectRow(0); window.preview_selected()
+        assert window.pending is not None
+        window.pending[0].future.result(15); window.poll()
+        video = window.video_dialog
+        assert video is not None and video.isVisible()
+        def wait_video(predicate):
+            deadline = monotonic() + 10
+            while not predicate():
+                assert monotonic() < deadline, 'Video backend did not complete verification'
+                app.processEvents(); QThread.msleep(5)
+        wait_video(lambda: video.frame_count > 0 or video._failed)
+        assert not video._failed and not video.canvas.pixmap().isNull()
+        assert (video._image.width(), video._image.height()) == (96, 64)
+        assert video.player.audioOutput() is None and video.player.hasAudio()
+        assert video.player.source().isEmpty() and video.player.sourceDevice() is video.buffer
+        video.play_button.click()
+        wait_video(lambda: video.player.position() >= 125 and video.frame_count >= 2)
+        video.play_button.click()
+        video.seek_slider.setValue(1000); video.seek()
+        wait_video(lambda: video.player.position() >= 900)
+        video.close()
+        assert video.buffer.size() == 0 and not video.buffer.isOpen()
+        assert not video.sink.videoFrame().isValid()
+        assert clip.read_bytes() == fixture and repo.candidate(video_candidate.id) == before_candidate
+        result.update(video_preview_verified=True, video_muted=True, video_buffer_released=True,
+                      video_frame_dimensions=[96, 64])
         previous_directory = window.config.data_dir
         session = app.workspace_session
         fresh = session.activate(validate_workspace(previous_directory / 'workspace-roundtrip'))
@@ -149,6 +190,8 @@ def _verify_packaged(app, window, report_path, screenshot_path=None):
         assert window.repository.candidate_count(scan.id) == 2
         assert len(window.repository.exports(exported.id)) == 2
         assert window.repository.candidate_count(computer.id) == 2
+        assert window.repository.candidate_count(video_task) == 1
+        assert clip.read_bytes() == fixture
         assert source.read_bytes() == original
         result['workspace_roundtrip_verified'] = True
         # Exercise the user-facing diagnostics in the actual packaged process.
