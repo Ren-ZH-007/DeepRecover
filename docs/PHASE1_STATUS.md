@@ -1,5 +1,7 @@
 # 第一阶段进度 — M4 图片预览与校验导出
 
+0.6.0 开发更新：补充 M5 本机环境检查、脱敏诊断报告和[实机验收清单](M5_ACCEPTANCE.md)。检查仅观测运行环境、显示缩放、工作目录容量及 ADB 工具位置是否可定位；不运行 ADB、不枚举设备或扫描备份。报告的实机项目始终为未执行，不据此宣称 M5 已完成；当前已发布版本仍为 v0.5.0。
+
 2026-11-04 引导式界面升级（[v0.5.0 预览版已发布](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.5.0)）：落实物理磁盘来源树、图形化工作目录选择/切换和中文结果依据；源数据、数据库与导出校验语义保持原有边界。[使用说明](GUIDED_RECOVERY.md)和[三平台测试报告](GUIDED_RECOVERY_TEST_REPORT_20261104.md)单独记录；M5 的真实介质、手机和安装体验仍待验收。
 
 2026-11-04 macOS APFS 预检修复（[v0.4.1 预览版已发布](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.4.1)）：兼容 `APFSPhysicalStore` 与系统快照卷引用，预检失败时提示工作目录设置，见[修复报告](APFS_PREFLIGHT_FIX_20261104.md)。

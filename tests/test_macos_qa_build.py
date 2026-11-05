@@ -52,6 +52,7 @@ class MacOSBuildQaTests(unittest.TestCase):
                         'native_quit_verified': True}
         self.payload.update(computer_candidates=2, computer_verified_exports=2)
         self.payload.update(workspace_dialog_verified=True, workspace_roundtrip_verified=True)
+        self.payload.update(environment_diagnostics_verified=True)
         self.exit_code = 0
         self.screenshot_bytes = png(10, 10, (b'\0' + bytes(range(30))) * 10)
         self.launches = []

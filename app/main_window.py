@@ -32,6 +32,18 @@ class MainWindow(QMainWindow):
         from app.workspace import request_workspace_change
         return request_workspace_change(self)
 
+    def show_environment_diagnostics(self):
+        if self.pending or self.computer_page.readonly_pending:
+            self.statusBar().showMessage('请先结束当前任务或只读预检，再检查本机环境。'); return
+        if self.diagnostics_dialog and self.diagnostics_dialog.isVisible():
+            self.diagnostics_dialog.raise_(); self.diagnostics_dialog.activateWindow(); return
+        if self.diagnostics_dialog:
+            self.diagnostics_dialog.deleteLater()
+        from ui.settings.diagnostics import DiagnosticsDialog
+        self.diagnostics_dialog = DiagnosticsDialog(self)
+        self.diagnostics_dialog.show()
+        self.diagnostics_dialog.start_check()
+
     def __init__(self, config, repository):
         super().__init__()
         self.config, self.repository = config, repository
@@ -50,6 +62,7 @@ class MainWindow(QMainWindow):
         self.preview_candidate_id = None
         self.export_dialog = None
         self.evidence_dialog = None
+        self.diagnostics_dialog = None
         self.setWindowTitle(f'DeepRecover · 本地数据工作台 · {VERSION}')
         self.setWindowIcon(brand_icon())
         self.resize(1280, 820)
@@ -284,7 +297,7 @@ class MainWindow(QMainWindow):
         self.history_table.cellDoubleClicked.connect(lambda *_: self.open_history_result())
         label = QLabel('中断或取消仅保留已提交的部分记录，不支持断点续扫。'); label.setObjectName('sectionNote'); box.addWidget(label)
 
-        box = self.page('工作空间设置', '选择本地工作目录，每个目录独立保留历史；正在处理任务时不能切换。')
+        box = self.page('工作空间设置', '选择本地工作目录，每个目录独立保留历史；正在处理任务时不能切换。', scrollable=True)
         data = self.card(box,'本地工作目录')
         label = QLabel(str(self.config.data_dir)); label.setObjectName('sourceInfo'); label.setTextFormat(Qt.TextFormat.PlainText); label.setWordWrap(True); label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse); data.addWidget(label)
         self.workspace_button = self.button(data,'选择工作目录',self.choose_work_directory,'primary','folder')
@@ -292,6 +305,10 @@ class MainWindow(QMainWindow):
         devices = self.card(box,'设备与处理')
         for text in ['DEEPRECOVER_ADB  ·  Android Platform Tools 中 adb 的完整路径','后台并发  ·  2 个任务线程','日志策略  ·  按大小轮转，不记录文件内容或完整设备序列号','数据策略  ·  本地处理，不上传备份或候选内容']:
             label = QLabel(text); label.setObjectName('sectionNote'); label.setWordWrap(True); devices.addWidget(label)
+        diagnostics = self.card(box,'本机环境与实机验收')
+        label = QLabel('查看系统、显示缩放、可用空间和 ADB 工具定位。诊断报告不含来源路径、设备序列号或日志，仅保存到本地；实机验收项目仍需实际测试。')
+        label.setObjectName('sectionNote'); label.setWordWrap(True); diagnostics.addWidget(label)
+        self.diagnostics_button = self.button(diagnostics,'检查本机环境',self.show_environment_diagnostics,'secondary','shield')
         about = self.card(box,'关于 DeepRecover')
         label = QLabel(f'版本 {VERSION}  ·  Preview\n普通文件复制与候选导出，不等于已删除数据恢复成功。'); label.setObjectName('sectionNote'); label.setWordWrap(True); about.addWidget(label); box.addStretch(1)
 
@@ -305,11 +322,13 @@ class MainWindow(QMainWindow):
                                             source=source, batch_size=batch_size, with_task_id=with_task_id), on_success)
         self.computer_page.refresh_controls()
         self.workspace_button.setEnabled(False)
+        self.diagnostics_button.setEnabled(False)
         self.statusBar().showMessage('任务执行中…')
 
     def poll(self):
         self.computer_page.poll()
         self.workspace_button.setEnabled(not self.pending and not self.computer_page.readonly_pending)
+        self.diagnostics_button.setEnabled(not self.pending and not self.computer_page.readonly_pending)
         if self.pending is None:
             return
         progress = self.pending[0].token.progress
@@ -353,6 +372,7 @@ class MainWindow(QMainWindow):
         self.refresh_history()
         self.computer_page.refresh_controls()
         self.workspace_button.setEnabled(not self.pending and not self.computer_page.readonly_pending)
+        self.diagnostics_button.setEnabled(not self.pending and not self.computer_page.readonly_pending)
 
     def filter_results(self, *_):
         self.result_offset = 0
@@ -673,6 +693,8 @@ class MainWindow(QMainWindow):
             self.export_dialog.close()
         if self.evidence_dialog:
             self.evidence_dialog.close()
+        if self.diagnostics_dialog:
+            self.diagnostics_dialog.close()
         self.timer.stop()
         self.manager.shutdown()
         workspace_lock = getattr(self, '_workspace_lock', None)

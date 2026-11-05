@@ -151,6 +151,36 @@ def _verify_packaged(app, window, report_path, screenshot_path=None):
         assert window.repository.candidate_count(computer.id) == 2
         assert source.read_bytes() == original
         result['workspace_roundtrip_verified'] = True
+        # Exercise the user-facing diagnostics in the actual packaged process.
+        # No raw device, ADB process or source content is accessed by this check.
+        from time import monotonic
+        from PySide6.QtCore import QThread
+        before_tasks = window.repository.tasks()
+        before_database = window.config.database.read_bytes()
+        report_directory = window.config.data_dir / 'Reports'
+        before_reports = set(report_directory.iterdir())
+        window.show_environment_diagnostics()
+        diagnostics = window.diagnostics_dialog
+        assert diagnostics.isVisible()
+        def wait_diagnostics():
+            deadline = monotonic() + 15
+            while window.computer_page.readonly_pending:
+                assert monotonic() < deadline, 'Environment diagnostics timed out'
+                app.processEvents(); window.poll(); QThread.msleep(10)
+        wait_diagnostics()
+        assert diagnostics.report['kind'] == 'environment_readiness'
+        assert diagnostics.report['manual_acceptance']['status'] == 'not_run'
+        assert all(case['status'] == 'not_run' for case in diagnostics.report['manual_acceptance']['cases'])
+        diagnostics.save_button.click(); wait_diagnostics()
+        new_reports = set(report_directory.iterdir()) - before_reports
+        assert len(new_reports) == 1
+        saved = json.loads(new_reports.pop().read_text(encoding='utf-8'))
+        assert saved == diagnostics.report
+        assert str(window.config.data_dir) not in json.dumps(saved, ensure_ascii=False)
+        assert window.repository.tasks() == before_tasks
+        assert window.config.database.read_bytes() == before_database
+        diagnostics.close(); app.processEvents()
+        result['environment_diagnostics_verified'] = True
         if screenshot_path:
             window.nav.setCurrentRow(0)
             app.processEvents()
