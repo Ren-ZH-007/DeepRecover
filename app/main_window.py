@@ -18,7 +18,7 @@ from core.preview.video import prepare_video
 from storage.models.classification import category
 from core.export.service import export_batch, ExportError
 from ui.recovery.export_history import ExportHistory
-from ui.recovery.presentation import (candidate_status, content_check, deletion_evidence,
+from ui.recovery.presentation import (candidate_status, content_check, deletion_evidence, video_check_details,
     export_guidance, task_status, task_kind, source_kind, error_text)
 from ui.computer.page import ComputerPage, check_computer_access, computer_error_types
 from app.theme import STYLE, icon, brand_icon
@@ -237,20 +237,20 @@ class MainWindow(QMainWindow):
         info = self.card(box,'保留原始备份，不改变源数据')
         label = QLabel('支持稳定的未加密 Manifest.db；有未合并事务日志时会明确拒绝读取。来源目录和索引结果保存在本地，可在历史中回读。'); label.setObjectName('sectionNote'); label.setWordWrap(True); info.addWidget(label)
 
-        box = self.page('扫描本地镜像', '定位文件或镜像中的连续 JPG / PNG 签名，记录偏移与结构检查结果。', scrollable=True)
+        box = self.page('扫描本地镜像', '定位连续 JPG / PNG / MP4 / MOV 签名，记录来源、偏移与检查结果。', scrollable=True)
         source_box = self.card(box,'01   选择扫描源')
         row = QHBoxLayout(); source_box.addLayout(row)
         self.button(row,'选择镜像或文件',self.choose_scan_source,'secondary','folder'); row.addStretch()
         self.scan_source_label = QLabel('尚未选择源文件'); self.scan_source_label.setObjectName('sourceInfo'); self.scan_source_label.setTextFormat(Qt.TextFormat.PlainText); self.scan_source_label.setWordWrap(True); self.scan_source_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse); source_box.addWidget(self.scan_source_label)
         work = self.card(box,'02   开始只读扫描')
         row = QHBoxLayout(); work.addLayout(row)
-        self.scan_start_button = self.button(row,'开始 JPG / PNG 扫描',self.start_scan,'primary','play'); self.scan_start_button.setEnabled(False)
+        self.scan_start_button = self.button(row,'开始图片 / 视频扫描',self.start_scan,'primary','play'); self.scan_start_button.setEnabled(False)
         self.button(row,'停止扫描',self.cancel_scan,'danger','stop'); row.addStretch()
         self.scan_progress = QProgressBar(); self.scan_progress.setRange(0,1000); self.scan_progress.setValue(0); work.addWidget(self.scan_progress)
         self.scan_status = QLabel('等待选择数据源。扫描结果将自动打开到候选索引。'); self.scan_status.setObjectName('sectionNote'); self.scan_status.setWordWrap(True); work.addWidget(self.scan_status)
         limits = self.card(box,'检查范围')
-        label = QLabel('连续图片候选  ·  单项检查上限 64 MiB  ·  PNG 解压上限 256 MiB  ·  最多 10,000 项'); label.setObjectName('sectionNote'); label.setWordWrap(True); limits.addWidget(label)
-        label = QLabel('不分析文件系统或重组碎片；结构检查通过不代表完整解码，也不能判断文件是否已删除。'); label.setObjectName('sectionNote'); label.setWordWrap(True); limits.addWidget(label)
+        label = QLabel('连续图片 / 视频候选  ·  单项检查上限 64 MiB  ·  PNG 解压上限 256 MiB  ·  最多 10,000 项'); label.setObjectName('sectionNote'); label.setWordWrap(True); limits.addWidget(label)
+        label = QLabel('视频限自包含的单 H.264 视频轨及可选 AAC 音轨；不重组碎片。通过检查不代表完整解码，也不能判断文件是否已删除。'); label.setObjectName('sectionNote'); label.setWordWrap(True); limits.addWidget(label)
         box.addStretch(1)
 
         box = self.page('查看候选结果', '筛选与预览后，按需导出；来源记录、候选状态和导出记录分别保留。')
@@ -432,6 +432,9 @@ class MainWindow(QMainWindow):
             note = QLabel(display.explanation); note.setObjectName(f'evidence-{key}-explanation')
             note.setTextFormat(Qt.TextFormat.PlainText); note.setWordWrap(True)
             note.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse); section.addWidget(note)
+            if key == 'content' and video_check_details(candidate):
+                details = QLabel(video_check_details(candidate)); details.setObjectName('evidence-video-details')
+                details.setTextFormat(Qt.TextFormat.PlainText); details.setWordWrap(True); section.addWidget(details)
         layout.addStretch(1); scroll.setWidget(content); box.addWidget(scroll,1)
         close = QPushButton('关闭'); close.clicked.connect(dialog.close); box.addWidget(close)
         self.evidence_dialog = dialog; dialog.show()
@@ -526,7 +529,7 @@ class MainWindow(QMainWindow):
     def choose_scan_source(self):
         if self.pending:
             self.statusBar().showMessage('请等待或停止当前任务后再选择扫描源。'); return
-        filename, _ = QFileDialog.getOpenFileName(self, '选择只读扫描源', '', '镜像或文件 (*.img *.dd *.bin *.jpg *.jpeg *.png);;所有文件 (*)')
+        filename, _ = QFileDialog.getOpenFileName(self, '选择只读扫描源', '', '镜像或文件 (*.img *.dd *.bin *.jpg *.jpeg *.png *.mp4 *.mov);;所有文件 (*)')
         if filename:
             from pathlib import Path
             source = Path(filename).resolve()

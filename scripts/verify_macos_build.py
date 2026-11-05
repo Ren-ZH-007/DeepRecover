@@ -28,6 +28,7 @@ def validate_report(path, expected_version, qt_platform):
     expected.update(computer_candidates=2, computer_verified_exports=2)
     expected.update(workspace_dialog_verified=True, workspace_roundtrip_verified=True)
     expected.update(environment_diagnostics_verified=True)
+    expected.update(video_scan_verified=True, video_scan_exports=1)
     expected.update(video_preview_verified=True, video_muted=True,
                     video_buffer_released=True, video_frame_dimensions=[96, 64])
     if qt_platform == 'cocoa':

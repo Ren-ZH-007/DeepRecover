@@ -35,6 +35,7 @@ class Candidate:
     file_system: str = ""
     deletion_state: str = "unknown"
     record_id: int | None = None
+    structure_details: dict | None = None
 
     def __post_init__(self):
         if self.size < 0 or (self.offset is not None and self.offset < 0):

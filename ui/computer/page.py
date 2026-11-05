@@ -88,7 +88,7 @@ class ComputerPage(QWidget):
         box = QVBoxLayout(content); box.setContentsMargins(24, 22, 24, 18); box.setSpacing(10)
         eyebrow = QLabel('DEEPRECOVER  /  COMPUTER'); eyebrow.setObjectName('pageEyebrow'); box.addWidget(eyebrow)
         title = QLabel('电脑磁盘与镜像恢复'); title.setObjectName('title'); box.addWidget(title)
-        subtitle = QLabel('选择 Windows / macOS 磁盘、U 盘或镜像，以只读方式检查删除记录或连续图片签名。')
+        subtitle = QLabel('选择 Windows / macOS 磁盘、U 盘或镜像，以只读方式检查删除记录或连续图片 / 视频签名。')
         subtitle.setObjectName('subtitle'); subtitle.setWordWrap(True); box.addWidget(subtitle)
         self.preflight_steps = QLabel('步骤 1 / 3：选择来源 → 检查工作目录与分区 → 核对后开始扫描')
         self.preflight_steps.setObjectName('sourceInfo'); self.preflight_steps.setWordWrap(True)
@@ -138,7 +138,7 @@ class ComputerPage(QWidget):
         work.addWidget(self.partition_combo)
         self.mode_combo = QComboBox()
         self.mode_combo.addItem('解析删除记录（NTFS / FAT32 / exFAT）', 'deleted')
-        self.mode_combo.addItem('JPG / PNG 签名候选（不判断是否已删除）', 'signature')
+        self.mode_combo.addItem('JPG / PNG / MP4 / MOV 签名候选（不判断是否已删除）', 'signature')
         work.addWidget(self.mode_combo)
         self.capability_label = QLabel('先选择来源并完成分区检测。')
         self.capability_label.setObjectName('sectionNote'); self.capability_label.setWordWrap(True)
@@ -169,7 +169,7 @@ class ComputerPage(QWidget):
         for text in (
             '删除记录是文件系统元数据证据；数据可能被覆盖。只有布局和来源检查通过的候选可预览或导出，导出另行核对 SHA-256。',
             'NTFS / FAT32 / exFAT 的支持取决于剩余元数据与分配状态。受限、压缩、加密、布局未知的记录保留限制状态，不标记恢复成功。',
-            'APFS / HFS+ 等来源可做连续 JPG / PNG 签名扫描；本版不解析其删除记录。签名候选可能来自现存文件，不能证明曾被删除。',
+            'APFS / HFS+ 等来源可做连续 JPG / PNG / MP4 / MOV 签名扫描；本版不解析其删除记录。签名候选可能来自现存文件，不能证明曾被删除。',
             '本程序只读访问来源，不提权、不卸载、不修复文件系统。正在使用的系统盘仍可能被其他程序写入；稳定镜像更适合验证。',
         ):
             label = QLabel(text); label.setObjectName('sectionNote'); label.setWordWrap(True); limits.addWidget(label)
@@ -342,7 +342,7 @@ class ComputerPage(QWidget):
             self.mode_combo.model().item(0).setEnabled(fs.upper() in METADATA_FILESYSTEMS)
             if fs.upper() not in METADATA_FILESYSTEMS:
                 self.mode_combo.setCurrentIndex(self.mode_combo.findData('signature'))
-                self.capability_label.setText(f'{fs}：本版仅提供连续图片签名候选，不解析已删除记录；加密、覆盖或 TRIM 后的数据可能不可读。')
+                self.capability_label.setText(f'{fs}：本版仅提供连续图片 / 视频签名候选，不解析已删除记录；加密、覆盖或 TRIM 后的数据可能不可读。')
             else:
                 self.capability_label.setText(f'{fs}：可检查删除记录。布局不明或簇已再分配的记录不会被当成可校验导出的完整文件。')
         self.refresh_controls()

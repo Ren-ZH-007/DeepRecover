@@ -145,17 +145,28 @@ def _verify_packaged(app, window, report_path, screenshot_path=None):
         from importlib.resources import files
         from time import monotonic
         from PySide6.QtCore import QThread
-        from core.candidate_io import snapshot
-        from storage.models.candidate import Candidate
         fixture = files('app').joinpath('assets/preview-test.mp4').read_bytes()
-        clip = window.config.data_dir / 'Acquisitions/synthetic-video'; clip.write_bytes(fixture)
-        video_source = DataSource('android', 'synthetic-smoke-device')
-        video_task = repo.create_task('android_acquisition', video_source)
-        video_candidate = Candidate('android_file', 'synthetic.mp4', 'mp4', len(fixture),
-            source_id=video_source.id, local_path=str(clip), sha256=hashlib.sha256(fixture).hexdigest(),
-            source_stat=snapshot(clip.stat()), integrity='not_checked')
-        repo.add_candidate(video_task, video_candidate); repo.update_task(video_task, 'completed')
-        before_candidate = repo.candidate(video_candidate.id)
+        clip = window.config.data_dir / 'synthetic-video.img'
+        video_image = b'synthetic-prefix' + fixture + b'unrelated-trailing-bytes'
+        clip.write_bytes(video_image)
+        video_scan = window.manager.submit('signature_scan', lambda token: SignatureScanner().scan(clip, token),
+            source=DataSource('image', str(clip)), persist_candidates=True, batch_size=1)
+        assert video_scan.future.result(15) == 1
+        video_task = video_scan.id
+        video_candidate_id = repo.candidate_ids(video_task)[0]
+        scanned_video = repo.candidate(video_candidate_id)
+        assert scanned_video['integrity'] == 'video_structure_checked'
+        assert scanned_video['offset'] == len(b'synthetic-prefix') and scanned_video['size'] == len(fixture)
+        assert scanned_video['sha256'] == hashlib.sha256(fixture).hexdigest()
+        video_export = window.manager.submit('export', lambda token, task_id: export_batch(repo, task_id,
+            [video_candidate_id], window.config.data_dir / 'Recovered', window.config.data_dir, token), with_task_id=True)
+        video_export.future.result(15)
+        video_records = repo.exports(video_export.id)
+        assert len(video_records) == 1 and video_records[0]['status'] == 'exported'
+        assert video_records[0]['source_sha256'] == video_records[0]['target_sha256'] == scanned_video['sha256']
+        assert Path(video_records[0]['output_path']).read_bytes() == fixture
+        result.update(video_scan_verified=True, video_scan_exports=1)
+        before_candidate = repo.candidate(video_candidate_id)
         window.open_results(video_task); window.result_table.selectRow(0); window.preview_selected()
         assert window.pending is not None
         window.pending[0].future.result(15); window.poll()
@@ -179,7 +190,7 @@ def _verify_packaged(app, window, report_path, screenshot_path=None):
         video.close()
         assert video.buffer.size() == 0 and not video.buffer.isOpen()
         assert not video.sink.videoFrame().isValid()
-        assert clip.read_bytes() == fixture and repo.candidate(video_candidate.id) == before_candidate
+        assert clip.read_bytes() == video_image and repo.candidate(video_candidate_id) == before_candidate
         result.update(video_preview_verified=True, video_muted=True, video_buffer_released=True,
                       video_frame_dimensions=[96, 64])
         previous_directory = window.config.data_dir
@@ -191,7 +202,9 @@ def _verify_packaged(app, window, report_path, screenshot_path=None):
         assert len(window.repository.exports(exported.id)) == 2
         assert window.repository.candidate_count(computer.id) == 2
         assert window.repository.candidate_count(video_task) == 1
-        assert clip.read_bytes() == fixture
+        assert window.repository.candidate(video_candidate_id) == before_candidate
+        assert window.repository.exports(video_export.id) == video_records
+        assert clip.read_bytes() == video_image
         assert source.read_bytes() == original
         result['workspace_roundtrip_verified'] = True
         # Exercise the user-facing diagnostics in the actual packaged process.

@@ -37,6 +37,15 @@ def content_check(value):
         'not_checked': ('未检查内容', '仅采集或索引文件；摘要或文件存在不证明内容完整。', 'neutral'),
         'metadata_checked': ('布局检查通过', '支持的文件布局与分配检查通过；不证明内容从未覆盖、完整或可解码。', 'info'),
         'structure_checked': ('图片结构检查通过', '支持范围内的图片容器结构通过检查；不等于完整解码、内容完整或文件曾被删除。', 'info'),
+        'video_structure_checked': ('视频容器与采样范围检查通过', '已核对支持的容器、采样表和媒体范围；候选止于最后一个必需盒的末尾，未推断尾随数据。未逐帧解码，不能证明内容完整或曾被删除。', 'info'),
+        'video_truncated': ('视频内容截断', '尚未覆盖所有必需容器与媒体范围；不能预览或导出此候选。', 'warning'),
+        'video_invalid_structure': ('视频结构检查失败', '容器或采样表不一致，或采样字节越过媒体数据范围。', 'danger'),
+        'video_boundary_unknown': ('视频边界未确认', '容器使用延伸至文件末尾的长度，无法从镜像确认原文件边界。', 'warning'),
+        'video_validation_limit': ('达到视频检查限制', '超过单项 64 MiB、元数据 8 MiB 或表项与检查次数上限；未完成验证。', 'warning'),
+        'video_unsupported': ('暂不支持此视频布局', '当前签名检查支持单 H.264 视频轨及可选 AAC 音轨的自包含 MP4/MOV；此候选超出支持范围。', 'warning'),
+        'video_fragmented': ('分段视频暂不支持', '检测到分段容器；本版不拼接分段或猜测碎片范围。', 'warning'),
+        'video_encrypted': ('加密视频暂不支持', '检测到加密容器或媒体标记；不尝试解密。', 'warning'),
+        'video_external_reference': ('视频含外部引用', '媒体依赖外部来源或其他引用；不会访问其地址。', 'warning'),
         'missing': ('来源文件缺失', '索引时未找到可访问的来源文件；历史记录仍可查看。', 'danger'),
         'truncated': ('内容截断', '检查尚未完成就到达来源结尾，当前长度不是完整文件边界。', 'warning'),
         'invalid_structure': ('结构检查失败', '图片容器不符合支持的结构要求。', 'danger'),
@@ -97,8 +106,8 @@ def task_kind(value):
         'android_acquisition': ('采集授权文件', '将选中的现存普通文件复制到本地工作目录。', 'neutral'),
         'ios_discovery': ('发现 iPhone 备份', '查找本地备份目录。', 'neutral'),
         'ios_manifest': ('索引 iPhone 备份', '只读索引备份中的文件记录。', 'neutral'),
-        'signature_scan': ('图片签名扫描', '寻找连续图片签名候选，不能判断删除状态。', 'neutral'),
-        'computer_scan': ('电脑磁盘 / 镜像扫描', '根据所选模式检查删除记录或图片签名候选。', 'neutral'),
+        'signature_scan': ('图片 / 视频签名扫描', '寻找连续 JPG / PNG / MP4 / MOV 签名候选，不能判断删除状态。', 'neutral'),
+        'computer_scan': ('电脑磁盘 / 镜像扫描', '根据所选模式检查删除记录或图片 / 视频签名候选。', 'neutral'),
         'image_preview': ('图片预览', '在内存中校验并解码选中图片。', 'neutral'),
         'video_preview': ('视频预览准备', '只读校验来源并准备内存播放内容；不代表完成解码或恢复。', 'neutral'),
         'export': ('校验导出', '将选中来源字节写入独立批次并比对摘要。', 'neutral'),
@@ -147,3 +156,15 @@ def export_status(record):
         'cancelled': ('已停止', '该项因停止请求结束，不作为已校验输出。', 'warning'),
         'interrupted': ('已中断', '该项上次运行未正常结束，不自动重验或续导。', 'warning'),
     }, ('导出状态未知', '没有可解释的逐项导出状态，不推断输出已通过校验。', 'warning'))
+
+
+def video_check_details(candidate):
+    details = candidate.get('structure_details')
+    if candidate.get('integrity') != 'video_structure_checked' or not isinstance(details, dict):
+        return ''
+    if details.get('check_version') != 1 or details.get('boundary_basis') != 'last_required_box' or details.get('bitstream_decoded') is not False:
+        return ''
+    counts = [details.get(key) for key in ('tracks', 'samples', 'chunks', 'media_boxes')]
+    if any(type(n) is not int or not 1 <= n <= 200000 for n in counts):
+        return ''
+    return f'检查版本 1 · {counts[0]} 个轨道 · {counts[1]} 个采样 · {counts[2]} 个块 · {counts[3]} 个媒体盒。边界：最后必需盒末尾；未逐帧解码。'
