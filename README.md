@@ -6,6 +6,8 @@
 
 v0.8.0 的支持范围与边界见[视频签名扫描](docs/VIDEO_SIGNATURE_SCAN.md)及[测试与截图](docs/VIDEO_SIGNATURE_TEST_REPORT_20261105.md)，正式附件下载核验见[发布记录](docs/releases/0.8.0/PUBLISHED.json)。签名候选的删除状态未知，不重组碎片或推断原文件尾随数据。
 
+**v0.9.0 开发中：** 新增 PDF 连续签名、结构与对象范围检查及分页/缩放静态预览，贯通文档筛选、校验导出和历史。尚未发布，支持边界见[PDF 说明](docs/PDF_PREVIEW.md)与[测试及截图](docs/PDF_TEST_REPORT_20261105.md)。
+
 依据《DeepRecover_当前对话归档与研发方案_20261102.md》创建。
 
 0.5.0 的图形化工作目录、物理磁盘来源树、三步预检及中文结果依据见[使用与验证说明](docs/GUIDED_RECOVERY.md)，该版本附件校验见[历史发布记录](docs/releases/0.5.0/PUBLISHED.json)。

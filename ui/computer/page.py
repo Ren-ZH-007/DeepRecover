@@ -138,7 +138,7 @@ class ComputerPage(QWidget):
         work.addWidget(self.partition_combo)
         self.mode_combo = QComboBox()
         self.mode_combo.addItem('解析删除记录（NTFS / FAT32 / exFAT）', 'deleted')
-        self.mode_combo.addItem('JPG / PNG / MP4 / MOV 签名候选（不判断是否已删除）', 'signature')
+        self.mode_combo.addItem('JPG / PNG / MP4 / MOV / PDF 签名候选（不判断是否已删除）', 'signature')
         work.addWidget(self.mode_combo)
         self.capability_label = QLabel('先选择来源并完成分区检测。')
         self.capability_label.setObjectName('sectionNote'); self.capability_label.setWordWrap(True)
@@ -169,7 +169,7 @@ class ComputerPage(QWidget):
         for text in (
             '删除记录是文件系统元数据证据；数据可能被覆盖。只有布局和来源检查通过的候选可预览或导出，导出另行核对 SHA-256。',
             'NTFS / FAT32 / exFAT 的支持取决于剩余元数据与分配状态。受限、压缩、加密、布局未知的记录保留限制状态，不标记恢复成功。',
-            'APFS / HFS+ 等来源可做连续 JPG / PNG / MP4 / MOV 签名扫描；本版不解析其删除记录。签名候选可能来自现存文件，不能证明曾被删除。',
+            'APFS / HFS+ 等来源可做连续 JPG / PNG / MP4 / MOV / PDF 签名扫描；本版不解析其删除记录。签名候选可能来自现存文件，不能证明曾被删除。',
             '本程序只读访问来源，不提权、不卸载、不修复文件系统。正在使用的系统盘仍可能被其他程序写入；稳定镜像更适合验证。',
         ):
             label = QLabel(text); label.setObjectName('sectionNote'); label.setWordWrap(True); limits.addWidget(label)

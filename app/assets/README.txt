@@ -9,3 +9,8 @@ ffmpeg -f lavfi -i testsrc2=size=96x64:rate=8
        -pix_fmt yuv420p -c:a aac -b:a 32k -movflags +faststart preview-test.mp4
 
 The FFmpeg executable/encoder is not bundled by this fixture.
+
+preview-test.pdf is an original two-page PDF authored for DeepRecover tests.
+It contains synthetic colored rectangles and Latin text with standard Helvetica;
+no user data, embedded files, external URLs, actions, forms or scripts.
+Its construction is reproducible with tests.pdf_fixture.make_pdf().

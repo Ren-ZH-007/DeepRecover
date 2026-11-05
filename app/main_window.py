@@ -15,10 +15,11 @@ from core.scanner.signature.scanner import SignatureScanner, ScanError
 from core.candidate_io import CandidateAccessError
 from core.preview.images import preview_image
 from core.preview.video import prepare_video
+from core.preview.pdf import prepare_pdf
 from storage.models.classification import category
 from core.export.service import export_batch, ExportError
 from ui.recovery.export_history import ExportHistory
-from ui.recovery.presentation import (candidate_status, content_check, deletion_evidence, video_check_details,
+from ui.recovery.presentation import (candidate_status, content_check, deletion_evidence, video_check_details, pdf_check_details,
     export_guidance, task_status, task_kind, source_kind, error_text)
 from ui.computer.page import ComputerPage, check_computer_access, computer_error_types
 from app.theme import STYLE, icon, brand_icon
@@ -66,6 +67,7 @@ class MainWindow(QMainWindow):
         self.evidence_dialog = None
         self.diagnostics_dialog = None
         self.video_dialog = None
+        self.pdf_dialog = None
         self.setWindowTitle(f'DeepRecover · 本地数据工作台 · {VERSION}')
         self.setWindowIcon(brand_icon())
         self.resize(1280, 820)
@@ -96,7 +98,7 @@ class MainWindow(QMainWindow):
         self.build_pages()
         self.nav.currentRowChanged.connect(self.stack.setCurrentIndex)
         self.nav.currentRowChanged.connect(self.refresh_history)
-        self.nav.currentRowChanged.connect(lambda index: self.stop_video_preview() if index != 4 else None)
+        self.nav.currentRowChanged.connect(lambda index: self.stop_previews() if index != 4 else None)
         self.nav.setCurrentRow(0)
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.poll)
@@ -205,7 +207,7 @@ class MainWindow(QMainWindow):
         self.button(actions,'扫描本地镜像',lambda: self.nav.setCurrentRow(3),'secondary','scan')
         self.computer_home_button = self.button(actions,'电脑磁盘恢复',lambda: self.nav.setCurrentRow(7),'secondary','disk'); actions.addStretch()
         cards = QHBoxLayout(); cards.setSpacing(12); box.addLayout(cards)
-        for number,title,description,symbol in [('01','连接与采集','选择已授权设备或本地备份','android'),('02','定位与预览','按类型筛选，查看 JPG / PNG','image'),('03','校验与导出','独立批次，源 / 目标摘要对照','check')]:
+        for number,title,description,symbol in [('01','连接与采集','选择已授权设备或本地备份','android'),('02','定位与预览','按类型筛选，预览图片、视频与 PDF','image'),('03','校验与导出','独立批次，源 / 目标摘要对照','check')]:
             frame = QFrame(); frame.setObjectName('card'); cards.addWidget(frame,1)
             inner = QVBoxLayout(frame); inner.setContentsMargins(18,18,18,18); inner.setSpacing(10)
             mark = QLabel(); mark.setPixmap(icon(symbol,26,'#2563eb').pixmap(26,26)); inner.addWidget(mark)
@@ -237,20 +239,20 @@ class MainWindow(QMainWindow):
         info = self.card(box,'保留原始备份，不改变源数据')
         label = QLabel('支持稳定的未加密 Manifest.db；有未合并事务日志时会明确拒绝读取。来源目录和索引结果保存在本地，可在历史中回读。'); label.setObjectName('sectionNote'); label.setWordWrap(True); info.addWidget(label)
 
-        box = self.page('扫描本地镜像', '定位连续 JPG / PNG / MP4 / MOV 签名，记录来源、偏移与检查结果。', scrollable=True)
+        box = self.page('扫描本地镜像', '定位连续 JPG / PNG / MP4 / MOV / PDF 签名，记录来源、偏移与检查结果。', scrollable=True)
         source_box = self.card(box,'01   选择扫描源')
         row = QHBoxLayout(); source_box.addLayout(row)
         self.button(row,'选择镜像或文件',self.choose_scan_source,'secondary','folder'); row.addStretch()
         self.scan_source_label = QLabel('尚未选择源文件'); self.scan_source_label.setObjectName('sourceInfo'); self.scan_source_label.setTextFormat(Qt.TextFormat.PlainText); self.scan_source_label.setWordWrap(True); self.scan_source_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse); source_box.addWidget(self.scan_source_label)
         work = self.card(box,'02   开始只读扫描')
         row = QHBoxLayout(); work.addLayout(row)
-        self.scan_start_button = self.button(row,'开始图片 / 视频扫描',self.start_scan,'primary','play'); self.scan_start_button.setEnabled(False)
+        self.scan_start_button = self.button(row,'开始图片 / 视频 / PDF 扫描',self.start_scan,'primary','play'); self.scan_start_button.setEnabled(False)
         self.button(row,'停止扫描',self.cancel_scan,'danger','stop'); row.addStretch()
         self.scan_progress = QProgressBar(); self.scan_progress.setRange(0,1000); self.scan_progress.setValue(0); work.addWidget(self.scan_progress)
         self.scan_status = QLabel('等待选择数据源。扫描结果将自动打开到候选索引。'); self.scan_status.setObjectName('sectionNote'); self.scan_status.setWordWrap(True); work.addWidget(self.scan_status)
         limits = self.card(box,'检查范围')
-        label = QLabel('连续图片 / 视频候选  ·  单项检查上限 64 MiB  ·  PNG 解压上限 256 MiB  ·  最多 10,000 项'); label.setObjectName('sectionNote'); label.setWordWrap(True); limits.addWidget(label)
-        label = QLabel('视频限自包含的单 H.264 视频轨及可选 AAC 音轨；不重组碎片。通过检查不代表完整解码，也不能判断文件是否已删除。'); label.setObjectName('sectionNote'); label.setWordWrap(True); limits.addWidget(label)
+        label = QLabel('图片 / 视频最多 64 MiB  ·  PDF 最多 16 MiB / 200 页  ·  PNG 解压上限 256 MiB  ·  最多 10,000 项'); label.setObjectName('sectionNote'); label.setWordWrap(True); limits.addWidget(label)
+        label = QLabel('视频限自包含的单 H.264 视频轨及可选 AAC 音轨；PDF 限传统交叉引用表的静态文档，不预览脚本、表单或外部引用。不重组碎片。通过检查不代表完整解码，也不能判断文件是否已删除。'); label.setObjectName('sectionNote'); label.setWordWrap(True); limits.addWidget(label)
         box.addStretch(1)
 
         box = self.page('查看候选结果', '筛选与预览后，按需导出；来源记录、候选状态和导出记录分别保留。')
@@ -273,10 +275,10 @@ class MainWindow(QMainWindow):
         self.result_table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection); splitter.addWidget(self.result_table)
         preview = QFrame(); preview.setObjectName('previewPanel'); preview_box = QVBoxLayout(preview); preview_box.setContentsMargins(14,14,14,14); splitter.addWidget(preview)
         label = QLabel('图片 / 视频预览'); label.setObjectName('sectionTitle'); preview_box.addWidget(label)
-        self.preview_label = QLabel('选择 JPG/PNG 图片\n或 MP4/MOV 视频'); self.preview_label.setObjectName('previewCanvas')
+        self.preview_label = QLabel('选择 JPG/PNG 图片\nMP4/MOV 视频或 PDF'); self.preview_label.setObjectName('previewCanvas')
         self.preview_label.setWordWrap(True); self.preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter); self.preview_label.setTextFormat(Qt.TextFormat.PlainText); self.preview_label.setMinimumWidth(210)
         self.result_table.itemSelectionChanged.connect(self.clear_preview); preview_box.addWidget(self.preview_label,1)
-        self.preview_button = self.button(preview_box,'预览选中图片 / 视频',self.preview_selected,'secondary','image')
+        self.preview_button = self.button(preview_box,'预览选中图片 / 视频 / PDF',self.preview_selected,'secondary','image')
         self.evidence_button = self.button(preview_box,'查看删除与检查依据',self.show_candidate_evidence,'secondary','shield')
         self.evidence_button.setEnabled(False)
         self.evidence_button.setToolTip('选中一项，分别查看删除依据、内容检查和独立导出记录说明。')
@@ -322,7 +324,7 @@ class MainWindow(QMainWindow):
     def run_task(self, kind, operation, on_success, *, persist_candidates=False, source=None, batch_size=100, with_task_id=False):
         if self.pending or self.computer_page.readonly_pending:
             self.statusBar().showMessage('已有任务执行中，请等待或在任务记录页停止。'); return
-        self.stop_video_preview()
+        self.stop_previews()
         self.pending = (self.manager.submit(kind, operation, persist_candidates=persist_candidates,
                                             source=source, batch_size=batch_size, with_task_id=with_task_id), on_success)
         self.computer_page.refresh_controls()
@@ -365,7 +367,7 @@ class MainWindow(QMainWindow):
             if task['status'] == 'completed':
                 self.scan_progress.setValue(1000)
         task = self.repository.task(handle.id)
-        if task['kind'] in ('image_preview', 'video_preview') and task['status'] != 'completed' and self.preview_candidate_id is not None:
+        if task['kind'] in ('image_preview', 'video_preview', 'pdf_preview') and task['status'] != 'completed' and self.preview_candidate_id is not None:
             self.preview_label.setText(self.statusBar().currentMessage())
         if task['kind'] == 'export':
             outcome = {'completed':'导出完成','failed':'导出失败','cancelled':'导出已停止','interrupted':'导出中断'}.get(task['status'],task['status'])
@@ -389,14 +391,14 @@ class MainWindow(QMainWindow):
                 if 0 <= index.row() < len(self.current_candidates)]
 
     def clear_preview(self):
-        self.stop_video_preview()
+        self.stop_previews()
         if self.evidence_dialog:
             self.evidence_dialog.close()
             self.evidence_dialog.deleteLater()
             self.evidence_dialog = None
         self.preview_candidate_id = None
         self.preview_label.clear()
-        self.preview_label.setText('选择 JPG/PNG 图片或 MP4/MOV 视频，再点击预览。')
+        self.preview_label.setText('选择图片、视频或 PDF，再点击预览。')
         self.evidence_button.setEnabled(len(self.selected_candidate_ids()) == 1)
 
     def stop_video_preview(self):
@@ -405,6 +407,13 @@ class MainWindow(QMainWindow):
             dialog.close()
             self.video_dialog = None
             dialog.deleteLater()
+
+    def stop_pdf_preview(self):
+        if self.pdf_dialog:
+            dialog=self.pdf_dialog;dialog.close();self.pdf_dialog=None;dialog.deleteLater()
+
+    def stop_previews(self):
+        self.stop_video_preview();self.stop_pdf_preview()
 
     def show_candidate_evidence(self):
         rows = self.result_table.selectionModel().selectedRows()
@@ -432,8 +441,9 @@ class MainWindow(QMainWindow):
             note = QLabel(display.explanation); note.setObjectName(f'evidence-{key}-explanation')
             note.setTextFormat(Qt.TextFormat.PlainText); note.setWordWrap(True)
             note.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse); section.addWidget(note)
-            if key == 'content' and video_check_details(candidate):
-                details = QLabel(video_check_details(candidate)); details.setObjectName('evidence-video-details')
+            detail_text = video_check_details(candidate) or pdf_check_details(candidate)
+            if key == 'content' and detail_text:
+                details = QLabel(detail_text); details.setObjectName('evidence-pdf-details' if candidate.get('file_type') == 'pdf' else 'evidence-video-details')
                 details.setTextFormat(Qt.TextFormat.PlainText); details.setWordWrap(True); section.addWidget(details)
         layout.addStretch(1); scroll.setWidget(content); box.addWidget(scroll,1)
         close = QPushButton('关闭'); close.clicked.connect(dialog.close); box.addWidget(close)
@@ -442,11 +452,14 @@ class MainWindow(QMainWindow):
     def preview_selected(self):
         ids = self.selected_candidate_ids()
         if len(ids) != 1 or self.pending or self.computer_page.readonly_pending:
-            self.statusBar().showMessage('请选择一项图片或视频，并等待当前任务结束。'); return
+            self.statusBar().showMessage('请选择一项图片、视频或 PDF，并等待当前任务结束。'); return
         selected, task_id = ids[0], self.result_task_id
         candidate = self.repository.candidate(selected)
         video = candidate is not None and category(candidate.get('file_type')) == 'video'
-        self.stop_video_preview()
+        pdf = candidate is not None and str(candidate.get('file_type','')).lower() == 'pdf'
+        if candidate and category(candidate.get('file_type')) == 'document' and not pdf:
+            self.statusBar().showMessage('本版文档预览仅支持 PDF。');return
+        self.stop_previews()
         def complete(result, _):
             if self.result_task_id == task_id and self.preview_candidate_id == selected and self.selected_candidate_ids() == [selected]:
                 if video:
@@ -457,6 +470,10 @@ class MainWindow(QMainWindow):
                         if self.video_dialog is dialog and self.preview_candidate_id == selected else None)
                     self.video_dialog.show()
                     self.preview_label.setText('视频窗口已打开 · 静音\n播放已校验的内存内容，不修改来源。')
+                elif pdf:
+                    from ui.preview.pdf import PdfPreviewDialog
+                    self.pdf_dialog = PdfPreviewDialog(result,self);self.pdf_dialog.show()
+                    self.preview_label.setText('PDF 窗口已打开 · 静态预览\n已校验的内存内容，不修改来源。')
                 else:
                     self.preview_label.setPixmap(QPixmap.fromImage(result).scaled(280,240,Qt.AspectRatioMode.KeepAspectRatio,Qt.TransformationMode.SmoothTransformation))
                 self.preview_label.setToolTip('本地解码预览；不更改候选状态，不表示已删除数据恢复成功。')
@@ -464,9 +481,9 @@ class MainWindow(QMainWindow):
             if self.result_task_id != task_id or self.selected_candidate_ids() != [selected]:
                 self.statusBar().showMessage('选中项已变化，请重新预览。'); return
             self.preview_candidate_id = selected
-            self.preview_label.clear(); self.preview_label.setText('正在校验视频来源与预览范围…' if video else '正在校验来源并解码图片…')
-            self.run_task('video_preview' if video else 'image_preview',
-                lambda token: (prepare_video if video else preview_image)(self.repository,selected,self.config.data_dir,token),complete)
+            self.preview_label.clear(); self.preview_label.setText('正在校验视频来源与预览范围…' if video else ('正在校验 PDF 并渲染首页…' if pdf else '正在校验来源并解码图片…'))
+            self.run_task('video_preview' if video else ('pdf_preview' if pdf else 'image_preview'),
+                lambda token: (prepare_video if video else (prepare_pdf if pdf else preview_image))(self.repository,selected,self.config.data_dir,token),complete)
         if self.requires_computer_preflight(ids):
             self.preview_label.clear(); self.preview_label.setText('正在检查源盘与工作目录隔离…')
             self.computer_page._readonly(lambda: check_computer_access(self.repository,tuple(ids),self.config.data_dir), begin,
@@ -529,7 +546,7 @@ class MainWindow(QMainWindow):
     def choose_scan_source(self):
         if self.pending:
             self.statusBar().showMessage('请等待或停止当前任务后再选择扫描源。'); return
-        filename, _ = QFileDialog.getOpenFileName(self, '选择只读扫描源', '', '镜像或文件 (*.img *.dd *.bin *.jpg *.jpeg *.png *.mp4 *.mov);;所有文件 (*)')
+        filename, _ = QFileDialog.getOpenFileName(self, '选择只读扫描源', '', '镜像或文件 (*.img *.dd *.bin *.jpg *.jpeg *.png *.mp4 *.mov *.pdf);;所有文件 (*)')
         if filename:
             from pathlib import Path
             source = Path(filename).resolve()
@@ -697,12 +714,12 @@ class MainWindow(QMainWindow):
                 self.history_table.selectRow(row)
 
     def cancel_task(self):
-        self.stop_video_preview()
+        self.stop_previews()
         if self.pending:
             self.pending[0].cancel()
             if self.repository.task(self.pending[0].id)['kind'] == 'signature_scan':
                 self.statusBar().showMessage('已请求停止扫描；已入库的候选记录会保留。')
-            elif self.repository.task(self.pending[0].id)['kind'] in ('export','image_preview','video_preview'):
+            elif self.repository.task(self.pending[0].id)['kind'] in ('export','image_preview','video_preview','pdf_preview'):
                 self.statusBar().showMessage('已请求停止；此前已校验的导出文件和记录会保留。')
             elif self.repository.task(self.pending[0].id)['kind'] == 'computer_scan':
                 self.statusBar().showMessage('已请求停止电脑扫描；已提交的部分候选保留，当前读取结束后停止。')
@@ -728,7 +745,7 @@ class MainWindow(QMainWindow):
             self.evidence_dialog.close()
         if self.diagnostics_dialog:
             self.diagnostics_dialog.close()
-        self.stop_video_preview()
+        self.stop_previews()
         self.timer.stop()
         self.manager.shutdown()
         workspace_lock = getattr(self, '_workspace_lock', None)

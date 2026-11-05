@@ -68,7 +68,7 @@ class Repository:
 
     def tasks(self):
         with closing(self.connect()) as db:
-            return [dict(row) for row in db.execute("SELECT * FROM tasks WHERE kind NOT IN ('image_preview','video_preview') ORDER BY created_at DESC LIMIT 200")]
+            return [dict(row) for row in db.execute("SELECT * FROM tasks WHERE kind NOT IN ('image_preview','video_preview','pdf_preview') ORDER BY created_at DESC LIMIT 200")]
 
     def add_candidate(self, task_id, candidate):
         with closing(self.connect()) as db, db:

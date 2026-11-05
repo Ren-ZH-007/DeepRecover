@@ -41,6 +41,8 @@ class MacOSBuildVerificationTests(unittest.TestCase):
         self.payload.update(computer_candidates=2, computer_verified_exports=2)
         self.payload.update(workspace_dialog_verified=True, workspace_roundtrip_verified=True)
         self.payload.update(environment_diagnostics_verified=True)
+        self.payload.update(pdf_scan_verified=True, pdf_preview_verified=True, pdf_page_count=2,
+                            pdf_verified_exports=1, pdf_worker_verified=True, pdf_buffer_released=True)
         self.payload.update(video_scan_verified=True, video_scan_exports=1)
         self.payload.update(video_preview_verified=True, video_muted=True,
                             video_buffer_released=True, video_frame_dimensions=[96, 64])
