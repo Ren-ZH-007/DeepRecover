@@ -1,0 +1,710 @@
+{
+  "success": true,
+  "tag": "v0.7.0",
+  "source_commit": "cd4fa531019e8592626e1465317a134e4ef14f30",
+  "release_url": "https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.7.0",
+  "build_url": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41955648432",
+  "published_at_utc": "2026-11-05T02:33:15Z",
+  "published_at_asia_shanghai": "2026-11-05T10:33:15+08:00",
+  "pre_release": true,
+  "assets": [
+    {
+      "name": "DeepRecover-v0.7.0-macos-arm64.zip",
+      "bytes": 47730675,
+      "sha256": "def416ab34a9aa1a0a599f0384658e4cccb13fa2b03af2a0805a4c78e7351113",
+      "download_url": "https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.7.0/DeepRecover-v0.7.0-macos-arm64.zip",
+      "zip_crc": "passed",
+      "entries": 500,
+      "architecture": "arm64",
+      "mach_o": "passed",
+      "preserved_symlinks": 117
+    },
+    {
+      "name": "DeepRecover-v0.7.0-macos-x86_64.zip",
+      "bytes": 52587246,
+      "sha256": "7ed9a182c08b598f969d1f09848a11e08904dd1cf56b752f1423cbf7fe812bfb",
+      "download_url": "https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.7.0/DeepRecover-v0.7.0-macos-x86_64.zip",
+      "zip_crc": "passed",
+      "entries": 500,
+      "architecture": "x86_64",
+      "mach_o": "passed",
+      "preserved_symlinks": 117
+    },
+    {
+      "name": "DeepRecover-v0.7.0-windows-x64.zip",
+      "bytes": 61222381,
+      "sha256": "b91ceb1b66f05dd843c819939cf861e66d5dbae2a7f2669c098d98ecbe2560f9",
+      "download_url": "https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.7.0/DeepRecover-v0.7.0-windows-x64.zip",
+      "zip_crc": "passed",
+      "entries": 257,
+      "architecture": "x64",
+      "pe_machine": "0x8664",
+      "qt_platform_and_jpeg_plugins": true
+    }
+  ],
+  "native_validation": {
+    "windows": {
+      "source_commit": "cd4fa531019e8592626e1465317a134e4ef14f30",
+      "validation_artifact": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41955648432/artifacts/13383061453",
+      "tests": {
+        "success": true,
+        "platform": "win32",
+        "run": 417,
+        "passed": 415,
+        "failures": 0,
+        "errors": 0,
+        "skipped": [
+          {
+            "test": "test_export.ExportTests.test_replaced_target_is_neither_verified_nor_deleted_as_owned_output",
+            "reason": "Windows may deny replacement of an open file"
+          },
+          {
+            "test": "test_qa_regressions.DetailedQaRegressions.test_manifest_symlink_cannot_escape_selected_backup",
+            "reason": "Creating symlinks may need Windows privileges"
+          }
+        ],
+        "unexpected_skips": [],
+        "expected_failures": 0,
+        "unexpected_successes": 0
+      },
+      "workflows": {
+        "diagnostics": {
+          "cases_passed": 4,
+          "screenshots_verified": 4
+        },
+        "computer": {
+          "cases_passed": 11,
+          "screenshots_verified": 18
+        },
+        "guided": {
+          "cases_passed": 5,
+          "screenshots_verified": 5
+        },
+        "video": {
+          "cases_passed": 7,
+          "screenshots_verified": 6
+        }
+      },
+      "packaged_smoke": {
+        "executable": {
+          "success": true,
+          "version": "0.7.0",
+          "schema_version": 3,
+          "navigation_pages": 8,
+          "qt_platform": "offscreen",
+          "workspace_dialog_verified": true,
+          "computer_candidates": 2,
+          "computer_verified_exports": 2,
+          "video_preview_verified": true,
+          "video_muted": true,
+          "video_buffer_released": true,
+          "video_frame_dimensions": [
+            96,
+            64
+          ],
+          "workspace_roundtrip_verified": true,
+          "environment_diagnostics_verified": true,
+          "verified_exports": 2,
+          "decoded_formats": [
+            "PNG",
+            "JPEG"
+          ]
+        }
+      },
+      "diagnostics_database_and_source_unchanged": true,
+      "diagnostics_adb_executed": false,
+      "diagnostics_devices_enumerated": false,
+      "diagnostics_raw_devices_opened": false,
+      "diagnostics_cases": [
+        {
+          "id": "DQA-01",
+          "result": "passed",
+          "real_collect_service": true,
+          "no_report_before_explicit_save": true,
+          "database_and_tasks_unchanged": true,
+          "manual_acceptance_not_run": true
+        },
+        {
+          "id": "DQA-02",
+          "result": "passed",
+          "real_write_service": true,
+          "one_new_local_report": true,
+          "database_and_tasks_unchanged": true,
+          "report_contains_no_source_path": true
+        },
+        {
+          "id": "DQA-03",
+          "result": "passed",
+          "save_exception_redacted": true,
+          "existing_report_not_overwritten": true,
+          "database_and_tasks_unchanged": true
+        },
+        {
+          "id": "DQA-04",
+          "result": "passed",
+          "collect_exception_redacted": true,
+          "stale_report_cleared": true,
+          "database_and_tasks_unchanged": true
+        }
+      ],
+      "video_source_and_candidates_unchanged": true,
+      "video_preview_files_created": false,
+      "video_network_media_sources_opened": false,
+      "video_cases": [
+        {
+          "id": "VQA-01",
+          "result": "passed",
+          "actual_frame_decoded": true,
+          "source_url_empty": true,
+          "memory_device_only": true,
+          "audio_track_present": true,
+          "no_audio_output": true
+        },
+        {
+          "id": "VQA-02",
+          "result": "passed",
+          "actual_playback_advanced": true,
+          "pause_verified": true,
+          "seek_frame_decoded": true
+        },
+        {
+          "id": "VQA-03",
+          "result": "passed",
+          "selection_stops_player": true,
+          "compressed_buffer_released": true,
+          "decoded_frame_released": true
+        },
+        {
+          "id": "VQA-04",
+          "result": "passed",
+          "external_reference_refused_before_decoder": true,
+          "no_backend_started": true
+        },
+        {
+          "id": "VQA-05",
+          "result": "passed",
+          "injected_decoder_error_redacted": true,
+          "stale_frame_cleared": true,
+          "buffer_released": true
+        },
+        {
+          "id": "VQA-06",
+          "result": "passed",
+          "history_does_not_prepare_video": true,
+          "candidate_unchanged": true,
+          "sources_unchanged": true,
+          "no_preview_files": true,
+          "no_export_files": true
+        },
+        {
+          "id": "VQA-07",
+          "result": "passed",
+          "rotation_metadata_applied": true,
+          "portrait_frame_decoded": true,
+          "portrait_source_and_candidate_unchanged": true
+        }
+      ]
+    },
+    "arm64": {
+      "source_commit": "cd4fa531019e8592626e1465317a134e4ef14f30",
+      "validation_artifact": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41955648432/artifacts/13383335910",
+      "tests": {
+        "success": true,
+        "platform": "darwin",
+        "run": 417,
+        "passed": 417,
+        "failures": 0,
+        "errors": 0,
+        "skipped": [],
+        "unexpected_skips": [],
+        "expected_failures": 0,
+        "unexpected_successes": 0
+      },
+      "workflows": {
+        "diagnostics": {
+          "cases_passed": 4,
+          "screenshots_verified": 4
+        },
+        "computer": {
+          "cases_passed": 11,
+          "screenshots_verified": 18
+        },
+        "guided": {
+          "cases_passed": 5,
+          "screenshots_verified": 5
+        },
+        "video": {
+          "cases_passed": 7,
+          "screenshots_verified": 6
+        },
+        "legacy_cocoa": {
+          "cases_passed": 14,
+          "screenshots_verified": 20
+        }
+      },
+      "packaged_smoke": {
+        "offscreen": {
+          "success": true,
+          "version": "0.7.0",
+          "schema_version": 3,
+          "navigation_pages": 8,
+          "qt_platform": "offscreen",
+          "workspace_dialog_verified": true,
+          "computer_candidates": 2,
+          "computer_verified_exports": 2,
+          "video_preview_verified": true,
+          "video_muted": true,
+          "video_buffer_released": true,
+          "video_frame_dimensions": [
+            96,
+            64
+          ],
+          "workspace_roundtrip_verified": true,
+          "environment_diagnostics_verified": true,
+          "verified_exports": 2,
+          "decoded_formats": [
+            "PNG",
+            "JPEG"
+          ]
+        },
+        "cocoa": {
+          "success": true,
+          "version": "0.7.0",
+          "schema_version": 3,
+          "navigation_pages": 8,
+          "qt_platform": "cocoa",
+          "workspace_dialog_verified": true,
+          "computer_candidates": 2,
+          "computer_verified_exports": 2,
+          "video_preview_verified": true,
+          "video_muted": true,
+          "video_buffer_released": true,
+          "video_frame_dimensions": [
+            96,
+            64
+          ],
+          "workspace_roundtrip_verified": true,
+          "environment_diagnostics_verified": true,
+          "native_quit_verified": true,
+          "verified_exports": 2,
+          "decoded_formats": [
+            "PNG",
+            "JPEG"
+          ]
+        }
+      },
+      "diagnostics_database_and_source_unchanged": true,
+      "diagnostics_adb_executed": false,
+      "diagnostics_devices_enumerated": false,
+      "diagnostics_raw_devices_opened": false,
+      "diagnostics_cases": [
+        {
+          "id": "DQA-01",
+          "result": "passed",
+          "real_collect_service": true,
+          "no_report_before_explicit_save": true,
+          "database_and_tasks_unchanged": true,
+          "manual_acceptance_not_run": true
+        },
+        {
+          "id": "DQA-02",
+          "result": "passed",
+          "real_write_service": true,
+          "one_new_local_report": true,
+          "database_and_tasks_unchanged": true,
+          "report_contains_no_source_path": true
+        },
+        {
+          "id": "DQA-03",
+          "result": "passed",
+          "save_exception_redacted": true,
+          "existing_report_not_overwritten": true,
+          "database_and_tasks_unchanged": true
+        },
+        {
+          "id": "DQA-04",
+          "result": "passed",
+          "collect_exception_redacted": true,
+          "stale_report_cleared": true,
+          "database_and_tasks_unchanged": true
+        }
+      ],
+      "video_source_and_candidates_unchanged": true,
+      "video_preview_files_created": false,
+      "video_network_media_sources_opened": false,
+      "video_cases": [
+        {
+          "id": "VQA-01",
+          "result": "passed",
+          "actual_frame_decoded": true,
+          "source_url_empty": true,
+          "memory_device_only": true,
+          "audio_track_present": true,
+          "no_audio_output": true
+        },
+        {
+          "id": "VQA-02",
+          "result": "passed",
+          "actual_playback_advanced": true,
+          "pause_verified": true,
+          "seek_frame_decoded": true
+        },
+        {
+          "id": "VQA-03",
+          "result": "passed",
+          "selection_stops_player": true,
+          "compressed_buffer_released": true,
+          "decoded_frame_released": true
+        },
+        {
+          "id": "VQA-04",
+          "result": "passed",
+          "external_reference_refused_before_decoder": true,
+          "no_backend_started": true
+        },
+        {
+          "id": "VQA-05",
+          "result": "passed",
+          "injected_decoder_error_redacted": true,
+          "stale_frame_cleared": true,
+          "buffer_released": true
+        },
+        {
+          "id": "VQA-06",
+          "result": "passed",
+          "history_does_not_prepare_video": true,
+          "candidate_unchanged": true,
+          "sources_unchanged": true,
+          "no_preview_files": true,
+          "no_export_files": true
+        },
+        {
+          "id": "VQA-07",
+          "result": "passed",
+          "rotation_metadata_applied": true,
+          "portrait_frame_decoded": true,
+          "portrait_source_and_candidate_unchanged": true
+        }
+      ],
+      "native_macos_metadata_only": {
+        "success": true,
+        "platform": "darwin",
+        "architecture": "arm64",
+        "metadata_queries_only": true,
+        "raw_reads": false,
+        "root_physical_disk_count": 1,
+        "work_directory_physical_disk_count": 1,
+        "root_and_work_directory_overlap": true,
+        "same_device_rejected": true,
+        "schemas": {
+          "root": {
+            "physical_stores": {
+              "entry_types": [
+                "dict"
+              ],
+              "identifier_keys": [
+                "APFSPhysicalStore"
+              ]
+            },
+            "volume_disk_value_type": "NoneType",
+            "snapshot": true
+          },
+          "work_directory": {
+            "physical_stores": {
+              "entry_types": [
+                "dict"
+              ],
+              "identifier_keys": [
+                "APFSPhysicalStore"
+              ]
+            },
+            "volume_disk_value_type": "NoneType",
+            "snapshot": false
+          },
+          "apfs_list_physical_stores": {
+            "entry_types": [
+              "dict"
+            ],
+            "identifier_keys": [
+              "DeviceIdentifier"
+            ]
+          }
+        },
+        "inventory": {
+          "source_count": 20,
+          "kinds": {
+            "physical": 2,
+            "partition": 3,
+            "apfs_container": 3,
+            "auxiliary": 8,
+            "apfs_volume": 3,
+            "snapshot": 1
+          },
+          "known_physical_groups": 2,
+          "system_sources": 17,
+          "metadata_queries_only": true
+        }
+      }
+    },
+    "x86_64": {
+      "source_commit": "cd4fa531019e8592626e1465317a134e4ef14f30",
+      "validation_artifact": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41955648432/artifacts/13382812339",
+      "tests": {
+        "success": true,
+        "platform": "darwin",
+        "run": 417,
+        "passed": 417,
+        "failures": 0,
+        "errors": 0,
+        "skipped": [],
+        "unexpected_skips": [],
+        "expected_failures": 0,
+        "unexpected_successes": 0
+      },
+      "workflows": {
+        "diagnostics": {
+          "cases_passed": 4,
+          "screenshots_verified": 4
+        },
+        "computer": {
+          "cases_passed": 11,
+          "screenshots_verified": 18
+        },
+        "guided": {
+          "cases_passed": 5,
+          "screenshots_verified": 5
+        },
+        "video": {
+          "cases_passed": 7,
+          "screenshots_verified": 6
+        },
+        "legacy_cocoa": {
+          "cases_passed": 14,
+          "screenshots_verified": 20
+        }
+      },
+      "packaged_smoke": {
+        "offscreen": {
+          "success": true,
+          "version": "0.7.0",
+          "schema_version": 3,
+          "navigation_pages": 8,
+          "qt_platform": "offscreen",
+          "workspace_dialog_verified": true,
+          "computer_candidates": 2,
+          "computer_verified_exports": 2,
+          "video_preview_verified": true,
+          "video_muted": true,
+          "video_buffer_released": true,
+          "video_frame_dimensions": [
+            96,
+            64
+          ],
+          "workspace_roundtrip_verified": true,
+          "environment_diagnostics_verified": true,
+          "verified_exports": 2,
+          "decoded_formats": [
+            "PNG",
+            "JPEG"
+          ]
+        },
+        "cocoa": {
+          "success": true,
+          "version": "0.7.0",
+          "schema_version": 3,
+          "navigation_pages": 8,
+          "qt_platform": "cocoa",
+          "workspace_dialog_verified": true,
+          "computer_candidates": 2,
+          "computer_verified_exports": 2,
+          "video_preview_verified": true,
+          "video_muted": true,
+          "video_buffer_released": true,
+          "video_frame_dimensions": [
+            96,
+            64
+          ],
+          "workspace_roundtrip_verified": true,
+          "environment_diagnostics_verified": true,
+          "native_quit_verified": true,
+          "verified_exports": 2,
+          "decoded_formats": [
+            "PNG",
+            "JPEG"
+          ]
+        }
+      },
+      "diagnostics_database_and_source_unchanged": true,
+      "diagnostics_adb_executed": false,
+      "diagnostics_devices_enumerated": false,
+      "diagnostics_raw_devices_opened": false,
+      "diagnostics_cases": [
+        {
+          "id": "DQA-01",
+          "result": "passed",
+          "real_collect_service": true,
+          "no_report_before_explicit_save": true,
+          "database_and_tasks_unchanged": true,
+          "manual_acceptance_not_run": true
+        },
+        {
+          "id": "DQA-02",
+          "result": "passed",
+          "real_write_service": true,
+          "one_new_local_report": true,
+          "database_and_tasks_unchanged": true,
+          "report_contains_no_source_path": true
+        },
+        {
+          "id": "DQA-03",
+          "result": "passed",
+          "save_exception_redacted": true,
+          "existing_report_not_overwritten": true,
+          "database_and_tasks_unchanged": true
+        },
+        {
+          "id": "DQA-04",
+          "result": "passed",
+          "collect_exception_redacted": true,
+          "stale_report_cleared": true,
+          "database_and_tasks_unchanged": true
+        }
+      ],
+      "video_source_and_candidates_unchanged": true,
+      "video_preview_files_created": false,
+      "video_network_media_sources_opened": false,
+      "video_cases": [
+        {
+          "id": "VQA-01",
+          "result": "passed",
+          "actual_frame_decoded": true,
+          "source_url_empty": true,
+          "memory_device_only": true,
+          "audio_track_present": true,
+          "no_audio_output": true
+        },
+        {
+          "id": "VQA-02",
+          "result": "passed",
+          "actual_playback_advanced": true,
+          "pause_verified": true,
+          "seek_frame_decoded": true
+        },
+        {
+          "id": "VQA-03",
+          "result": "passed",
+          "selection_stops_player": true,
+          "compressed_buffer_released": true,
+          "decoded_frame_released": true
+        },
+        {
+          "id": "VQA-04",
+          "result": "passed",
+          "external_reference_refused_before_decoder": true,
+          "no_backend_started": true
+        },
+        {
+          "id": "VQA-05",
+          "result": "passed",
+          "injected_decoder_error_redacted": true,
+          "stale_frame_cleared": true,
+          "buffer_released": true
+        },
+        {
+          "id": "VQA-06",
+          "result": "passed",
+          "history_does_not_prepare_video": true,
+          "candidate_unchanged": true,
+          "sources_unchanged": true,
+          "no_preview_files": true,
+          "no_export_files": true
+        },
+        {
+          "id": "VQA-07",
+          "result": "passed",
+          "rotation_metadata_applied": true,
+          "portrait_frame_decoded": true,
+          "portrait_source_and_candidate_unchanged": true
+        }
+      ],
+      "native_macos_metadata_only": {
+        "success": true,
+        "platform": "darwin",
+        "architecture": "x86_64",
+        "metadata_queries_only": true,
+        "raw_reads": false,
+        "root_physical_disk_count": 1,
+        "work_directory_physical_disk_count": 1,
+        "root_and_work_directory_overlap": true,
+        "same_device_rejected": true,
+        "schemas": {
+          "root": {
+            "physical_stores": {
+              "entry_types": [
+                "dict"
+              ],
+              "identifier_keys": [
+                "APFSPhysicalStore"
+              ]
+            },
+            "volume_disk_value_type": "NoneType",
+            "snapshot": true
+          },
+          "work_directory": {
+            "physical_stores": {
+              "entry_types": [
+                "dict"
+              ],
+              "identifier_keys": [
+                "APFSPhysicalStore"
+              ]
+            },
+            "volume_disk_value_type": "NoneType",
+            "snapshot": false
+          },
+          "apfs_list_physical_stores": {
+            "entry_types": [
+              "dict"
+            ],
+            "identifier_keys": [
+              "DeviceIdentifier"
+            ]
+          }
+        },
+        "inventory": {
+          "source_count": 11,
+          "kinds": {
+            "physical": 1,
+            "partition": 2,
+            "apfs_container": 1,
+            "apfs_volume": 2,
+            "auxiliary": 4,
+            "snapshot": 1
+          },
+          "known_physical_groups": 1,
+          "system_sources": 11,
+          "metadata_queries_only": true
+        }
+      }
+    }
+  },
+  "workflow_screenshots_verified": 139,
+  "additional_packaged_screenshots_verified": 2,
+  "screenshot_checks": {
+    "workflow_sha256_matches_evidence": true,
+    "png_crc": true,
+    "qt_decode": true,
+    "nonblank_pixel_samples": true
+  },
+  "macos_signing": "local ad-hoc; no Developer ID certificate; not notarized",
+  "physical_device_acceptance": "not_run",
+  "video_preview_scope": "self-contained H.264 MP4/MOV, silent, 64 MiB, 10 minutes, landscape/portrait 1080p; not a recovery or complete validation verdict",
+  "native_macos_metadata_queried": true,
+  "raw_devices_opened_by_application": false,
+  "apfs_hfs_capability": "continuous JPG/PNG signature candidates only; no deleted metadata parser",
+  "video_test_pattern_rendered_in_screenshots": {
+    "windows": true,
+    "arm64": true,
+    "x86_64": true
+  }
+}

@@ -2,16 +2,16 @@
 
 个人自用、本地运行的手机与电脑数据恢复工作台。目标平台：Windows 10/11 x64、macOS 13+（Apple Silicon / Intel），Python 3.12 + PySide6 + SQLite。
 
-**当前预览版本：[v0.6.0](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.6.0)，已发布 Windows 和 macOS 双架构包，新增本机环境检查、脱敏本地报告与 M5 验收清单。** 电脑功能的范围与使用方法见 [电脑恢复](docs/COMPUTER_RECOVERY.md)，macOS 启动说明见 [macOS 适配](docs/MACOS.md)。
+**当前预览版本：[v0.7.0](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.7.0)，已发布 Windows 和 macOS 双架构包，新增 MP4/MOV 静音视频预览、播放/暂停、进度拖动和手机竖屏支持。** 电脑功能的范围与使用方法见 [电脑恢复](docs/COMPUTER_RECOVERY.md)，macOS 启动说明见 [macOS 适配](docs/MACOS.md)。
 依据《DeepRecover_当前对话归档与研发方案_20261102.md》创建。
 
 0.5.0 的图形化工作目录、物理磁盘来源树、三步预检及中文结果依据见[使用与验证说明](docs/GUIDED_RECOVERY.md)，该版本附件校验见[历史发布记录](docs/releases/0.5.0/PUBLISHED.json)。
 
-0.6.0 已发布：设置页新增本机环境检查和脱敏本地报告，为 M5 实机验收提供准备工具。正式附件下载后校验见[发布记录](docs/releases/0.6.0/PUBLISHED.json)。诊断不运行 ADB、不枚举设备或读取源内容，也不自动完成实机验收，操作及记录模板见 [M5 验收清单](docs/M5_ACCEPTANCE.md)，验证与截图见[测试报告](docs/M5_PREPARATION_TEST_REPORT_20261105.md)。
+0.6.0 已发布：设置页新增本机环境检查和脱敏本地报告，为 M5 实机验收提供准备工具。该版本附件核验见[历史发布记录](docs/releases/0.6.0/PUBLISHED.json)。诊断不运行 ADB、不枚举设备或读取源内容，也不自动完成实机验收，操作及记录模板见 [M5 验收清单](docs/M5_ACCEPTANCE.md)，验证与截图见[测试报告](docs/M5_PREPARATION_TEST_REPORT_20261105.md)。
 
 ## 已实现
 
-0.7.0 开发功能：新增 MP4/MOV 静音视频预览、播放/暂停和进度拖动；来源只读，内容在内存中播放，不生成预览副本。首版支持 H.264、64 MiB/10 分钟/横竖屏 1080p，详见[视频预览](docs/VIDEO_PREVIEW.md)和[测试报告与截图](docs/VIDEO_PREVIEW_TEST_REPORT_20261105.md)。当前已发布版本仍为上方 v0.6.0。
+0.7.0 已发布：新增 MP4/MOV 静音视频预览、播放/暂停和进度拖动；来源只读，内容在内存中播放，不生成预览副本。首版支持 H.264、64 MiB/10 分钟/横竖屏 1080p，详见[视频预览](docs/VIDEO_PREVIEW.md)和[测试报告与截图](docs/VIDEO_PREVIEW_TEST_REPORT_20261105.md)。正式附件下载后核验见[发布记录](docs/releases/0.7.0/PUBLISHED.json)。
 
 - 分层工程、虚拟环境依赖清单、入口和 8 个导航页面。
 - 电脑恢复入口：Windows 本地磁盘/U 盘、macOS 磁盘、原始镜像；MBR/扩展分区及 GPT 识别，源只读，原始盘工作目录/导出目标必须位于另一物理盘。
@@ -25,23 +25,25 @@
 - 未加密 Manifest.db 只读解析、候选入库，缺失文件显式标记。
 - 候选按任务每页 100 条展示；历史任务结果可重开，失败/取消任务保留已提交的部分记录。
 - 本地文件/镜像的 JPG、PNG 连续签名扫描，记录源内偏移、长度和结构检查结果；支持后台进度与取消。
-- 类型与状态筛选、JPG/PNG 本地图片预览；本页选中项或跨页全部筛选结果的批量导出。
+- 类型与状态筛选、JPG/PNG 图片及 H.264 MP4/MOV 静音视频预览；本页选中项或跨页全部筛选结果的批量导出。
 - 防覆盖导出、源范围与目标 SHA-256 对照、可回读的导出记录及本地 JSON 清单。
 - macOS 独立工作目录、Finder 备份发现、Homebrew ADB 发现与原生退出菜单；Apple Silicon / Intel 分别原生构建 `.app`。
 - 完整自动化回归与原生平台构建门禁；打包后的程序需实际启动并完成扫描→预览→校验导出的合成数据流程。
 
 ## 下载预览包
 
-- [Windows x64](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.6.0/DeepRecover-v0.6.0-windows-x64.zip)
-- [macOS Apple Silicon](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.6.0/DeepRecover-v0.6.0-macos-arm64.zip)
-- [macOS Intel](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.6.0/DeepRecover-v0.6.0-macos-x86_64.zip)
-- [SHA256SUMS.txt](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.6.0/SHA256SUMS.txt)
+- [Windows x64](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.7.0/DeepRecover-v0.7.0-windows-x64.zip)
+- [macOS Apple Silicon](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.7.0/DeepRecover-v0.7.0-macos-arm64.zip)
+- [macOS Intel](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.7.0/DeepRecover-v0.7.0-macos-x86_64.zip)
+- [SHA256SUMS.txt](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.7.0/SHA256SUMS.txt)
 
 Windows 解压后运行目录中的 `DeepRecover.exe`，保留整个 `DeepRecover` 文件夹及 `_internal` 文件，不能只复制 EXE。macOS 按芯片类型下载，解压后将整个 `DeepRecover.app` 拖入“应用程序”。预览包无需另外安装 Python，Windows 包不是安装程序；源码归档则按下方步骤配置 Python。macOS 包未提供 Developer ID 签名或 Apple 公证，详见 [macOS 说明](docs/MACOS.md)。
 
 v0.5.0 界面截图：[选择工作目录](docs/qa/guided-20261104/arm64/01-workspace-before-initialization.png)、[物理磁盘分组](docs/qa/guided-20261104/arm64/14-grouped-physical-sources.png)、[结果依据](docs/qa/guided-20261104/arm64/02a-deleted-record-evidence.png)。
 
 v0.6.0 诊断截图：[环境检查](docs/qa/m5-20261105/arm64/01-local-environment-check.png)、[保存本地报告](docs/qa/m5-20261105/arm64/02-sanitized-report-saved.png)。
+
+v0.7.0 视频截图：[播放与拖动](docs/qa/video-20261105/arm64/02-playback-pause-and-seek.png)、[手机竖屏](docs/qa/video-20261105/arm64/06-phone-portrait-rotation.png)。
 
 ## Windows 启动
 
@@ -106,7 +108,7 @@ Android SHA-256 仅是本地副本的摘要，不是源端哈希比对或文件�
 
 在结果页按类型（图片/视频/音频/文档/其他）和候选状态筛选，筛选条件同时用于总数、分页和“导出全部筛选结果”。类型分类来自文件类型元数据，不证明真实格式。Ctrl/Shift 可多选本页记录；没有选择时不导出。“导出全部筛选结果”包含其他页，单批最多 10,000 项，超限需要进一步筛选或分批处理。
 
-选择单张 JPG/PNG 后点击预览。程序从本地来源读出有界数据、检查来源后，在后台用 Qt 根据内容格式解码，只在内存显示，不生成预览文件、不更改原候选状态。图片预览输入上限 32 MiB、1,600 万像素、Qt 解码分配上限 64 MiB，显示最多 1024×768。取消在读取期间及原生解码前后检查，不能中断正在执行的 Qt 原生解码。其他图片格式尚未支持。0.7.0 开发版另支持选中 MP4/MOV 后打开独立静音视频窗口，限制与使用方法见[视频预览](docs/VIDEO_PREVIEW.md)。解码失败不显示旧图，也不标记恢复成功。
+选择单张 JPG/PNG 后点击预览。程序从本地来源读出有界数据、检查来源后，在后台用 Qt 根据内容格式解码，只在内存显示，不生成预览文件、不更改原候选状态。图片预览输入上限 32 MiB、1,600 万像素、Qt 解码分配上限 64 MiB，显示最多 1024×768。取消在读取期间及原生解码前后检查，不能中断正在执行的 Qt 原生解码。其他图片格式尚未支持。0.7.0 起另支持选中 MP4/MOV 后打开独立静音视频窗口，限制与使用方法见[视频预览](docs/VIDEO_PREVIEW.md)。解码失败不显示旧图，也不标记恢复成功。
 
 macOS 使用 Command/Shift 多选；应用菜单的 Command+Q 经过任务停止检查，正在执行的任务需先结束再退出。
 
@@ -165,7 +167,7 @@ macOS 构建脚本：`scripts/build-macos.sh`，必须在原生 macOS + 对应�
 
 1. M5：Windows 10/11 x64 与 macOS 实机、真实 Android/iPhone 备份、打包与安装包验收。macOS 双架构适配是本次新增的平台范围，原生构建与自动化证据单独保存。
    本机环境检查和本地诊断报告用于准备及定位问题，真实设备与桌面操作的结论仍须按 [M5 清单](docs/M5_ACCEPTANCE.md)记录。
-2. 视频预览已纳入 0.7.0 开发；后续扩展视频/文档扫描及结构校验。
+2. 视频预览已随 v0.7.0 发布；后续扩展视频/文档扫描及结构校验。
 
 源文件默认只读。索引读取、普通文件采集不等同于已删除数据恢复。
 电脑恢复新增受限的 NTFS/FAT32/exFAT 元数据解析和 NTFS 运行列表读取，不是通用文件系统修复或任意碎片重组。APFS/HFS+ 删除记录、加密来源解密、损坏分区修复及 Rust 引擎未实现。签名扫描仅定位连续图片候选，不能判断候选是否曾被删除。
