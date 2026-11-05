@@ -15,13 +15,26 @@
 
 Linux x86_64 / Python 3.12 / PySide6 6.8.3：全量 **447/447 通过，0 跳过**，其中新增 30 项核心与界面测试。新 Qt 工作流 **8/8 通过、8 张截图**。见[测试门禁报告](qa/20261105-video-signature/linux/test-report.json)和[界面证据](qa/20261105-video-signature/linux/evidence.json)。
 
-原生 Windows/macOS 构建验证待执行；最终结果与运行链接将在本 PR 内补齐，未完成的构建不记为通过。
+原生验证全部通过，功能提交 `34e231584472fdcdbb331cdc2d1904c26da3c43c`。Windows 构建该提交，macOS 构建 PR 临时合并提交 `4488ecb653d93d702e219f9f47f770af09863d97`，其父提交为当前 main `806447c` 与该功能提交。后续证据提交仅补充文档与截图。[构建对应记录](qa/20261105-video-signature/build-provenance.json)。
 
-关键节点（合成数据，未编辑截图）：
+| 平台 | 全量自动化 | 界面工作流 / 截图 | 打包验证 |
+|---|---|---|---|
+| Windows x64 | 445 通过 / 2 项已知跳过 | 35 / 41 | EXE 实际启动、扫描视频、解码及导出通过 |
+| macOS Apple Silicon | 447 通过 / 0 跳过 | 49 / 61 | 原生 `.app`，offscreen / Cocoa 冒烟与退出通过 |
+| macOS Intel | 447 通过 / 0 跳过 | 49 / 61 | 原生 `.app`，offscreen / Cocoa 冒烟与退出通过 |
 
-![候选的容器与采样依据](qa/20261105-video-signature/linux/03-container-and-sample-evidence.png)
+- [Windows 运行与构建附件](https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41975529355)、[macOS 双架构运行与构建附件](https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41975535337)。这些是 PR 预览构建，尚未创建 v0.8.0 Release。
+- 已下载并核验 3 个 ZIP：SHA-256 与清单一致、CRC 正确，PE/Mach-O 架构与应用版本符合要求；macOS 可执行权限与框架符号链接存在。[安装包核验记录](qa/20261105-video-signature/packages-verification.json)。macOS 仍为 ad-hoc 签名，未进行 Developer ID 签名或公证。
+- 已核验 163 张原生工作流截图和 2 张打包 Cocoa 截图的 PNG、SHA-256 与解码尺寸，并核对所有工作流结果、字形覆盖、来源只读及新打包门禁。[完整原生证据汇总](qa/20261105-video-signature/native-verification.json)。
+- 本轮新增视频签名流程在 Linux 和三种原生构建各 8 项、各 8 张截图，分平台保留：[Linux](qa/20261105-video-signature/linux/evidence.json)、[Windows](qa/20261105-video-signature/windows-x64/evidence.json)、[Apple Silicon](qa/20261105-video-signature/macos-arm64/evidence.json)、[Intel](qa/20261105-video-signature/macos-x86_64/evidence.json)。其余工作流图片可从对应 CI 附件回读。
 
-![扫描出的 MOV 实际解码](qa/20261105-video-signature/linux/05-scanned-mov-decoded-frame.png)
+开发复核时修正了一个分类缺陷：零采样偏移原本显示资源受限，现归为视频结构失败。已补充精确断言，30 项本轮测试和最终 447 项全量回归通过。
+
+关键节点（合成数据，未编辑截图；原生 Apple Silicon）：
+
+![候选的容器与采样依据](qa/20261105-video-signature/macos-arm64/03-container-and-sample-evidence.png)
+
+![扫描出的 MOV 实际解码](qa/20261105-video-signature/macos-arm64/05-scanned-mov-decoded-frame.png)
 
 ## 保留的边界
 

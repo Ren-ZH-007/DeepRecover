@@ -1,0 +1,29 @@
+[
+  {
+    "architecture": "windows-x64",
+    "filename": "DeepRecover-v0.8.0-windows-x64.zip",
+    "bytes": 61240475,
+    "sha256": "a74618ec3d9ded89c30df75901de3c1d8c3aace678f435f2912fc483b606f780",
+    "zip_crc": "passed",
+    "executable_architecture": "passed",
+    "kind": "PR test artifact; not a GitHub Release"
+  },
+  {
+    "architecture": "macos-arm64",
+    "filename": "DeepRecover-v0.8.0-macos-arm64.zip",
+    "bytes": 47747641,
+    "sha256": "ca16dae5ce4ecf15307d514c032db1cdb042b699f49f0c38f2aab49703ebc626",
+    "zip_crc": "passed",
+    "executable_architecture": "passed",
+    "kind": "PR test artifact; not a GitHub Release"
+  },
+  {
+    "architecture": "macos-x86_64",
+    "filename": "DeepRecover-v0.8.0-macos-x86_64.zip",
+    "bytes": 52602444,
+    "sha256": "14d23014746a73c63d8b03bd1a3bc684cef96bf70493d6ee6e756cdaea0ca1a5",
+    "zip_crc": "passed",
+    "executable_architecture": "passed",
+    "kind": "PR test artifact; not a GitHub Release"
+  }
+]

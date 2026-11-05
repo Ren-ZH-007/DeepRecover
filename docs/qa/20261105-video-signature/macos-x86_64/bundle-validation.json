@@ -1,0 +1,15 @@
+{
+  "success": true,
+  "architecture": "x86_64",
+  "version": "0.8.0",
+  "runner_macos": "15.7.9",
+  "python": "3.12.10",
+  "minimum_macos": "13.0",
+  "bundle_identifier": "com.deeprecover.workbench",
+  "mach_o_archs": "x86_64",
+  "signing": "local ad-hoc; no Developer ID certificate; not notarized",
+  "offscreen_smoke": true,
+  "cocoa_smoke": true,
+  "zip_roundtrip_verified": true,
+  "physical_device_acceptance": false
+}

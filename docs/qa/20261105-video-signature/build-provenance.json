@@ -1,0 +1,31 @@
+{
+  "windows": {
+    "conclusion": "success",
+    "created_at": "2026-11-05T05:40:50Z",
+    "event": "push",
+    "head_sha": "34e231584472fdcdbb331cdc2d1904c26da3c43c",
+    "html_url": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41975529355",
+    "id": 41975529355,
+    "status": "completed",
+    "updated_at": "2026-11-05T05:43:35Z"
+  },
+  "macos": {
+    "conclusion": "success",
+    "created_at": "2026-11-05T05:40:53Z",
+    "event": "pull_request",
+    "head_sha": "34e231584472fdcdbb331cdc2d1904c26da3c43c",
+    "html_url": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41975535337",
+    "id": 41975535337,
+    "status": "completed",
+    "updated_at": "2026-11-05T05:46:02Z"
+  },
+  "macos_pr_checkout": {
+    "sha": "4488ecb653d93d702e219f9f47f770af09863d97",
+    "parents": [
+      "806447c38211a23022f6aae7dad2e95927c324ea",
+      "34e231584472fdcdbb331cdc2d1904c26da3c43c"
+    ]
+  },
+  "functional_commit": "34e231584472fdcdbb331cdc2d1904c26da3c43c",
+  "published_release": false
+}
