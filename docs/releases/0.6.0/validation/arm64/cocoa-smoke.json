@@ -1,0 +1,18 @@
+{
+  "success": true,
+  "version": "0.6.0",
+  "schema_version": 3,
+  "navigation_pages": 8,
+  "qt_platform": "cocoa",
+  "workspace_dialog_verified": true,
+  "computer_candidates": 2,
+  "computer_verified_exports": 2,
+  "workspace_roundtrip_verified": true,
+  "environment_diagnostics_verified": true,
+  "native_quit_verified": true,
+  "verified_exports": 2,
+  "decoded_formats": [
+    "PNG",
+    "JPEG"
+  ]
+}
