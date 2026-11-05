@@ -2,9 +2,9 @@
 
 个人自用、本地运行的手机与电脑数据恢复工作台。目标平台：Windows 10/11 x64、macOS 13+（Apple Silicon / Intel），Python 3.12 + PySide6 + SQLite。
 
-**当前预览版本：[v0.7.0](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.7.0)，已发布 Windows 和 macOS 双架构包，新增 MP4/MOV 静音视频预览、播放/暂停、进度拖动和手机竖屏支持。** 电脑功能的范围与使用方法见 [电脑恢复](docs/COMPUTER_RECOVERY.md)，macOS 启动说明见 [macOS 适配](docs/MACOS.md)。
+**当前预览版本：[v0.8.0](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.8.0)，已发布 Windows 和 macOS 双架构包，新增 MP4/MOV 连续签名扫描与容器/采样范围检查，贯通预览、校验导出和历史回读。** 电脑功能的范围与使用方法见 [电脑恢复](docs/COMPUTER_RECOVERY.md)，macOS 启动说明见 [macOS 适配](docs/MACOS.md)。
 
-**v0.8.0 已合并、发布待完成：** MP4/MOV 连续签名扫描及三平台正式构建已通过，GitHub 自动发布任务因账号计费/额度问题未启动，当前环境备用上传接口返回 401。现有下载仍为 v0.7.0；正式构建与待处理事项见[发布状态](docs/releases/0.8.0/STATUS.json)，范围与截图见[视频签名扫描](docs/VIDEO_SIGNATURE_SCAN.md)及[本轮测试](docs/VIDEO_SIGNATURE_TEST_REPORT_20261105.md)。
+v0.8.0 的支持范围与边界见[视频签名扫描](docs/VIDEO_SIGNATURE_SCAN.md)及[测试与截图](docs/VIDEO_SIGNATURE_TEST_REPORT_20261105.md)，正式附件下载核验见[发布记录](docs/releases/0.8.0/PUBLISHED.json)。签名候选的删除状态未知，不重组碎片或推断原文件尾随数据。
 
 依据《DeepRecover_当前对话归档与研发方案_20261102.md》创建。
 
@@ -18,7 +18,7 @@
 
 - 分层工程、虚拟环境依赖清单、入口和 8 个导航页面。
 - 电脑恢复入口：Windows 本地磁盘/U 盘、macOS 磁盘、原始镜像；MBR/扩展分区及 GPT 识别，源只读，原始盘工作目录/导出目标必须位于另一物理盘。
-- NTFS 删除记录与碎片布局、FAT32 空闲单簇、exFAT 明确连续布局候选；分配已重用或布局不明的记录保留为受限项。APFS/HFS+ 在 v0.8.0 开发版提供 JPG/PNG/MP4/MOV 连续签名候选，不解析删除记录。
+- NTFS 删除记录与碎片布局、FAT32 空闲单簇、exFAT 明确连续布局候选；分配已重用或布局不明的记录保留为受限项。APFS/HFS+ 提供 JPG/PNG/MP4/MOV 连续签名候选，不解析删除记录。
 - 深蓝导航、浅色工作区、三步总览入口、卡片分区与统一图标；结果预览、分页工具栏和导出历史使用同一视觉主题。
 - 工作目录初始化、轮转日志、SQLite v3 迁移、数据源/候选/导出记录（兼容 v1/v2 历史记录）。
 - 后台任务执行、协作式取消、成功/失败/中断状态及任务历史。
@@ -27,7 +27,7 @@
 - iPhone 常用备份目录发现、自选目录、备份元数据和加密状态识别。
 - 未加密 Manifest.db 只读解析、候选入库，缺失文件显式标记。
 - 候选按任务每页 100 条展示；历史任务结果可重开，失败/取消任务保留已提交的部分记录。
-- 本地文件/镜像的 JPG、PNG 及 v0.8.0 开发版新增的 MP4、MOV 连续签名扫描，记录源内偏移、长度和结构检查结果；支持后台进度与取消。
+- 本地文件/镜像的 JPG、PNG、MP4、MOV 连续签名扫描，记录源内偏移、长度和结构检查结果；支持后台进度与取消。
 - 类型与状态筛选、JPG/PNG 图片及 H.264 MP4/MOV 静音视频预览；本页选中项或跨页全部筛选结果的批量导出。
 - 防覆盖导出、源范围与目标 SHA-256 对照、可回读的导出记录及本地 JSON 清单。
 - macOS 独立工作目录、Finder 备份发现、Homebrew ADB 发现与原生退出菜单；Apple Silicon / Intel 分别原生构建 `.app`。
@@ -35,10 +35,10 @@
 
 ## 下载预览包
 
-- [Windows x64](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.7.0/DeepRecover-v0.7.0-windows-x64.zip)
-- [macOS Apple Silicon](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.7.0/DeepRecover-v0.7.0-macos-arm64.zip)
-- [macOS Intel](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.7.0/DeepRecover-v0.7.0-macos-x86_64.zip)
-- [SHA256SUMS.txt](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.7.0/SHA256SUMS.txt)
+- [Windows x64](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.8.0/DeepRecover-v0.8.0-windows-x64.zip)
+- [macOS Apple Silicon](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.8.0/DeepRecover-v0.8.0-macos-arm64.zip)
+- [macOS Intel](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.8.0/DeepRecover-v0.8.0-macos-x86_64.zip)
+- [SHA256SUMS.txt](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.8.0/SHA256SUMS.txt)
 
 Windows 解压后运行目录中的 `DeepRecover.exe`，保留整个 `DeepRecover` 文件夹及 `_internal` 文件，不能只复制 EXE。macOS 按芯片类型下载，解压后将整个 `DeepRecover.app` 拖入“应用程序”。预览包无需另外安装 Python，Windows 包不是安装程序；源码归档则按下方步骤配置 Python。macOS 包未提供 Developer ID 签名或 Apple 公证，详见 [macOS 说明](docs/MACOS.md)。
 
@@ -47,6 +47,8 @@ v0.5.0 界面截图：[选择工作目录](docs/qa/guided-20261104/arm64/01-work
 v0.6.0 诊断截图：[环境检查](docs/qa/m5-20261105/arm64/01-local-environment-check.png)、[保存本地报告](docs/qa/m5-20261105/arm64/02-sanitized-report-saved.png)。
 
 v0.7.0 视频截图：[播放与拖动](docs/qa/video-20261105/arm64/02-playback-pause-and-seek.png)、[手机竖屏](docs/qa/video-20261105/arm64/06-phone-portrait-rotation.png)。
+
+v0.8.0 扫描截图：[采样范围依据](docs/releases/0.8.0/validation/arm64/video-signature-qa/03-container-and-sample-evidence.png)、[扫描出的 MOV 预览](docs/releases/0.8.0/validation/arm64/video-signature-qa/05-scanned-mov-decoded-frame.png)、[精确范围导出](docs/releases/0.8.0/validation/arm64/video-signature-qa/06-verified-range-exports.png)。
 
 ## Windows 启动
 

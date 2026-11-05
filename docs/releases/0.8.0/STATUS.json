@@ -2,16 +2,16 @@
   "tag": "v0.8.0",
   "source_commit": "bb14d60944270a3da4fece96718fdd5f54f1adb3",
   "builds_verified": true,
-  "release_published": false,
-  "publication_status": "blocked",
-  "current_published_preview": "v0.7.0",
-  "checked_at_utc": "2026-11-05T06:13:47.973619+00:00",
+  "release_published": true,
+  "publication_status": "published",
+  "current_published_preview": "v0.8.0",
+  "checked_at_utc": "2026-11-05T08:41:38.543510+00:00",
   "merged_pull_requests": [
     18,
     19
   ],
   "build_url": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41977483255",
-  "workflow_run_conclusion": "failure",
+  "workflow_run_conclusion": "success",
   "native_validation": {
     "windows": {
       "source_commit": "bb14d60944270a3da4fece96718fdd5f54f1adb3",
@@ -318,18 +318,63 @@
     }
   ],
   "automatic_publish": {
-    "started": false,
-    "job_url": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41977483255/job/127084101377",
-    "failure_reason": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
-    "retry_result": "Same billing/spending-limit failure before any step started"
+    "started": true,
+    "conclusion": "success",
+    "job_url": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41977483255/job/127138816628",
+    "run_attempt": 3
   },
-  "fallback_upload": {
-    "host": "uploads.github.com",
-    "http_status": 401,
-    "error": "Bad credentials",
-    "release_created": false
-  },
-  "resume": "Fix GitHub Actions account billing or spending allowance, then rerun only the failed publish job for run 41977483255. Existing artifacts and tag are unchanged.",
   "physical_device_acceptance": "not_run",
-  "publication_attempts": 2
+  "publication_attempts": 3,
+  "publication_history": {
+    "automatic_publish_before_public": {
+      "started": false,
+      "job_url": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41977483255/job/127084101377",
+      "failure_reason": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
+      "retry_result": "Same billing/spending-limit failure before any step started"
+    },
+    "fallback_upload_before_public": {
+      "host": "uploads.github.com",
+      "http_status": 401,
+      "error": "Bad credentials",
+      "release_created": false
+    }
+  },
+  "repository_visibility": "public",
+  "release_url": "https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.8.0",
+  "assets": [
+    {
+      "name": "DeepRecover-v0.8.0-macos-arm64.zip",
+      "bytes": 47747417,
+      "sha256": "74d9cd40a14e6ed22a1ff67d44dd625e18c6585609d046bc40cc03d0ef168883",
+      "download_url": "https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.8.0/DeepRecover-v0.8.0-macos-arm64.zip",
+      "zip_crc": "passed",
+      "entries": 500,
+      "architecture": "arm64",
+      "mach_o": "passed",
+      "preserved_symlinks": 117
+    },
+    {
+      "name": "DeepRecover-v0.8.0-macos-x86_64.zip",
+      "bytes": 52602967,
+      "sha256": "696559f6b7d318e3e0073a747a60d5611bdfd5181bc852ab244739651712d281",
+      "download_url": "https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.8.0/DeepRecover-v0.8.0-macos-x86_64.zip",
+      "zip_crc": "passed",
+      "entries": 500,
+      "architecture": "x86_64",
+      "mach_o": "passed",
+      "preserved_symlinks": 117
+    },
+    {
+      "name": "DeepRecover-v0.8.0-windows-x64.zip",
+      "bytes": 61241085,
+      "sha256": "166db4d925233b31c00e283390562186f074986cc5b004590cbd868d1ec30dc3",
+      "download_url": "https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.8.0/DeepRecover-v0.8.0-windows-x64.zip",
+      "zip_crc": "passed",
+      "entries": 257,
+      "architecture": "x64",
+      "pe_machine": "0x8664",
+      "qt_platform_and_jpeg_plugins": true
+    }
+  ],
+  "published_at_asia_shanghai": "2026-11-05T16:37:33+08:00"
 }
