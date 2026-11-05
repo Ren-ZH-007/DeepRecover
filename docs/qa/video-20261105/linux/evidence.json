@@ -1,0 +1,98 @@
+{
+  "date_utc": "2026-11-05",
+  "platform": "linux",
+  "architecture": "x86_64",
+  "qt_platform": "offscreen",
+  "cases": [
+    {
+      "id": "VQA-01",
+      "result": "passed",
+      "actual_frame_decoded": true,
+      "source_url_empty": true,
+      "memory_device_only": true,
+      "audio_track_present": true,
+      "no_audio_output": true
+    },
+    {
+      "id": "VQA-02",
+      "result": "passed",
+      "actual_playback_advanced": true,
+      "pause_verified": true,
+      "seek_frame_decoded": true
+    },
+    {
+      "id": "VQA-03",
+      "result": "passed",
+      "selection_stops_player": true,
+      "compressed_buffer_released": true,
+      "decoded_frame_released": true
+    },
+    {
+      "id": "VQA-04",
+      "result": "passed",
+      "external_reference_refused_before_decoder": true,
+      "no_backend_started": true
+    },
+    {
+      "id": "VQA-05",
+      "result": "passed",
+      "injected_decoder_error_redacted": true,
+      "stale_frame_cleared": true,
+      "buffer_released": true
+    },
+    {
+      "id": "VQA-06",
+      "result": "passed",
+      "history_does_not_prepare_video": true,
+      "candidate_unchanged": true,
+      "sources_unchanged": true,
+      "no_preview_files": true,
+      "no_export_files": true
+    },
+    {
+      "id": "VQA-07",
+      "result": "passed",
+      "rotation_metadata_applied": true,
+      "portrait_frame_decoded": true,
+      "portrait_source_and_candidate_unchanged": true
+    }
+  ],
+  "screenshot_font_check": {
+    "text": "DeepRecover 0123456789 电脑恢复 已删除图片 碎片文档 来源只读 本地处理 预览导出 历史结果",
+    "families": [
+      "Noto Sans CJK SC"
+    ],
+    "missing_glyphs": 0
+  },
+  "source_hashes_unchanged": true,
+  "candidate_statuses_unchanged": true,
+  "preview_files_created": false,
+  "raw_devices_opened": false,
+  "network_media_sources_opened": false,
+  "screenshots": [
+    {
+      "file": "01-actual-video-first-frame.png",
+      "sha256": "b5690992a7bb40cf9e6b311206c8b0bfc37a60eeaaaaf12c67f7772af332d6ee"
+    },
+    {
+      "file": "02-playback-pause-and-seek.png",
+      "sha256": "2461643fff07b14130c3c188fb692d6fa6bdba14e441c00e4adec6c62dafcea1"
+    },
+    {
+      "file": "03-selection-change-releases-video.png",
+      "sha256": "38894c6b8e599c30b817d285fff13a5187e8909039564f4d90776c4b4c8bcfbb"
+    },
+    {
+      "file": "04-external-reference-rejected.png",
+      "sha256": "36b11238c9d5e4e0adc8a00f1484ba5586944314d78c826727ff3f1f644feba8"
+    },
+    {
+      "file": "05-decoder-error-clears-frame.png",
+      "sha256": "d617a585a421358b2e7074509d0ea6f74c896d179e29dccea44800972fcbf018"
+    },
+    {
+      "file": "06-phone-portrait-rotation.png",
+      "sha256": "cb2fc9129bcff49200fd01d43ac3e6023d913b669229e14095e9064d972deb1b"
+    }
+  ]
+}
