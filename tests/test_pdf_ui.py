@@ -123,15 +123,26 @@ class PdfUiTests(unittest.TestCase):
 
     def test_qt_authored_pdf_with_embedded_font_passes_real_rendering(self):
         from PySide6.QtCore import QByteArray,QBuffer,QIODevice
-        from PySide6.QtGui import QPainter,QPdfWriter,QPagedPaintDevice
+        from PySide6.QtGui import QPainter,QPdfWriter,QPagedPaintDevice,QFont
         from core.preview.pdf import inspect_pdf,render_pdf
         buffer=QBuffer();buffer.open(QIODevice.OpenModeFlag.WriteOnly)
         writer=QPdfWriter(buffer);writer.setPdfVersion(QPagedPaintDevice.PdfVersion.PdfVersion_1_4)
-        painter=QPainter(writer);painter.drawText(100,400,'Original Qt-authored PDF')
+        painter=QPainter(writer)
+        # The platform UI font may be a virtual/protected system face on macOS.
+        # Use an explicit portable family for a deterministic embedded-font PDF.
+        painter.setFont(QFont('Arial',12));painter.drawText(100,400,'Original Qt-authored PDF')
         writer.newPage();painter.drawText(100,400,'A second static page');painter.end()
         data=bytes(buffer.data());buffer.close()
         details=inspect_pdf(data,CancellationToken());self.assertEqual(details['pages'],2)
-        self.assertFalse(render_pdf(data,1,50,CancellationToken()).isNull())
+        try:
+            self.assertFalse(render_pdf(data,1,50,CancellationToken()).isNull())
+        except Exception:
+            import platform
+            import sys
+            folder=Path('build')/(f'macos-{platform.machine()}' if sys.platform=='darwin' else '')
+            folder.mkdir(parents=True,exist_ok=True)
+            (folder/'pdf-render-failure.pdf').write_bytes(data)
+            raise
 
     def test_raw_pdf_preflight_failure_creates_no_preview_task_or_renderer(self):
         from core.computer.service import ComputerError

@@ -93,6 +93,7 @@ jobs:
           name: windows-validation-${{ github.sha }}
           path: |
             build/test-report.json
+            build/pdf-render-failure.pdf
             build/executable-smoke.json
             build/computer-qa/
             build/guided-qa/

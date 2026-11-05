@@ -98,6 +98,7 @@ jobs:
           name: macos-${{ matrix.arch }}-validation-${{ github.sha }}
           path: |
             build/macos-${{ matrix.arch }}/test-report.json
+            build/macos-${{ matrix.arch }}/pdf-render-failure.pdf
             build/macos-${{ matrix.arch }}/*-smoke.json
             build/macos-${{ matrix.arch }}/*.stdout.txt
             build/macos-${{ matrix.arch }}/*.stderr.txt
