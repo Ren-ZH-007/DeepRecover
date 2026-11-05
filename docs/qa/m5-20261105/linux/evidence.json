@@ -1,0 +1,68 @@
+{
+  "date": "2026-11-05",
+  "platform": "linux",
+  "architecture": "x86_64",
+  "qt_platform": "offscreen",
+  "cases": [
+    {
+      "id": "DQA-01",
+      "result": "passed",
+      "real_collect_service": true,
+      "no_report_before_explicit_save": true,
+      "database_and_tasks_unchanged": true,
+      "manual_acceptance_not_run": true
+    },
+    {
+      "id": "DQA-02",
+      "result": "passed",
+      "real_write_service": true,
+      "one_new_local_report": true,
+      "database_and_tasks_unchanged": true,
+      "report_contains_no_source_path": true
+    },
+    {
+      "id": "DQA-03",
+      "result": "passed",
+      "save_exception_redacted": true,
+      "existing_report_not_overwritten": true,
+      "database_and_tasks_unchanged": true
+    },
+    {
+      "id": "DQA-04",
+      "result": "passed",
+      "collect_exception_redacted": true,
+      "stale_report_cleared": true,
+      "database_and_tasks_unchanged": true
+    }
+  ],
+  "screenshot_font_check": {
+    "text": "DeepRecover 0123456789 电脑恢复 已删除图片 碎片文档 来源只读 本地处理 预览导出 历史结果",
+    "families": [
+      "Noto Sans CJK SC"
+    ],
+    "missing_glyphs": 0
+  },
+  "source_sentinel_sha256_unchanged": true,
+  "database_and_tasks_unchanged": true,
+  "raw_devices_opened": false,
+  "devices_enumerated": false,
+  "adb_executed": false,
+  "screenshots": [
+    {
+      "file": "01-local-environment-check.png",
+      "sha256": "8ac14fdd043f2bffb33292fb71c2ca0148df0f90882e34355e88ba54fd8bec3a"
+    },
+    {
+      "file": "02-sanitized-report-saved.png",
+      "sha256": "af01ae92151957aea60786c2764df8fc50368124d59052a038a9e6f83b43d086"
+    },
+    {
+      "file": "03-report-error-redacted.png",
+      "sha256": "49c2ba4c496f99ef751e819934d70c34d9086d731b2d367880a08f5f27bafa6d"
+    },
+    {
+      "file": "04-check-error-redacted.png",
+      "sha256": "c1e3a10667f8720498ae9ff9297264bd65ef8fa6bbebe09f471920968532487b"
+    }
+  ]
+}

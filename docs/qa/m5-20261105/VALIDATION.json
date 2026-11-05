@@ -1,0 +1,266 @@
+{
+  "success": true,
+  "pull_request": "https://github.com/Ren-ZH-007/DeepRecover/pull/14",
+  "functional_commit": "31e8c6dff69dbe871bba204ee510aacc39537005",
+  "workflow_screenshots_verified": 121,
+  "additional_packaged_screenshots_verified": 2,
+  "real_hardware_acceptance": "not_run",
+  "scope": "Native CI and local synthetic workflows; no physical device acceptance",
+  "local_linux_test_report": "linux/test-report.json",
+  "local_linux_tests_passed": 392,
+  "native_validation": {
+    "windows": {
+      "build_url": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41942714396",
+      "checkout_commit": "31e8c6dff69dbe871bba204ee510aacc39537005",
+      "validation_artifact": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41942714396/artifacts/13377246589",
+      "tests": {
+        "success": true,
+        "platform": "win32",
+        "run": 392,
+        "passed": 390,
+        "failures": 0,
+        "errors": 0,
+        "skipped": [
+          {
+            "test": "test_export.ExportTests.test_replaced_target_is_neither_verified_nor_deleted_as_owned_output",
+            "reason": "Windows may deny replacement of an open file"
+          },
+          {
+            "test": "test_qa_regressions.DetailedQaRegressions.test_manifest_symlink_cannot_escape_selected_backup",
+            "reason": "Creating symlinks may need Windows privileges"
+          }
+        ],
+        "unexpected_skips": [],
+        "expected_failures": 0,
+        "unexpected_successes": 0
+      },
+      "workflows": {
+        "diagnostics": {
+          "cases_passed": 4,
+          "screenshots_verified": 4
+        },
+        "computer": {
+          "cases_passed": 11,
+          "screenshots_verified": 18
+        },
+        "guided": {
+          "cases_passed": 5,
+          "screenshots_verified": 5
+        }
+      },
+      "diagnostics_database_and_source_unchanged": true,
+      "diagnostics_raw_devices_opened": false,
+      "diagnostics_devices_enumerated": false,
+      "diagnostics_adb_executed": false,
+      "packaged_smoke": {
+        "executable": {
+          "success": true,
+          "version": "0.6.0",
+          "schema_version": 3,
+          "navigation_pages": 8,
+          "qt_platform": "offscreen",
+          "workspace_dialog_verified": true,
+          "computer_candidates": 2,
+          "computer_verified_exports": 2,
+          "workspace_roundtrip_verified": true,
+          "environment_diagnostics_verified": true,
+          "verified_exports": 2,
+          "decoded_formats": [
+            "PNG",
+            "JPEG"
+          ]
+        }
+      },
+      "test_package": {
+        "architecture": "windows-x64",
+        "filename": "DeepRecover-v0.6.0-windows-x64.zip",
+        "bytes": 51645956,
+        "sha256": "c3b8cf03051a0336a0bc7a34609f20b0a78693a4c35541b655bd727103008881",
+        "zip_crc": "passed",
+        "executable_architecture": "passed",
+        "kind": "PR test artifact; not a GitHub Release",
+        "artifact_url": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41942714396/artifacts/13377351040"
+      }
+    },
+    "arm64": {
+      "build_url": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41942744276",
+      "checkout_commit": "c354dafe7b67a97c8badd18aa84ca72ba49bb873",
+      "validation_artifact": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41942744276/artifacts/13376729485",
+      "tests": {
+        "success": true,
+        "platform": "darwin",
+        "run": 392,
+        "passed": 392,
+        "failures": 0,
+        "errors": 0,
+        "skipped": [],
+        "unexpected_skips": [],
+        "expected_failures": 0,
+        "unexpected_successes": 0
+      },
+      "workflows": {
+        "diagnostics": {
+          "cases_passed": 4,
+          "screenshots_verified": 4
+        },
+        "computer": {
+          "cases_passed": 11,
+          "screenshots_verified": 18
+        },
+        "guided": {
+          "cases_passed": 5,
+          "screenshots_verified": 5
+        },
+        "legacy_cocoa": {
+          "cases_passed": 14,
+          "screenshots_verified": 20
+        }
+      },
+      "diagnostics_database_and_source_unchanged": true,
+      "diagnostics_raw_devices_opened": false,
+      "diagnostics_devices_enumerated": false,
+      "diagnostics_adb_executed": false,
+      "packaged_smoke": {
+        "offscreen": {
+          "success": true,
+          "version": "0.6.0",
+          "schema_version": 3,
+          "navigation_pages": 8,
+          "qt_platform": "offscreen",
+          "workspace_dialog_verified": true,
+          "computer_candidates": 2,
+          "computer_verified_exports": 2,
+          "workspace_roundtrip_verified": true,
+          "environment_diagnostics_verified": true,
+          "verified_exports": 2,
+          "decoded_formats": [
+            "PNG",
+            "JPEG"
+          ]
+        },
+        "cocoa": {
+          "success": true,
+          "version": "0.6.0",
+          "schema_version": 3,
+          "navigation_pages": 8,
+          "qt_platform": "cocoa",
+          "workspace_dialog_verified": true,
+          "computer_candidates": 2,
+          "computer_verified_exports": 2,
+          "workspace_roundtrip_verified": true,
+          "environment_diagnostics_verified": true,
+          "native_quit_verified": true,
+          "verified_exports": 2,
+          "decoded_formats": [
+            "PNG",
+            "JPEG"
+          ]
+        }
+      },
+      "test_package": {
+        "architecture": "macos-arm64",
+        "filename": "DeepRecover-v0.6.0-macos-arm64.zip",
+        "bytes": 38491426,
+        "sha256": "565c83698501d4d272c199f4a79774361ac03093d229db9f92f8a2d7e36388ca",
+        "zip_crc": "passed",
+        "executable_architecture": "passed",
+        "kind": "PR test artifact; not a GitHub Release",
+        "artifact_url": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41942744276/artifacts/13377430870"
+      }
+    },
+    "x86_64": {
+      "build_url": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41942744276",
+      "checkout_commit": "c354dafe7b67a97c8badd18aa84ca72ba49bb873",
+      "validation_artifact": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41942744276/artifacts/13375934738",
+      "tests": {
+        "success": true,
+        "platform": "darwin",
+        "run": 392,
+        "passed": 392,
+        "failures": 0,
+        "errors": 0,
+        "skipped": [],
+        "unexpected_skips": [],
+        "expected_failures": 0,
+        "unexpected_successes": 0
+      },
+      "workflows": {
+        "diagnostics": {
+          "cases_passed": 4,
+          "screenshots_verified": 4
+        },
+        "computer": {
+          "cases_passed": 11,
+          "screenshots_verified": 18
+        },
+        "guided": {
+          "cases_passed": 5,
+          "screenshots_verified": 5
+        },
+        "legacy_cocoa": {
+          "cases_passed": 14,
+          "screenshots_verified": 20
+        }
+      },
+      "diagnostics_database_and_source_unchanged": true,
+      "diagnostics_raw_devices_opened": false,
+      "diagnostics_devices_enumerated": false,
+      "diagnostics_adb_executed": false,
+      "packaged_smoke": {
+        "offscreen": {
+          "success": true,
+          "version": "0.6.0",
+          "schema_version": 3,
+          "navigation_pages": 8,
+          "qt_platform": "offscreen",
+          "workspace_dialog_verified": true,
+          "computer_candidates": 2,
+          "computer_verified_exports": 2,
+          "workspace_roundtrip_verified": true,
+          "environment_diagnostics_verified": true,
+          "verified_exports": 2,
+          "decoded_formats": [
+            "PNG",
+            "JPEG"
+          ]
+        },
+        "cocoa": {
+          "success": true,
+          "version": "0.6.0",
+          "schema_version": 3,
+          "navigation_pages": 8,
+          "qt_platform": "cocoa",
+          "workspace_dialog_verified": true,
+          "computer_candidates": 2,
+          "computer_verified_exports": 2,
+          "workspace_roundtrip_verified": true,
+          "environment_diagnostics_verified": true,
+          "native_quit_verified": true,
+          "verified_exports": 2,
+          "decoded_formats": [
+            "PNG",
+            "JPEG"
+          ]
+        }
+      },
+      "test_package": {
+        "architecture": "macos-x86_64",
+        "filename": "DeepRecover-v0.6.0-macos-x86_64.zip",
+        "bytes": 42240328,
+        "sha256": "c078a026157243e0a5ed43a03d3eb5e05a961ec07aae2c39ca9f81d355ae19ca",
+        "zip_crc": "passed",
+        "executable_architecture": "passed",
+        "kind": "PR test artifact; not a GitHub Release",
+        "artifact_url": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/41942744276/artifacts/13376973073"
+      }
+    }
+  },
+  "screenshot_checks": {
+    "sha256_matches_evidence": true,
+    "png_crc": true,
+    "qt_decode": true,
+    "nonblank_pixel_samples": true
+  },
+  "archived_diagnostic_screenshots": 16,
+  "release_created": false
+}
