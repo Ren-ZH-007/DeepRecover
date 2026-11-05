@@ -4,7 +4,7 @@
 
 **当前预览版本：[v0.7.0](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.7.0)，已发布 Windows 和 macOS 双架构包，新增 MP4/MOV 静音视频预览、播放/暂停、进度拖动和手机竖屏支持。** 电脑功能的范围与使用方法见 [电脑恢复](docs/COMPUTER_RECOVERY.md)，macOS 启动说明见 [macOS 适配](docs/MACOS.md)。
 
-**v0.8.0 开发中：** 新增 MP4/MOV 连续签名扫描与容器/采样范围检查，贯通来源追踪、视频筛选、预览、校验导出和历史。尚未正式发布，支持范围与边界见[视频签名扫描](docs/VIDEO_SIGNATURE_SCAN.md)及[本轮测试](docs/VIDEO_SIGNATURE_TEST_REPORT_20261105.md)。
+**v0.8.0 已合并、发布待完成：** MP4/MOV 连续签名扫描及三平台正式构建已通过，GitHub 自动发布任务因账号计费/额度问题未启动，当前环境备用上传接口返回 401。现有下载仍为 v0.7.0；正式构建与待处理事项见[发布状态](docs/releases/0.8.0/STATUS.json)，范围与截图见[视频签名扫描](docs/VIDEO_SIGNATURE_SCAN.md)及[本轮测试](docs/VIDEO_SIGNATURE_TEST_REPORT_20261105.md)。
 
 依据《DeepRecover_当前对话归档与研发方案_20261102.md》创建。
 
