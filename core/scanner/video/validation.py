@@ -408,7 +408,8 @@ def validate(stream, start, source_size, token, max_size):
                 require(size - header <= MAX_METADATA, 'validation_limit')
                 movie = Movie(read(position + header, size - header), token, budget)
                 ranges = movie.parse()
-                require(all(0 < a < b <= max_size for a, b in ranges), 'validation_limit')
+                require(all(0 < a < b for a, b in ranges))
+                require(all(b <= max_size for _, b in ranges), 'validation_limit')
             elif kind == b'mdat':
                 require(size > header)
                 mdats.append((position + header, end))

@@ -68,6 +68,8 @@ class VideoStructureTests(unittest.TestCase):
             bad = edit_box(data, b'stco', lambda p: p[:8] + struct.pack('>II', *offsets))
             result = self.check(bad)
             self.assertNotEqual(result.integrity, 'video_structure_checked')
+            if offsets[0] == 0:
+                self.assertEqual(result.integrity, 'video_invalid_structure')
             self.assertIsNone(result.details)
 
     def test_overlapping_chunk_ranges_are_invalid(self):
