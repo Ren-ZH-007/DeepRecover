@@ -1,0 +1,69 @@
+{
+  "date": "2026-11-05",
+  "platform": "darwin",
+  "architecture": "x86_64",
+  "qt_platform": "cocoa",
+  "cases": [
+    {
+      "id": "DQA-01",
+      "result": "passed",
+      "real_collect_service": true,
+      "no_report_before_explicit_save": true,
+      "database_and_tasks_unchanged": true,
+      "manual_acceptance_not_run": true
+    },
+    {
+      "id": "DQA-02",
+      "result": "passed",
+      "real_write_service": true,
+      "one_new_local_report": true,
+      "database_and_tasks_unchanged": true,
+      "report_contains_no_source_path": true
+    },
+    {
+      "id": "DQA-03",
+      "result": "passed",
+      "save_exception_redacted": true,
+      "existing_report_not_overwritten": true,
+      "database_and_tasks_unchanged": true
+    },
+    {
+      "id": "DQA-04",
+      "result": "passed",
+      "collect_exception_redacted": true,
+      "stale_report_cleared": true,
+      "database_and_tasks_unchanged": true
+    }
+  ],
+  "screenshot_font_check": {
+    "text": "DeepRecover 0123456789 电脑恢复 已删除图片 碎片文档 来源只读 本地处理 预览导出 历史结果",
+    "families": [
+      "Helvetica Neue",
+      "PingFang SC"
+    ],
+    "missing_glyphs": 0
+  },
+  "source_sentinel_sha256_unchanged": true,
+  "database_and_tasks_unchanged": true,
+  "raw_devices_opened": false,
+  "devices_enumerated": false,
+  "adb_executed": false,
+  "screenshots": [
+    {
+      "file": "01-local-environment-check.png",
+      "sha256": "9ed7f04aed173f807bf08132c0029e27b349fa381deeb432965f253792a0e9ac"
+    },
+    {
+      "file": "02-sanitized-report-saved.png",
+      "sha256": "fddc224fbf0c5ed76b91f454f3d64c4f262cbf98ffe5ac876fa12789c869aae6"
+    },
+    {
+      "file": "03-report-error-redacted.png",
+      "sha256": "ec6a071e28d7ebe6a88341648ab486e849053540f3e59bc927a34fa9eb25b4f9"
+    },
+    {
+      "file": "04-check-error-redacted.png",
+      "sha256": "9913c9b75d65291f5fe736c83f369a4e6355262965db6f6809dada22512275ea"
+    }
+  ]
+}

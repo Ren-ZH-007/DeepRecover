@@ -40,6 +40,7 @@ class MacOSBuildVerificationTests(unittest.TestCase):
                         'native_quit_verified': True}
         self.payload.update(computer_candidates=2, computer_verified_exports=2)
         self.payload.update(workspace_dialog_verified=True, workspace_roundtrip_verified=True)
+        self.payload.update(environment_diagnostics_verified=True)
 
     def write_info(self):
         with (self.bundle / 'Contents/Info.plist').open('wb') as stream:

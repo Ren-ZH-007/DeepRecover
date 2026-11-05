@@ -19,6 +19,7 @@ def validate_report(path, expected_version):
         'computer_verified_exports': 2,
         'workspace_dialog_verified': True,
         'workspace_roundtrip_verified': True,
+        'environment_diagnostics_verified': True,
     }
     for name, value in expected.items():
         if type(data.get(name)) is not type(value) or data.get(name) != value:
