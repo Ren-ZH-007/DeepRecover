@@ -1,0 +1,116 @@
+{
+  "date_utc": "2026-11-05T10:49:50.002036+00:00",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "qt_platform": "cocoa",
+  "cases": [
+    {
+      "id": "PQA-01",
+      "result": "passed",
+      "real_ui_scan": true,
+      "exact_range_and_hash": true,
+      "document_filter": true,
+      "deletion_unknown": true
+    },
+    {
+      "id": "PQA-02",
+      "result": "passed",
+      "persisted_page_object_evidence": true,
+      "no_whole_document_render_claim": true
+    },
+    {
+      "id": "PQA-03",
+      "result": "passed",
+      "actual_first_and_second_pages": true,
+      "isolated_renderer": true,
+      "distinct_page_pixels": true
+    },
+    {
+      "id": "PQA-04",
+      "result": "passed",
+      "zoom_pixels_verified": true,
+      "selection_closes_pdf": true,
+      "owned_bytes_and_pixels_released": true
+    },
+    {
+      "id": "PQA-05",
+      "result": "passed",
+      "computer_source_same_verified_range": true,
+      "computer_pdf_rendered": true,
+      "ordinary_acquisition_rendered": true,
+      "ordinary_copy_not_marked_recovered": true
+    },
+    {
+      "id": "PQA-06",
+      "result": "passed",
+      "exact_export_bytes": true,
+      "source_target_sha256_equal": true,
+      "independent_export_record": true
+    },
+    {
+      "id": "PQA-07",
+      "result": "passed",
+      "encrypted_active_external_object_stream_truncated_distinguished": true,
+      "all_unverified_exports_failed": true,
+      "no_pdf_output": true
+    },
+    {
+      "id": "PQA-08",
+      "result": "passed",
+      "source_hashes_unchanged": true,
+      "candidate_status_unchanged": true,
+      "history_without_source": true,
+      "history_does_not_render": true
+    }
+  ],
+  "screenshot_font_check": {
+    "text": "DeepRecover 0123456789 电脑恢复 已删除图片 碎片文档 来源只读 本地处理 预览导出 历史结果",
+    "families": [
+      "Helvetica Neue",
+      "PingFang SC"
+    ],
+    "missing_glyphs": 0
+  },
+  "synthetic_sources_only": true,
+  "raw_devices_opened": false,
+  "network_media_sources_opened": false,
+  "preview_document_copies_created": false,
+  "screenshots": [
+    {
+      "file": "01-read-only-pdf-scan-scope.png",
+      "sha256": "e91dadde7d495037b88263c66e55890700a20beb735d9cd5bc4a3f651e8579f1"
+    },
+    {
+      "file": "02-pdf-structure-evidence.png",
+      "sha256": "2a59d6387ddcb0ae87c35ae8049e5d4fcd9fec3af1547a07fe68af1a23bfbcc5"
+    },
+    {
+      "file": "03-first-page-actual-render.png",
+      "sha256": "5a397ec87d1e651111a8bdbab34a9c81209b3d4fc4e2c2c0993806542151961d"
+    },
+    {
+      "file": "04-second-page-actual-render.png",
+      "sha256": "4fa6903fd7dcdab3be1722385898b80ef15d3b1c7de46f30df3f1b6824a08b04"
+    },
+    {
+      "file": "05-document-zoom.png",
+      "sha256": "f26f6c13473bc652155a01de22689fedd1f92588f10acee9dc6c00eda8be1233"
+    },
+    {
+      "file": "06-selection-releases-document.png",
+      "sha256": "27dedacde4a9a412368c587487a094df52d24e97315a87892063ca24a4be7e3c"
+    },
+    {
+      "file": "07-verified-pdf-range-export.png",
+      "sha256": "7b64a80f24d7a91a445fe0598288400a0a9e5fc921a6363270cfbd16e750e106"
+    },
+    {
+      "file": "08-encrypted-and-active-documents-rejected.png",
+      "sha256": "efaa6418e5be12155e7d5568ad286f8707db56d701ead29346f69335bac53448"
+    },
+    {
+      "file": "09-history-with-missing-source.png",
+      "sha256": "0bb38722e3f93f2885974a19f17c0634debbb631d1929d8f97d747be806653a4"
+    }
+  ]
+}
