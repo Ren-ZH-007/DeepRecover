@@ -19,6 +19,7 @@ from core.preview.pdf import prepare_pdf
 from storage.models.classification import category
 from core.export.service import export_batch, ExportError
 from ui.recovery.export_history import ExportHistory
+from core.progress_rate import RateEstimator, describe_rate, format_bytes
 from ui.recovery.presentation import (candidate_status, content_check, deletion_evidence, video_check_details, pdf_check_details,
     export_guidance, task_status, task_kind, source_kind, error_text)
 from ui.computer.page import ComputerPage, check_computer_access, computer_error_types
@@ -52,6 +53,7 @@ class MainWindow(QMainWindow):
         self.config, self.repository = config, repository
         self.manager = TaskManager(repository)
         self.pending = None
+        self.rate = RateEstimator(); self.scan_base_text = None
         self.backups = []
         self.devices = []
         self.android_files = []
@@ -325,6 +327,7 @@ class MainWindow(QMainWindow):
         if self.pending or self.computer_page.readonly_pending:
             self.statusBar().showMessage('已有任务执行中，请等待或在任务记录页停止。'); return
         self.stop_previews()
+        self.rate = RateEstimator(); self.scan_base_text = None
         self.pending = (self.manager.submit(kind, operation, persist_candidates=persist_candidates,
                                             source=source, batch_size=batch_size, with_task_id=with_task_id), on_success)
         self.computer_page.refresh_controls()
@@ -339,12 +342,17 @@ class MainWindow(QMainWindow):
         if self.pending is None:
             return
         progress = self.pending[0].token.progress
+        rate = describe_rate(self.rate.update(self.pending[0].id, progress),
+                             'items' if progress is not None and progress.phase == 'export' else 'bytes')
+        rate = f' · {rate}' if rate and not self.pending[0].future.done() else ''
         if progress is not None and progress.phase == 'scan':
             self.scan_progress.setValue(progress.processed * 1000 // progress.total if progress.total else 0)
-            self.scan_status.setText(f'已扫描 {progress.processed} / {progress.total} 字节 · {progress.candidates} 个签名候选（不等于恢复成功）')
+            self.scan_base_text = (f'已扫描 {format_bytes(progress.processed)} / {format_bytes(progress.total)}'
+                                   f' · {progress.candidates} 个签名候选（不等于恢复成功）')
+            self.scan_status.setText(self.scan_base_text + rate)
         elif progress is not None and progress.phase == 'export':
             self.export_progress.setValue(progress.processed * 1000 // progress.total if progress.total else 0)
-            self.export_status.setText(f'已处理 {progress.processed} / {progress.total} 项 · 已校验导出 {progress.candidates} 项')
+            self.export_status.setText(f'已处理 {progress.processed} / {progress.total} 项 · 已校验导出 {progress.candidates} 项' + rate)
         if not self.pending[0].future.done():
             return
         handle, callback = self.pending
@@ -362,7 +370,7 @@ class MainWindow(QMainWindow):
         if progress is not None and progress.phase == 'scan':
             task = self.repository.task(handle.id)
             display = task_status(task['status'])
-            self.scan_status.setText(self.scan_status.text() + f" · 任务状态：{display.label}，已入库 {self.repository.candidate_count(handle.id)} 条")
+            self.scan_status.setText((self.scan_base_text or self.scan_status.text()) + f" · 任务状态：{display.label}，已入库 {self.repository.candidate_count(handle.id)} 条")
             self.scan_status.setToolTip(display.tooltip)
             if task['status'] == 'completed':
                 self.scan_progress.setValue(1000)

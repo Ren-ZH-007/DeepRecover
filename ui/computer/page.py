@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (QAbstractItemView, QCheckBox, QComboBox, QFrame,
     QHeaderView, QHBoxLayout, QLabel, QMessageBox, QProgressBar, QScrollArea,
     QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget, QFileDialog)
 
+from core.progress_rate import RateEstimator, describe_rate, format_bytes
 from storage.models.source import DataSource
 from ui.recovery.presentation import task_status
 
@@ -65,6 +66,7 @@ class ComputerPage(QWidget):
     def __init__(self, window):
         super().__init__()
         self.window = window
+        self.rate = RateEstimator()
         self.source_path = None
         self.source_kind = None
         self.devices = []
@@ -509,4 +511,6 @@ class ComputerPage(QWidget):
             progress = pending[0].token.progress
             if progress is not None:
                 self.progress.setValue(progress.processed * 1000 // progress.total if progress.total else 0)
-                self.status.setText(f'已处理 {progress.processed} / {progress.total} · {progress.candidates} 条候选（不等于恢复成功）')
+                rate = describe_rate(self.rate.update(pending[0].id, progress))
+                self.status.setText(f'已处理 {format_bytes(progress.processed)} / {format_bytes(progress.total)}'
+                                    f' · {progress.candidates} 条候选（不等于恢复成功）' + (f' · {rate}' if rate else ''))
