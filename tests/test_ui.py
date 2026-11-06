@@ -179,6 +179,36 @@ class UiTests(unittest.TestCase):
             finally:
                 window.close()
 
+    def test_duplicate_column_hide_filter_export_selection_and_reset(self):
+        app=QApplication.instance() or QApplication([])
+        with tempfile.TemporaryDirectory() as directory:
+            config=AppConfig(Path(directory)); config.initialize()
+            repo=Repository(config.database)
+            task=repo.create_task('signature_scan', DataSource('image',str(Path(directory)/'disk.img'),'disk.img'))
+            same='d'*64
+            repo.add_candidates(task,[Candidate('signature_scan','first.jpg','jpg',1,sha256=same),
+                                      Candidate('signature_scan','unique.jpg','jpg',1,sha256='e'*64),
+                                      Candidate('signature_scan','copy.jpg','jpg',1,sha256=same),
+                                      Candidate('signature_scan','unverified.jpg','jpg',1)])
+            repo.update_task(task,'completed')
+            window=MainWindow(config,repo)
+            try:
+                window.open_results(task)
+                column={window.result_table.item(r,0).text():window.result_table.item(r,13).text() for r in range(window.result_table.rowCount())}
+                self.assertEqual(column,{'first.jpg':'共 2 份 · 最早一项','unique.jpg':'','copy.jpg':'共 2 份 · 重复','unverified.jpg':''})
+                self.assertEqual(window.result_table.horizontalHeaderItem(13).text(),'相同内容')
+                window.hide_duplicates.setChecked(True)
+                self.assertEqual([window.result_table.item(r,0).text() for r in range(window.result_table.rowCount())],
+                                 ['first.jpg','unique.jpg','unverified.jpg'])
+                with patch('app.main_window.QFileDialog.getExistingDirectory',return_value='') as chooser, \
+                     patch.object(repo,'candidate_ids',wraps=repo.candidate_ids) as ids:
+                    window.export_results(True)
+                self.assertTrue(ids.call_args.kwargs['hide_duplicates']); chooser.assert_called_once()
+                window.open_results(task)
+                self.assertFalse(window.hide_duplicates.isChecked()); self.assertEqual(window.result_table.rowCount(),4)
+            finally:
+                window.close()
+
     def test_scan_ui_select_run_progress_offsets_and_reopen_history(self):
         app=QApplication.instance() or QApplication([])
         with tempfile.TemporaryDirectory() as directory:
