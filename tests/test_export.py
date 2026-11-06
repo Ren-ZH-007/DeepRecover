@@ -87,7 +87,9 @@ class ExportTests(unittest.TestCase):
         first=self.export([candidate.id]); second=self.export([candidate.id])
         paths=[Path(self.repo.exports(t.id)[0]['output_path']) for t in (first,second)]
         self.assertNotEqual(paths[0].parent,paths[1].parent)
-        self.assertTrue(all(p.suffix=='.bin' and p.read_bytes()==b'bytes' for p in paths))
+        output=(self.root/'output').resolve()
+        self.assertTrue(all(p.name=='.._.._CON_bad.jpg' and p.parent.name=='DCIM' and p.read_bytes()==b'bytes'
+                            and p.resolve().is_relative_to(output) for p in paths))
         self.assertFalse((self.root/'outside').exists())
 
     def test_exclusive_output_creation_preserves_existing_file(self):
@@ -99,7 +101,8 @@ class ExportTests(unittest.TestCase):
 
     def test_output_name_collision_does_not_delete_first_export(self):
         first,_,_=self.android(b'first'); second,_,_=self.android(b'second')
-        with patch('core.export.service.uuid4',return_value=type('Id',(),{'hex':'collision'})()):
+        # A name that was free when chosen but taken before the exclusive open.
+        with patch('core.export.naming._taken',return_value=False):
             task=self.export([first.id,second.id],expected_error=ExportError)
         records=self.repo.exports(task.id)
         self.assertEqual([r['status'] for r in records],['exported','failed'])
@@ -131,7 +134,7 @@ class ExportTests(unittest.TestCase):
         replaced_paths=[]
         def replacing_open(path,mode='r',*args,**kwargs):
             stream=original_open(path,mode,*args,**kwargs)
-            if mode=='rb' and path.parent.parent.resolve()==output_root:
+            if mode=='rb' and path.resolve().is_relative_to(output_root):
                 alternate=path.with_suffix('.replacement')
                 with original_open(alternate,'wb') as replacement: replacement.write(b'other!')
                 alternate.replace(path)
