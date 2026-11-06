@@ -209,6 +209,45 @@ class UiTests(unittest.TestCase):
             finally:
                 window.close()
 
+    def test_modified_time_column_date_filter_export_selection_and_reset(self):
+        from datetime import date
+        from PySide6.QtCore import QDate
+        app=QApplication.instance() or QApplication([])
+        with tempfile.TemporaryDirectory() as directory:
+            config=AppConfig(Path(directory)); config.initialize()
+            repo=Repository(config.database)
+            task=repo.create_task('computer_scan', DataSource('image',str(Path(directory)/'disk.img'),'disk.img'))
+            repo.add_candidates(task,[Candidate('computer_deleted','may.jpg','jpg',1,file_system='FAT32',modified_at='2024-05-01T13:45:30',modified_basis='local'),
+                                      Candidate('computer_deleted','june.jpg','jpg',1,file_system='FAT32',modified_at='2024-06-01T08:00:00',modified_basis='local'),
+                                      Candidate('signature_scan','undated.jpg','jpg',1)])
+            repo.update_task(task,'completed')
+            window=MainWindow(config,repo)
+            try:
+                window.open_results(task)
+                names=lambda: [window.result_table.item(r,0).text() for r in range(window.result_table.rowCount())]
+                self.assertEqual(window.result_table.horizontalHeaderItem(14).text(),'修改时间')
+                self.assertEqual(window.result_table.item(0,14).text(),'2024-05-01 13:45（本地，无时区）')
+                self.assertIn('没有时区信息',window.result_table.item(0,14).toolTip())
+                self.assertEqual(window.result_table.item(2,14).text(),'')
+                self.assertFalse(window.date_from.isEnabled())
+                window.date_from.setDate(QDate(2024,5,1)); window.date_to.setDate(QDate(2024,5,31))
+                self.assertEqual(len(names()),3)  # not applied until enabled
+                window.date_filter.setChecked(True)
+                self.assertTrue(window.date_from.isEnabled()); self.assertEqual(names(),['may.jpg'])
+                window.date_to.setDate(QDate(2024,6,30)); self.assertEqual(names(),['may.jpg','june.jpg'])
+                window.date_from.setDate(QDate(2024,7,1))  # reversed range is swapped, not an error
+                self.assertEqual(window.date_range(),(date(2024,6,30),date(2024,7,1))); self.assertEqual(names(),[])
+                window.date_from.setDate(QDate(2024,5,1))
+                with patch('app.main_window.QFileDialog.getExistingDirectory',return_value='') as chooser, \
+                     patch.object(repo,'candidate_ids',wraps=repo.candidate_ids) as ids:
+                    window.export_results(True)
+                self.assertEqual(ids.call_args.kwargs['dates'],(date(2024,5,1),date(2024,6,30))); chooser.assert_called_once()
+                window.open_results(task)
+                self.assertFalse(window.date_filter.isChecked()); self.assertFalse(window.date_to.isEnabled())
+                self.assertEqual(window.date_to.date(),QDate.currentDate()); self.assertEqual(len(names()),3)
+            finally:
+                window.close()
+
     def test_scan_ui_select_run_progress_offsets_and_reopen_history(self):
         app=QApplication.instance() or QApplication([])
         with tempfile.TemporaryDirectory() as directory:

@@ -67,7 +67,7 @@ class Fat32Fixture:
         return MemoryReader(self.data)
 
 
-def short_entry(name=b'NOTE    TXT', *, deleted=True, cluster=3, size=20, attributes=0x20):
+def short_entry(name=b'NOTE    TXT', *, deleted=True, cluster=3, size=20, attributes=0x20, write_date=0, write_time=0):
     assert len(name) == 11
     entry = bytearray(32)
     entry[:11] = name
@@ -77,6 +77,7 @@ def short_entry(name=b'NOTE    TXT', *, deleted=True, cluster=3, size=20, attrib
     struct.pack_into('<H', entry, 20, cluster >> 16)
     struct.pack_into('<H', entry, 26, cluster & 0xffff)
     struct.pack_into('<I', entry, 28, size)
+    struct.pack_into('<HH', entry, 22, write_time, write_date)
     return bytes(entry)
 
 

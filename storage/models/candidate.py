@@ -36,6 +36,9 @@ class Candidate:
     deletion_state: str = "unknown"
     record_id: int | None = None
     structure_details: dict | None = None
+    # Metadata modification time; basis is 'utc' or 'local' (zoneless wall clock).
+    modified_at: str | None = None
+    modified_basis: str | None = None
 
     def __post_init__(self):
         if self.size < 0 or (self.offset is not None and self.offset < 0):

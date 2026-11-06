@@ -6,6 +6,7 @@ import tempfile
 
 from core.device.android.adapter import AdbError
 from storage.models.candidate import Candidate
+from core.file_times import unix_modified
 from core.candidate_io import snapshot
 
 
@@ -24,6 +25,9 @@ def acquire_files(adapter, serial, paths, destination, token):
         with tempfile.TemporaryDirectory(prefix='pull-', dir=destination) as staging:
             copied = Path(staging) / 'content'
             adapter.pull_file(serial, remote, copied, token)
+            # Only after pull_file has authorised and validated the target.
+            lookup = getattr(adapter, 'modified_time', None)
+            modified = unix_modified(lookup(serial, remote)) if lookup else {}
             if copied.is_symlink() or not copied.is_file():
                 raise AdbError("设备未返回普通文件，采集已停止。")
             digest = hashlib.sha256()
@@ -47,4 +51,4 @@ def acquire_files(adapter, serial, paths, destination, token):
                         local_path=str(final.resolve()), sha256=digest.hexdigest(),
                         acquired_at=datetime.now(timezone.utc).isoformat(),
                         source_stat=snapshot(final.stat()),
-                        integrity='not_checked')
+                        integrity='not_checked', **modified)

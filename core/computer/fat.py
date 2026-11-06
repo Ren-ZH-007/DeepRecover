@@ -7,6 +7,8 @@ remaining metadata. Larger files remain visible as non-exportable candidates.
 from collections import deque
 import struct
 
+from core.file_times import fat_modified
+
 
 class _FatMismatch(ValueError):
     pass
@@ -192,7 +194,8 @@ class _Fat32:
         return {'name': name, 'original_path': parent + '/' + name, 'size': size,
                 'extents': extents, 'record_id': record_id, 'file_system': 'FAT32',
                 'deletion_state': 'deleted_record', 'integrity': integrity,
-                'status': 'candidate' if integrity == 'metadata_checked' else 'partial'}
+                'status': 'candidate' if integrity == 'metadata_checked' else 'partial',
+                **fat_modified(_u16(entry, 24), _u16(entry, 22))}
 
 
 def scan_fat32(reader, partition, token, *, max_entries=1000000, max_candidates=10000):

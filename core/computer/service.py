@@ -116,7 +116,8 @@ class ComputerScanner:
                         sha256=digest, source_stat=original, extents=extents,
                         file_system=record.get('file_system', partition.file_system),
                         deletion_state=record.get('deletion_state', 'unknown'), record_id=record.get('record_id'),
-                        structure_details=record.get('structure_details'))
+                        structure_details=record.get('structure_details'),
+                        modified_at=record.get('modified_at'), modified_basis=record.get('modified_basis'))
                 reader.check(original); token.checkpoint()
                 token.report_progress(partition.size, partition.size, progress.count, phase='computer')
         except (OSError, ValueError) as error:

@@ -23,12 +23,13 @@ class MemoryReader:
 
 
 def entry_set(name='已删除照片.png', first=5, size=600, *, deleted=True, contiguous=True,
-              valid_size=None, directory=False):
+              valid_size=None, directory=False, modified=0, modified_10ms=0, modified_offset=0):
     raw_name = name.encode('utf-16-le')
     name_length = len(raw_name) // 2
     count = (name_length + 14) // 15
     primary = bytearray(32); primary[0] = 0x85; primary[1] = count + 1
     struct.pack_into('<H', primary, 4, 0x10 if directory else 0x20)
+    struct.pack_into('<I', primary, 12, modified); primary[21] = modified_10ms; primary[23] = modified_offset
     stream = bytearray(32); stream[0] = 0xc0; stream[1] = 3 if contiguous else 1; stream[3] = name_length
     struct.pack_into('<Q', stream, 8, size if valid_size is None else valid_size)
     struct.pack_into('<I', stream, 20, first)

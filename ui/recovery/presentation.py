@@ -99,6 +99,16 @@ def duplicate_label(info):
     return f'共 {copies} 份 · 最早一项' if earliest else f'共 {copies} 份 · 重复'
 
 
+def modified_time_note(candidate):
+    """Where a shown modification time came from and how to read it."""
+    origin = {'android_file': '设备文件系统', 'ios_backup': '备份索引 Manifest.db'}.get(
+        candidate.get('source'), f"{candidate.get('file_system') or '文件系统'} 删除记录")
+    caveat = '删除记录中的时间可能已被改写，仅供参考。' if candidate.get('source') == 'computer_deleted' else ''
+    if candidate.get('modified_basis') == 'utc':
+        return f'{origin}中的修改时间为 UTC，已换算为本机时区显示。{caveat}'
+    return f'{origin}中的修改时间只有本地时钟、没有时区信息，按记录原样显示。{caveat}'
+
+
 def export_guidance():
     return DisplayText('查看独立导出记录',
         '此处不判断是否已导出。导出操作保留独立批次记录；如已导出，请从“任务记录”打开该批次。'
