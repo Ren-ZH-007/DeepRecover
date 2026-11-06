@@ -35,8 +35,11 @@ def guard_computer_source(path, kind, data_dir):
 
 def scan_computer_source(path, token, *, kind, mode, partition_offset, data_dir):
     from core.computer.service import ComputerScanner
+    from core.scanner.resume import CHECKPOINT_SECONDS
+    # Signature scans record checkpoints so an interrupted run can continue later.
     return ComputerScanner(data_dir=data_dir).scan(path, token, kind=kind, mode=mode,
-                                  partition_offset=partition_offset)
+                                  partition_offset=partition_offset,
+                                  checkpoint_every=CHECKPOINT_SECONDS if mode == 'signature' else None)
 
 
 def check_computer_access(repository, candidate_ids, data_dir, destination=None):

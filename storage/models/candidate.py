@@ -39,6 +39,8 @@ class Candidate:
     # Metadata modification time; basis is 'utc' or 'local' (zoneless wall clock).
     modified_at: str | None = None
     modified_basis: str | None = None
+    # Signature scans: source offset where searching continued after this candidate.
+    scan_next: int | None = None
 
     def __post_init__(self):
         if self.size < 0 or (self.offset is not None and self.offset < 0):

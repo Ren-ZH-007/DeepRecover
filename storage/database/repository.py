@@ -77,6 +77,10 @@ class Repository:
                 db.execute("PRAGMA user_version=3")
             # Compatible with every v3 reader: an extra index changes no table or version.
             db.execute(f"CREATE INDEX IF NOT EXISTS candidate_sha ON candidates(task_id, {_SHA})")
+            # Also v3-compatible: older readers ignore an extra table.
+            db.execute("CREATE TABLE IF NOT EXISTS scan_checkpoints(task_id TEXT PRIMARY KEY REFERENCES tasks(id), "
+                       "position INTEGER NOT NULL, candidates INTEGER NOT NULL, total INTEGER NOT NULL, "
+                       "identity TEXT NOT NULL, params TEXT NOT NULL, updated_at TEXT NOT NULL)")
 
     def create_task(self, kind, source=None):
         task_id = str(uuid4())
@@ -121,6 +125,37 @@ class Repository:
         with closing(self.connect()) as db, db:
             db.executemany("INSERT INTO candidates VALUES(?,?,?)",
                 ((c.id, task_id, json.dumps(asdict(c), ensure_ascii=False)) for c in candidates))
+
+    def save_checkpoint(self, task_id, checkpoint):
+        values = (checkpoint.position, checkpoint.candidates, checkpoint.total)
+        if (any(type(v) is not int or v < 0 for v in values) or checkpoint.position > checkpoint.total
+                or not isinstance(checkpoint.identity, dict) or not isinstance(checkpoint.params, dict)):
+            raise ValueError('Invalid scan checkpoint')
+        identity = json.dumps(checkpoint.identity, sort_keys=True)
+        params = json.dumps(checkpoint.params, sort_keys=True)
+        with closing(self.connect()) as db, db:
+            # A checkpoint only moves forward for the same source and scope.
+            db.execute("INSERT INTO scan_checkpoints VALUES(?,?,?,?,?,?,?) ON CONFLICT(task_id) DO UPDATE SET "
+                       "position=excluded.position, candidates=excluded.candidates, updated_at=excluded.updated_at "
+                       "WHERE excluded.position>=scan_checkpoints.position AND excluded.total=scan_checkpoints.total "
+                       "AND excluded.identity=scan_checkpoints.identity AND excluded.params=scan_checkpoints.params",
+                       (task_id, *values, identity, params, now()))
+
+    def scan_checkpoint(self, task_id):
+        with closing(self.connect()) as db:
+            row = db.execute("SELECT position,candidates,total,identity,params,updated_at FROM scan_checkpoints "
+                             "WHERE task_id=?", (task_id,)).fetchone()
+        if row is None:
+            return None
+        return {'position': row[0], 'candidates': row[1], 'total': row[2], 'identity': json.loads(row[3]),
+                'params': json.loads(row[4]), 'updated_at': row[5]}
+
+    def recent_candidates(self, task_id, limit=50):
+        if not 1 <= limit <= 1000:
+            raise ValueError('Invalid limit')
+        with closing(self.connect()) as db:
+            return [json.loads(row[0]) for row in db.execute(
+                "SELECT payload FROM candidates WHERE task_id=? ORDER BY rowid DESC LIMIT ?", (task_id, limit))]
 
     def candidates(self, task_id):
         with closing(self.connect()) as db:

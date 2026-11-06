@@ -248,6 +248,59 @@ class UiTests(unittest.TestCase):
             finally:
                 window.close()
 
+    def test_history_resume_button_continues_signature_scan_and_refuses_changed_source(self):
+        from tests.test_resume import interrupt_after, source_bytes, summary
+        from PySide6.QtWidgets import QMessageBox
+        app=QApplication.instance() or QApplication([])
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'disk.img'; path.write_bytes(source_bytes(600_000))
+            config=AppConfig(Path(directory)/'data'); config.initialize()
+            repo=Repository(config.database)
+            window=MainWindow(config,repo)
+            def run(limit=None):
+                scan=lambda token: SignatureScanner(block_size=4096).scan(path,token,checkpoint_every=0)
+                handle=window.manager.submit('signature_scan',(lambda token: interrupt_after(scan(token),token,limit)) if limit else scan,
+                                             persist_candidates=True,source=DataSource('image',str(path),path.name),batch_size=1)
+                try: handle.future.result(30)
+                except TaskCancelled: pass
+                return handle.id
+            def select(task_id):
+                window.nav.setCurrentRow(5); window.refresh_history()
+                window.history_table.selectRow([t['id'] for t in window.history].index(task_id)); app.processEvents()
+            def settle():
+                if window.computer_page._future is not None:
+                    window.computer_page._future.result(30); window.poll()
+                if window.pending is not None:
+                    try: window.pending[0].future.result(60)
+                    except Exception: pass
+                    window.poll()
+            try:
+                reference=summary(repo.candidates(run()))
+                task=run(4)
+                select(next(t['id'] for t in repo.tasks() if t['status']=='completed'))
+                self.assertFalse(window.resume_button.isEnabled())
+                select(task); self.assertTrue(window.resume_button.isEnabled())
+                with patch('app.main_window.QMessageBox.question',return_value=QMessageBox.StandardButton.No):
+                    window.resume_history_task()
+                self.assertIsNone(window.computer_page._future); self.assertEqual(repo.task(task)['status'],'cancelled')
+                with patch('app.main_window.QMessageBox.question',return_value=QMessageBox.StandardButton.Yes) as asked:
+                    window.resume_history_task(); settle()
+                self.assertIn('已保存',asked.call_args.args[2])
+                self.assertEqual(window.stack.currentIndex(),4)  # results opened after completion
+                self.assertEqual(repo.task(task)['status'],'completed')
+                self.assertEqual(summary(repo.candidates(task)),reference)
+                self.assertEqual(window.result_task_id,task)
+                changed=run(3)
+                with path.open('ab') as stream: stream.write(b'!')
+                select(changed)
+                with patch('app.main_window.QMessageBox.question',return_value=QMessageBox.StandardButton.Yes):
+                    window.resume_history_task(); settle()
+                self.assertIn('源文件已变化',window.statusBar().currentMessage())
+                self.assertEqual(repo.task(changed)['status'],'cancelled')
+                self.assertIsNone(window.pending)
+            finally:
+                window.close()
+
     def test_scan_ui_select_run_progress_offsets_and_reopen_history(self):
         app=QApplication.instance() or QApplication([])
         with tempfile.TemporaryDirectory() as directory:
