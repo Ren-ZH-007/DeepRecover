@@ -184,6 +184,46 @@ class UiTests(unittest.TestCase):
             finally:
                 window.close()
 
+    def test_scan_ui_shows_speed_and_remaining_time_then_clears_it(self):
+        from core.progress_rate import RateEstimator
+        app=QApplication.instance() or QApplication([])
+        MB=1024*1024
+        with tempfile.TemporaryDirectory() as directory:
+            source=Path(directory)/'source.img'; source.write_bytes(b'x')
+            config=AppConfig(Path(directory)/'data'); config.initialize()
+            window=MainWindow(config,Repository(config.database))
+            steps=[Event() for _ in range(2)]; release=[Event() for _ in range(2)]
+            def paced_scan(path,token):
+                for index,done in enumerate((0,20*MB)):
+                    token.report_progress(done,100*MB,0)
+                    steps[index].set()
+                    if not release[index].wait(5): raise RuntimeError('UI did not release scanner')
+                return iter(())
+            class Clock:
+                now=100.0
+                def __call__(self): return self.now
+            clock=Clock()
+            try:
+                window.scan_source=source
+                with patch('app.main_window.SignatureScanner') as factory:
+                    factory.return_value.scan.side_effect=paced_scan
+                    window.start_scan()
+                    window.rate=RateEstimator(clock=clock)
+                    self.assertTrue(steps[0].wait(5)); window.poll()
+                    self.assertIn('0 B / 100 MB',window.scan_status.text())
+                    self.assertIn('正在估算剩余时间',window.scan_status.text())
+                    release[0].set(); self.assertTrue(steps[1].wait(5))
+                    clock.now=102.0; window.poll()
+                    self.assertIn('20.0 MB / 100 MB',window.scan_status.text())
+                    self.assertIn('速度 10.0 MB/s · 预计剩余约 8 秒',window.scan_status.text())
+                    release[1].set(); self.finish_task(window)
+                self.assertIn('已完成',window.scan_status.text())
+                self.assertNotIn('预计剩余',window.scan_status.text())
+                self.assertNotIn('正在估算',window.scan_status.text())
+            finally:
+                for event in release: event.set()
+                window.close()
+
     def test_scan_ui_cancel_preserves_partial_history_and_incomplete_progress(self):
         app=QApplication.instance() or QApplication([])
         with tempfile.TemporaryDirectory() as directory:
