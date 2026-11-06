@@ -27,6 +27,13 @@ from tests.pdf_fixture import make_pdf, objects, stream
 from tests.test_scanner import png_image
 from ui.recovery.presentation import content_check, deletion_evidence, pdf_check_details
 
+try:
+    import PySide6.QtGui, PySide6.QtPdf  # noqa: F401  # renderer and pixel decoding
+    QT_AVAILABLE = True
+except ImportError:
+    QT_AVAILABLE = False
+requires_qt = unittest.skipUnless(QT_AVAILABLE, 'PySide6 not installed')
+
 
 class PdfStructureTests(unittest.TestCase):
     def check(self,data,*,start=0,end=None,limit=MAX_BYTES,token=None):
@@ -241,6 +248,7 @@ class PdfIntegrationTests(unittest.TestCase):
             with self.assertRaises(CandidateAccessError):prepare_pdf(self.repo,item.id,self.config.data_dir,CancellationToken())
             renderer.assert_not_called()
 
+    @requires_qt
     def test_authorized_android_pdf_is_verified_without_changing_copy_or_metadata(self):
         path=self.config.data_dir/'Acquisitions/synthetic';path.write_bytes(self.pdf)
         source=DataSource('android','synthetic-serial');task=self.repo.create_task('android_acquisition',source)
@@ -250,6 +258,7 @@ class PdfIntegrationTests(unittest.TestCase):
         self.assertEqual(result.pages,2);self.assertEqual(result.data,self.pdf)
         self.assertEqual(path.read_bytes(),self.pdf);self.assertEqual(self.repo.candidate(item.id),before)
 
+    @requires_qt
     def test_ios_extensionless_blob_pdf_uses_verified_local_backup_source(self):
         backup=self.root/'backup';backup.mkdir();path=backup/'0123456789abcdef';path.write_bytes(self.pdf)
         source=DataSource('ios_backup',str(backup));task=self.repo.create_task('ios_manifest',source)
@@ -258,6 +267,7 @@ class PdfIntegrationTests(unittest.TestCase):
         self.assertEqual(prepare_pdf(self.repo,item.id,self.config.data_dir,CancellationToken()).data,self.pdf)
         self.assertEqual(list(backup.iterdir()),[path]);self.assertEqual(path.read_bytes(),self.pdf)
 
+    @requires_qt
     def test_metadata_deleted_pdf_preserves_fragmented_logical_byte_order(self):
         split=300;original=b'prefix'+self.pdf[split:]+b'gap'+self.pdf[:split];self.path.write_bytes(original)
         with DiskReader(self.path) as reader:identity=reader.check()
@@ -275,6 +285,7 @@ class PdfIntegrationTests(unittest.TestCase):
         candidate['structure_details']['pages']='<script>';self.assertEqual(pdf_check_details(candidate),'')
 
 
+@requires_qt
 class PdfRenderingTests(unittest.TestCase):
     def test_real_pages_and_zoom_are_rendered_as_distinct_bounded_pixels(self):
         data=make_pdf();token=CancellationToken()

@@ -7,8 +7,10 @@ from pathlib import Path
 import subprocess
 import sys
 from time import monotonic
+from typing import TYPE_CHECKING
 
-from PySide6.QtGui import QImage, QImageReader
+if TYPE_CHECKING:
+    from PySide6.QtGui import QImage
 from core.candidate_io import CandidateAccessError, candidate_input, read_candidate
 from core.scanner.pdf.validation import validate, MAX_BYTES, MAX_PAGES
 
@@ -32,7 +34,7 @@ MESSAGES = {
 class PdfPreview:
     data: bytes
     pages: int
-    image: QImage
+    image: 'QImage'
 
 
 def inspect_pdf(data, token):
@@ -125,6 +127,8 @@ def render_pdf(data, page, zoom, token):
         # Verify the PNG's declared dimensions before native allocation.
         if len(png) < 24 or int.from_bytes(png[16:20],'big') != width or int.from_bytes(png[20:24],'big') != height:
             raise CandidateAccessError('PDF 渲染尺寸不一致。')
+        # Qt is only needed to decode rendered pixels; structure checks stay importable without it.
+        from PySide6.QtGui import QImage, QImageReader
         QImageReader.setAllocationLimit(64)
         image = QImage.fromData(png,'PNG')
         if image.isNull() or image.width() != width or image.height() != height:
