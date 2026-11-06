@@ -10,7 +10,7 @@ from shiboken6 import isValid
 from app.theme import STYLE
 from app.workspace import validate_workspace
 from core.diagnostics import (DiagnosticsError, MANUAL_CASES,
-    collect_environment, write_environment_report)
+    collect_environment, disk_snapshot, write_environment_report)
 
 
 CHECK_ERROR = '本地环境检查未完成，请检查工作目录权限后重试。'
@@ -43,6 +43,28 @@ def _safe(operation, message):
         raise DiagnosticsError(message) from None
 
 
+def _disk_text(disks):
+    if disks['status'] != 'detected':
+        return '尚未检测；可先在“电脑恢复”页检测磁盘后再检查'
+    volumes = disks['volumes']
+    unmapped = sum(v['physical_mapping'] in ('unmapped', 'unknown') for v in volumes)
+    count = disks['physical_disk_count']
+    text = f"{count if count is not None else '未知数量的'} 块物理盘 · {len(volumes)} 个磁盘 / 卷"
+    return text + (f' · {unmapped} 个未能确认所在物理盘' if unmapped else ' · 均已确认所在物理盘')
+
+
+def _error_text(errors):
+    if errors['status'] != 'collected':
+        return '未能读取本地任务记录'
+    tasks = sum(row['count'] for row in errors['tasks'])
+    exports = sum(row['count'] for row in errors['exports'])
+    if not tasks and not exports:
+        return '没有失败、中断或取消的任务记录'
+    rows = [row for row in errors['tasks'] + errors['exports'] if row['error'] not in ('none', 'unknown')]
+    common = max(rows, key=lambda row: row['count'])['error'] if rows else None
+    return f'{tasks} 次任务未成功 · {exports} 项导出未成功' + (f' · 最常见：{common}' if common else '')
+
+
 def _size(value):
     if type(value) is not int or value < 0:
         return '未知'
@@ -67,7 +89,7 @@ class DiagnosticsDialog(QDialog):
         box = QVBoxLayout(self)
         box.setContentsMargins(20, 18, 20, 18)
         box.addWidget(_label('检查本机环境，准备实机验收', 'title'))
-        box.addWidget(_label('仅查询系统与工作目录的基本信息，不检测设备、不扫描备份，也不打开来源内容。', 'subtitle'))
+        box.addWidget(_label('仅查询系统与工作目录的基本信息，不检测设备、不扫描备份，也不打开来源内容。磁盘映射取自“电脑恢复”页最近一次检测，错误类型取自本地任务记录，均不含名称、路径或序列号。', 'subtitle'))
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.Shape.NoFrame)
@@ -85,7 +107,8 @@ class DiagnosticsDialog(QDialog):
             ('version', '应用版本'), ('system', '系统与架构'),
             ('runtime', '启动形式'), ('qt', '界面运行环境'),
             ('screens', '屏幕观测'), ('workspace', '工作目录容量'),
-            ('adb', 'Android 工具'),
+            ('adb', 'Android 工具'), ('disks', '磁盘映射'),
+            ('errors', '错误类型'),
         )):
             grid.addWidget(_label(text, 'sectionNote'), row, 0)
             self.values[key] = _label('尚未检查')
@@ -168,6 +191,16 @@ class DiagnosticsDialog(QDialog):
             'screen_count': len(screens),
             'high_dpi_screens': sum(screen.devicePixelRatio() > 1 for screen in screens)}
         workspace = self._report_workspace
+        page = self.window.computer_page
+        # Copy on the GUI thread; an empty list means no detection has run yet.
+        disks = disk_snapshot(page.devices) if page.devices else None
+        repository = self.window.repository
+
+        def errors():
+            try:
+                return repository.error_summary()
+            except Exception:
+                return None
 
         def complete(report):
             if not self._alive(generation):
@@ -189,8 +222,7 @@ class DiagnosticsDialog(QDialog):
             self._refresh_buttons()
 
         self.status_label.setText('正在只读查询本机环境；不会建立扫描或采集任务。')
-        page = self.window.computer_page
-        page._readonly(lambda: _safe(lambda: collect_environment(workspace, display=display), CHECK_ERROR),
+        page._readonly(lambda: _safe(lambda: collect_environment(workspace, display=display, disks=disks, errors=errors()), CHECK_ERROR),
             complete, '正在检查本机基本环境，不检测设备或扫描备份…', failed)
         self._owned_future = page._future
         self._refresh_buttons()
@@ -208,6 +240,8 @@ class DiagnosticsDialog(QDialog):
         self.values['screens'].setText(f'{count} 个屏幕 · {high_dpi} 个缩放屏幕（仅当前观测）' if count is not None and high_dpi is not None else '屏幕信息未知')
         self.values['workspace'].setText(f"可用 {_size(workspace['free_bytes'])} / 总容量 {_size(workspace['total_bytes'])}；未测试写入" if workspace['status'] == 'available' else '容量信息无法读取；未测试写入')
         self.values['adb'].setText('已定位 ADB 工具；未执行、未检测连接设备' if report['adb']['located'] else '未定位 ADB 工具；手机连接与授权未检测')
+        self.values['disks'].setText(_disk_text(report['disks']))
+        self.values['errors'].setText(_error_text(report['errors']))
 
     def save_report(self):
         if not self._alive():
