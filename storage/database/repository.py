@@ -10,6 +10,11 @@ from storage.models.classification import CATEGORIES
 
 SCHEMA_VERSION = 3
 MAX_QUERY = 200
+_SHA = "json_extract(payload,'$.sha256')"
+# Same digest as an earlier candidate of the same task; candidates without a digest never match.
+_EARLIER_COPY = ("EXISTS (SELECT 1 FROM candidates d WHERE d.task_id=candidates.task_id "
+                 "AND json_extract(d.payload,'$.sha256')=json_extract(candidates.payload,'$.sha256') "
+                 "AND d.rowid<candidates.rowid)")
 MAX_QUERY_TERMS = 8
 
 def now():
@@ -48,6 +53,8 @@ class Repository:
                 db.execute("CREATE TABLE exports(id TEXT PRIMARY KEY, task_id TEXT NOT NULL REFERENCES tasks(id), candidate_id TEXT NOT NULL REFERENCES candidates(id), status TEXT NOT NULL, output_path TEXT NOT NULL, source_sha256 TEXT, target_sha256 TEXT, size INTEGER NOT NULL, created_at TEXT NOT NULL, error_code TEXT, metadata TEXT NOT NULL)")
                 db.execute("CREATE INDEX export_task ON exports(task_id)")
                 db.execute("PRAGMA user_version=3")
+            # Compatible with every v3 reader: an extra index changes no table or version.
+            db.execute(f"CREATE INDEX IF NOT EXISTS candidate_sha ON candidates(task_id, {_SHA})")
 
     def create_task(self, kind, source=None):
         task_id = str(uuid4())
@@ -98,7 +105,7 @@ class Repository:
             return [json.loads(row[0]) for row in db.execute("SELECT payload FROM candidates WHERE task_id=? ORDER BY rowid", (task_id,))]
 
     @staticmethod
-    def candidate_filter(task_id, category='all', status='all', query=''):
+    def candidate_filter(task_id, category='all', status='all', query='', hide_duplicates=False):
         clauses, args = ['task_id=?'], [task_id]
         if category != 'all':
             if category not in (*CATEGORIES, 'other'):
@@ -121,25 +128,44 @@ class Repository:
             clauses.append("(coalesce(json_extract(payload,'$.name'),'') LIKE ? ESCAPE '\\'"
                            " OR coalesce(json_extract(payload,'$.original_path'),'') LIKE ? ESCAPE '\\')")
             args.extend((pattern, pattern))
+        if hide_duplicates is True:
+            clauses.append(f'NOT {_EARLIER_COPY}')
+        elif hide_duplicates is not False:
+            raise ValueError('Invalid duplicate filter')
         return ' AND '.join(clauses), args
 
-    def candidate_page(self, task_id, *, offset=0, limit=100, category='all', status='all', query=''):
+    def duplicate_info(self, task_id, candidate_ids):
+        """{id: (copies, is_earliest)} for listed candidates that share a digest with others."""
+        ids = list(dict.fromkeys(candidate_ids))
+        if not ids:
+            return {}
+        if len(ids) > 1000:
+            raise ValueError('Invalid duplicate lookup')
+        marks = ','.join('?' for _ in ids)
+        with closing(self.connect()) as db:
+            rows = db.execute(
+                f"SELECT id, (SELECT count(*) FROM candidates d WHERE d.task_id=candidates.task_id "
+                f"AND json_extract(d.payload,'$.sha256')=json_extract(candidates.payload,'$.sha256')), {_EARLIER_COPY} "
+                f"FROM candidates WHERE task_id=? AND {_SHA} IS NOT NULL AND id IN ({marks})", (task_id, *ids)).fetchall()
+        return {row[0]: (row[1], not row[2]) for row in rows if row[1] > 1}
+
+    def candidate_page(self, task_id, *, offset=0, limit=100, category='all', status='all', query='', hide_duplicates=False):
         if not isinstance(offset, int) or not isinstance(limit, int) or offset < 0 or not 1 <= limit <= 1000:
             raise ValueError("Invalid page bounds")
-        where, args = self.candidate_filter(task_id, category, status, query)
+        where, args = self.candidate_filter(task_id, category, status, query, hide_duplicates)
         with closing(self.connect()) as db:
             return [json.loads(row[0]) for row in db.execute(
                 f"SELECT payload FROM candidates WHERE {where} ORDER BY rowid LIMIT ? OFFSET ?", (*args, limit, offset))]
 
-    def candidate_count(self, task_id, *, category='all', status='all', query=''):
-        where, args = self.candidate_filter(task_id, category, status, query)
+    def candidate_count(self, task_id, *, category='all', status='all', query='', hide_duplicates=False):
+        where, args = self.candidate_filter(task_id, category, status, query, hide_duplicates)
         with closing(self.connect()) as db:
             return db.execute(f"SELECT count(*) FROM candidates WHERE {where}", args).fetchone()[0]
 
-    def candidate_ids(self, task_id, *, category='all', status='all', query='', limit=10000):
+    def candidate_ids(self, task_id, *, category='all', status='all', query='', hide_duplicates=False, limit=10000):
         if not 1 <= limit <= 10000:
             raise ValueError('Invalid selection limit')
-        where, args = self.candidate_filter(task_id, category, status, query)
+        where, args = self.candidate_filter(task_id, category, status, query, hide_duplicates)
         with closing(self.connect()) as db:
             ids = [row[0] for row in db.execute(f'SELECT id FROM candidates WHERE {where} ORDER BY rowid LIMIT ?', (*args, limit + 1))]
         if len(ids) > limit:

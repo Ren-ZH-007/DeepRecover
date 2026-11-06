@@ -3,7 +3,7 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QPixmap, QColor, QAction, QKeySequence
 from PySide6.QtWidgets import (QAbstractItemView, QFileDialog, QHBoxLayout, QLabel,
     QListWidget, QMainWindow, QPushButton, QStackedWidget, QTableWidget,
-    QTableWidgetItem, QVBoxLayout, QWidget, QHeaderView, QInputDialog, QMessageBox, QProgressBar, QComboBox, QSplitter, QFrame, QListWidgetItem, QScrollArea, QDialog, QLineEdit)
+    QTableWidgetItem, QVBoxLayout, QWidget, QHeaderView, QInputDialog, QMessageBox, QProgressBar, QComboBox, QSplitter, QFrame, QListWidgetItem, QScrollArea, QDialog, QLineEdit, QCheckBox)
 from app.navigation import PAGES
 from core.tasks import TaskManager, TaskCancelled
 from core.device.android.adapter import AndroidAdapter, AdbError
@@ -22,7 +22,7 @@ from core.export.service import export_batch, ExportError
 from ui.recovery.export_history import ExportHistory
 from core.progress_rate import RateEstimator, describe_rate, format_bytes
 from ui.recovery.presentation import (candidate_status, content_check, deletion_evidence, video_check_details, pdf_check_details,
-    export_guidance, task_status, task_kind, source_kind, error_text)
+    export_guidance, task_status, task_kind, source_kind, error_text, duplicate_label)
 from ui.computer.page import ComputerPage, check_computer_access, computer_error_types
 from app.theme import STYLE, icon, brand_icon
 from app.version import VERSION
@@ -276,12 +276,16 @@ class MainWindow(QMainWindow):
         self.search_timer.timeout.connect(self.filter_results)
         self.result_search.textChanged.connect(lambda _: self.search_timer.start())
         self.result_search.returnPressed.connect(self.filter_results)
+        self.hide_duplicates = QCheckBox('隐藏重复项')
+        self.hide_duplicates.setToolTip('按 SHA-256 判断内容相同的候选，每组只显示最早的一项。'
+                                        '未计算摘要的候选（如未通过结构检查）不参与比较，始终显示。')
+        self.hide_duplicates.toggled.connect(self.filter_results); row.addWidget(self.hide_duplicates)
         self.result_selection_hint = QLabel(f'{selection_modifier()} 多选'); self.result_selection_hint.setObjectName('sectionNote'); row.addWidget(self.result_selection_hint)
         row.addStretch()
         self.result_page_label = QLabel('0 条'); self.result_page_label.setObjectName('sectionNote'); row.addWidget(self.result_page_label)
         self.category_filter.currentIndexChanged.connect(self.filter_results); self.status_filter.currentIndexChanged.connect(self.filter_results)
         splitter = QSplitter(); box.addWidget(splitter,1)
-        self.result_table = self.table(['文件名','类型','大小 / 字节','内容检查','原始路径','本地文件','来源范围 SHA-256','采集时间 / UTC','源内偏移 / 字节','候选状态','文件系统','删除依据','来源范围数'])
+        self.result_table = self.table(['文件名','类型','大小 / 字节','内容检查','原始路径','本地文件','来源范围 SHA-256','采集时间 / UTC','源内偏移 / 字节','候选状态','文件系统','删除依据','来源范围数','相同内容'])
         self.result_table.setToolTip(f'{selection_modifier()} 可多选本页记录；分页或筛选会重置当前选择。')
         self.result_table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection); splitter.addWidget(self.result_table)
         preview = QFrame(); preview.setObjectName('previewPanel'); preview_box = QVBoxLayout(preview); preview_box.setContentsMargins(14,14,14,14); splitter.addWidget(preview)
@@ -532,7 +536,7 @@ class MainWindow(QMainWindow):
         if self.pending or self.computer_page.readonly_pending or not self.result_task_id:
             self.statusBar().showMessage('请先打开结果并等待当前任务结束。'); return
         try:
-            ids = self.repository.candidate_ids(self.result_task_id,category=self.category_filter.currentData(),status=self.status_filter.currentData(),query=self.search_text()) if all_filtered else self.selected_candidate_ids()
+            ids = self.repository.candidate_ids(self.result_task_id,category=self.category_filter.currentData(),status=self.status_filter.currentData(),query=self.search_text(),hide_duplicates=self.hide_duplicates.isChecked()) if all_filtered else self.selected_candidate_ids()
         except ValueError as error:
             self.statusBar().showMessage(str(error)); return
         if not ids:
@@ -675,6 +679,7 @@ class MainWindow(QMainWindow):
         self.category_filter.setCurrentIndex(0); self.status_filter.setCurrentIndex(0)
         self.category_filter.blockSignals(False); self.status_filter.blockSignals(False)
         self.result_search.blockSignals(True); self.result_search.clear(); self.result_search.blockSignals(False); self.search_timer.stop()
+        self.hide_duplicates.blockSignals(True); self.hide_duplicates.setChecked(False); self.hide_duplicates.blockSignals(False)
         self.load_result_page()
         self.nav.setCurrentRow(4)
 
@@ -689,23 +694,28 @@ class MainWindow(QMainWindow):
             self.previous_page.setEnabled(False); self.next_page.setEnabled(False)
             return
         source = self.repository.source(task['source_id']) if task['source_id'] else None
-        filters = {'category':self.category_filter.currentData(),'status':self.status_filter.currentData(),'query':self.search_text()}
+        filters = {'category':self.category_filter.currentData(),'status':self.status_filter.currentData(),'query':self.search_text(),
+                   'hide_duplicates':self.hide_duplicates.isChecked()}
         total = self.repository.candidate_count(self.result_task_id,**filters)
         self.result_offset = min(self.result_offset, max(0, (total - 1) // self.page_size * self.page_size))
         candidates = self.repository.candidate_page(self.result_task_id, offset=self.result_offset, limit=self.page_size,**filters)
         self.result_table.clearSelection()
         self.current_candidates = candidates
+        copies = self.repository.duplicate_info(self.result_task_id, [c['id'] for c in candidates])
         self.fill(self.result_table, [(c['name'], c['file_type'], c['size'], content_check(c.get('integrity')).label, c['original_path'],
                                       c.get('local_path', ''), c.get('sha256') or '', c.get('acquired_at') or '',
                                       c.get('offset') if c.get('offset') is not None else '', candidate_status(c.get('status')).label,
                                       c.get('file_system') or '',
                                       deletion_evidence(c).label,
-                                      len(c.get('extents') or ()) if c.get('file_system') else '') for c in candidates])
+                                      len(c.get('extents') or ()) if c.get('file_system') else '',
+                                      duplicate_label(copies.get(c['id']))) for c in candidates])
         for row, candidate in enumerate(candidates):
             for column, display in ((3, content_check(candidate.get('integrity'))),
                                     (9, candidate_status(candidate.get('status'))),
                                     (11, deletion_evidence(candidate))):
                 self.explain_item(self.result_table.item(row,column), display)
+            if candidate['id'] in copies:
+                self.result_table.item(row,13).setToolTip('SHA-256 与本次结果中其他候选相同。“最早一项”在隐藏重复项时保留；导出前请自行判断需要哪一份。')
         self.clear_preview()
         description = f"{source_kind(source['kind']).label} · {source['label']} · {source['locator']}" if source else '旧记录：未保存独立数据源，见原始路径'
         display = task_status(task['status'])

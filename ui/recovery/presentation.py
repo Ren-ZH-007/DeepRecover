@@ -91,6 +91,14 @@ def deletion_evidence(candidate):
     return DisplayText('删除状态未知', '没有可解释的删除依据，不能从名称、摘要或候选状态推断文件曾被删除。', raw, 'warning')
 
 
+def duplicate_label(info):
+    """Short text for the duplicate column; ``info`` is (copies, is_earliest) or None."""
+    if not info:
+        return ''
+    copies, earliest = info
+    return f'共 {copies} 份 · 最早一项' if earliest else f'共 {copies} 份 · 重复'
+
+
 def export_guidance():
     return DisplayText('查看独立导出记录',
         '此处不判断是否已导出。导出操作保留独立批次记录；如已导出，请从“任务记录”打开该批次。'
