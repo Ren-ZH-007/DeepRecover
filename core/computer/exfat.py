@@ -6,6 +6,8 @@ bits supplies recoverable extents. A deleted fragmented chain is never guessed.
 from collections import deque
 import struct
 
+from core.file_times import exfat_modified
+
 
 def _u16(data, offset):
     return struct.unpack_from('<H', data, offset)[0]
@@ -328,4 +330,5 @@ def scan_exfat(reader, partition, token, *, max_entries=1000000, max_candidates=
                         extents = volume.layout(first_cluster, size, contiguous=True)
             yield {'name': name, 'original_path': path, 'size': size, 'extents': extents,
                    'record_id': record_offset, 'integrity': integrity, 'status': status,
-                   'file_system': 'exFAT', 'deletion_state': 'deleted_record'}
+                   'file_system': 'exFAT', 'deletion_state': 'deleted_record',
+                   **exfat_modified(_u32(primary, 12), primary[21], primary[23])}

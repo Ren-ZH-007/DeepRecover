@@ -1,10 +1,14 @@
 from contextlib import closing
 from pathlib import Path
+import plistlib
 import re
 import sqlite3
 from core.device.ios.discovery import inspect_backup
 from storage.models.candidate import Candidate
 from core.candidate_io import snapshot
+from core.file_times import unix_modified
+
+MAX_FILE_INFO = 64 * 1024
 
 class BackupError(RuntimeError):
     pass
@@ -42,8 +46,10 @@ def iter_manifest(path, token=None, limit=None):
             db.execute("PRAGMA query_only=ON")
             if token:
                 db.set_progress_handler(lambda: _progress(token), 1000)
-            for file_id, domain, relative_path, flags in db.execute(
-                "SELECT fileID,domain,relativePath,flags FROM Files WHERE flags=1 LIMIT ?", (limit if limit is not None else -1,)
+            columns = {row[1] for row in db.execute("PRAGMA table_info(Files)")}
+            metadata = "file" if "file" in columns else "NULL"
+            for file_id, domain, relative_path, flags, file_info in db.execute(
+                f"SELECT fileID,domain,relativePath,flags,{metadata} FROM Files WHERE flags=1 LIMIT ?", (limit if limit is not None else -1,)
             ):
                 if token:
                     token.checkpoint()
@@ -59,7 +65,7 @@ def iter_manifest(path, token=None, limit=None):
                     size=info.st_size if info else 0,
                     original_path=f"{domain}/{relative_path}", local_path=str(blob) if exists else "",
                     source_stat=snapshot(info) if info else None,
-                    integrity="not_checked" if exists else "missing")
+                    integrity="not_checked" if exists else "missing", **_last_modified(file_info))
         _require_stable_index(database, canonical)
         if database.resolve(strict=True) != canonical or snapshot(canonical.stat()) != initial:
             raise BackupError('Manifest.db 在读取期间已变化，索引结果不完整，请使用稳定备份重试。')
@@ -69,6 +75,23 @@ def iter_manifest(path, token=None, limit=None):
         raise BackupError("Manifest.db 无法读取或索引结构不受支持。") from error
     except OSError as error:
         raise BackupError('备份索引路径不可用或在读取期间变化，请检查稳定备份。') from error
+
+
+def _last_modified(blob):
+    """LastModified from a Files.file NSKeyedArchiver blob; binary plists only."""
+    if not isinstance(blob, bytes) or not blob.startswith(b"bplist00") or len(blob) > MAX_FILE_INFO:
+        return {}
+    try:
+        archive = plistlib.loads(blob, fmt=plistlib.FMT_BINARY)
+    except Exception:
+        return {}
+    objects = archive.get("$objects") if isinstance(archive, dict) else None
+    if not isinstance(objects, list):
+        return {}
+    for item in objects[:64]:
+        if isinstance(item, dict) and "LastModified" in item:
+            return unix_modified(item["LastModified"])
+    return {}
 
 
 def _require_stable_index(database, canonical):

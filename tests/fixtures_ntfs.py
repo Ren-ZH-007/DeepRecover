@@ -91,7 +91,7 @@ def nonresident_attr(runs, size, *, name='', flags=0, attribute_id=0,
     return bytes(data)
 
 
-def file_name(name, parent=5, namespace=1, *, parent_sequence=1, size=0, flags=0):
+def file_name(name, parent=5, namespace=1, *, parent_sequence=1, size=0, flags=0, modified=0):
     """Build a resident FILE_NAME value; ``parent`` is an MFT record number."""
     name_bytes = name.encode('utf-16le')
     units = len(name_bytes) // 2
@@ -100,6 +100,7 @@ def file_name(name, parent=5, namespace=1, *, parent_sequence=1, size=0, flags=0
     value = bytearray(66 + len(name_bytes))
     reference = parent if parent >> 48 else parent | parent_sequence << 48
     struct.pack_into('<Q', value, 0, reference)
+    struct.pack_into('<Q', value, 16, modified)
     struct.pack_into('<QQI', value, 40, _align(size, 4096), size, flags)
     value[64], value[65] = units, namespace
     value[66:] = name_bytes

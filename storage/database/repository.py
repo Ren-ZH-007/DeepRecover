@@ -1,14 +1,36 @@
+from datetime import date, datetime, time, timedelta, timezone
 import json
 import re
 import sqlite3
 from contextlib import closing
 from dataclasses import asdict
-from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 from storage.models.classification import CATEGORIES
 
 SCHEMA_VERSION = 3
+_MODIFIED = "json_extract(payload,'$.modified_at')"
+_BASIS = "json_extract(payload,'$.modified_basis')"
+_DATE_CLAUSE = (f"(({_BASIS}='utc' AND {_MODIFIED}>=? AND {_MODIFIED}<?) "
+                f"OR ({_BASIS}='local' AND {_MODIFIED}>=? AND {_MODIFIED}<?))")
+
+
+def _date_bounds(dates, tz=None):
+    """Inclusive (first, last) calendar days in the viewer's zone -> query bounds.
+
+    UTC records are compared against the zone's midnights converted to UTC;
+    zoneless local records against the plain calendar days.
+    """
+    if not isinstance(dates, tuple) or len(dates) != 2:
+        raise ValueError('Invalid date range')
+    first, last = dates
+    if any(type(day) is not date or not 1980 <= day.year < 2100 for day in (first, last)) or first > last:
+        raise ValueError('Invalid date range')
+    start, end = datetime.combine(first, time()), datetime.combine(last + timedelta(days=1), time())
+    def utc(moment):
+        aware = moment.replace(tzinfo=tz) if tz is not None else moment.astimezone()
+        return aware.astimezone(timezone.utc).replace(tzinfo=None).isoformat()
+    return utc(start), utc(end), start.isoformat(), end.isoformat()
 MAX_QUERY = 200
 _SHA = "json_extract(payload,'$.sha256')"
 # Same digest as an earlier candidate of the same task; candidates without a digest never match.
@@ -105,7 +127,7 @@ class Repository:
             return [json.loads(row[0]) for row in db.execute("SELECT payload FROM candidates WHERE task_id=? ORDER BY rowid", (task_id,))]
 
     @staticmethod
-    def candidate_filter(task_id, category='all', status='all', query='', hide_duplicates=False):
+    def candidate_filter(task_id, category='all', status='all', query='', hide_duplicates=False, dates=None, tz=None):
         clauses, args = ['task_id=?'], [task_id]
         if category != 'all':
             if category not in (*CATEGORIES, 'other'):
@@ -132,6 +154,9 @@ class Repository:
             clauses.append(f'NOT {_EARLIER_COPY}')
         elif hide_duplicates is not False:
             raise ValueError('Invalid duplicate filter')
+        if dates is not None:
+            clauses.append(_DATE_CLAUSE)
+            args.extend(_date_bounds(dates, tz))
         return ' AND '.join(clauses), args
 
     def duplicate_info(self, task_id, candidate_ids):
@@ -149,23 +174,23 @@ class Repository:
                 f"FROM candidates WHERE task_id=? AND {_SHA} IS NOT NULL AND id IN ({marks})", (task_id, *ids)).fetchall()
         return {row[0]: (row[1], not row[2]) for row in rows if row[1] > 1}
 
-    def candidate_page(self, task_id, *, offset=0, limit=100, category='all', status='all', query='', hide_duplicates=False):
+    def candidate_page(self, task_id, *, offset=0, limit=100, category='all', status='all', query='', hide_duplicates=False, dates=None, tz=None):
         if not isinstance(offset, int) or not isinstance(limit, int) or offset < 0 or not 1 <= limit <= 1000:
             raise ValueError("Invalid page bounds")
-        where, args = self.candidate_filter(task_id, category, status, query, hide_duplicates)
+        where, args = self.candidate_filter(task_id, category, status, query, hide_duplicates, dates, tz)
         with closing(self.connect()) as db:
             return [json.loads(row[0]) for row in db.execute(
                 f"SELECT payload FROM candidates WHERE {where} ORDER BY rowid LIMIT ? OFFSET ?", (*args, limit, offset))]
 
-    def candidate_count(self, task_id, *, category='all', status='all', query='', hide_duplicates=False):
-        where, args = self.candidate_filter(task_id, category, status, query, hide_duplicates)
+    def candidate_count(self, task_id, *, category='all', status='all', query='', hide_duplicates=False, dates=None, tz=None):
+        where, args = self.candidate_filter(task_id, category, status, query, hide_duplicates, dates, tz)
         with closing(self.connect()) as db:
             return db.execute(f"SELECT count(*) FROM candidates WHERE {where}", args).fetchone()[0]
 
-    def candidate_ids(self, task_id, *, category='all', status='all', query='', hide_duplicates=False, limit=10000):
+    def candidate_ids(self, task_id, *, category='all', status='all', query='', hide_duplicates=False, dates=None, tz=None, limit=10000):
         if not 1 <= limit <= 10000:
             raise ValueError('Invalid selection limit')
-        where, args = self.candidate_filter(task_id, category, status, query, hide_duplicates)
+        where, args = self.candidate_filter(task_id, category, status, query, hide_duplicates, dates, tz)
         with closing(self.connect()) as db:
             ids = [row[0] for row in db.execute(f'SELECT id FROM candidates WHERE {where} ORDER BY rowid LIMIT ?', (*args, limit + 1))]
         if len(ids) > limit:

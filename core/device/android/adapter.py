@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import os
+import re
 import shutil
 import subprocess
 import shlex
@@ -117,6 +118,16 @@ class AndroidAdapter:
             if len(paths) > limit:
                 raise AdbError("目录超过 10,000 个文件，请选择更小的子目录；未显示截断列表。")
         return sorted(set(paths))
+
+    def modified_time(self, serial, remote_path):
+        """Best-effort ``stat`` mtime in UTC seconds; never fails an acquisition."""
+        try:
+            quoted = shlex.quote(self.shared_path(remote_path))
+            output = self._device_command(serial, ['shell', f'stat -c %Y {quoted}'])
+        except AdbError:
+            return None
+        text = output.strip()
+        return int(text) if re.fullmatch(r'\d{1,12}', text) else None
 
     def pull_file(self, serial, remote_path, destination, token=None):
         remote_path = self.shared_path(remote_path)

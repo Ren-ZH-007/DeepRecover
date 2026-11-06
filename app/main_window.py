@@ -1,9 +1,9 @@
 import sys
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QTimer, QDate
 from PySide6.QtGui import QPixmap, QColor, QAction, QKeySequence
 from PySide6.QtWidgets import (QAbstractItemView, QFileDialog, QHBoxLayout, QLabel,
     QListWidget, QMainWindow, QPushButton, QStackedWidget, QTableWidget,
-    QTableWidgetItem, QVBoxLayout, QWidget, QHeaderView, QInputDialog, QMessageBox, QProgressBar, QComboBox, QSplitter, QFrame, QListWidgetItem, QScrollArea, QDialog, QLineEdit, QCheckBox)
+    QTableWidgetItem, QVBoxLayout, QWidget, QHeaderView, QInputDialog, QMessageBox, QProgressBar, QComboBox, QSplitter, QFrame, QListWidgetItem, QScrollArea, QDialog, QLineEdit, QCheckBox, QDateEdit)
 from app.navigation import PAGES
 from core.tasks import TaskManager, TaskCancelled
 from core.device.android.adapter import AndroidAdapter, AdbError
@@ -20,9 +20,10 @@ from core.preview.pdf import prepare_pdf
 from storage.models.classification import category
 from core.export.service import export_batch, ExportError
 from ui.recovery.export_history import ExportHistory
+from core.file_times import display_time
 from core.progress_rate import RateEstimator, describe_rate, format_bytes
 from ui.recovery.presentation import (candidate_status, content_check, deletion_evidence, video_check_details, pdf_check_details,
-    export_guidance, task_status, task_kind, source_kind, error_text, duplicate_label)
+    export_guidance, task_status, task_kind, source_kind, error_text, duplicate_label, modified_time_note)
 from ui.computer.page import ComputerPage, check_computer_access, computer_error_types
 from app.theme import STYLE, icon, brand_icon
 from app.version import VERSION
@@ -284,8 +285,20 @@ class MainWindow(QMainWindow):
         row.addStretch()
         self.result_page_label = QLabel('0 条'); self.result_page_label.setObjectName('sectionNote'); row.addWidget(self.result_page_label)
         self.category_filter.currentIndexChanged.connect(self.filter_results); self.status_filter.currentIndexChanged.connect(self.filter_results)
+        row = QHBoxLayout(); box.addLayout(row)
+        self.date_filter = QCheckBox('按修改日期')
+        self.date_filter.setToolTip('按文件系统或备份记录的修改时间筛选，含开始和结束当天。'
+                                    'UTC 时间按本机时区换算；FAT32 等只记录本地时间的按记录日期比较。'
+                                    '开启后，没有修改时间的候选（如签名扫描结果）不显示。')
+        self.date_from, self.date_to = QDateEdit(), QDateEdit()
+        for edit in (self.date_from, self.date_to):
+            edit.setCalendarPopup(True); edit.setDisplayFormat('yyyy-MM-dd'); edit.setEnabled(False)
+            edit.setDateRange(QDate(1980, 1, 1), QDate(2099, 12, 31)); edit.dateChanged.connect(self.date_range_changed)
+        self.reset_date_filter()
+        self.date_filter.toggled.connect(self.date_filter_toggled)
+        row.addWidget(self.date_filter); row.addWidget(self.date_from); row.addWidget(QLabel('至')); row.addWidget(self.date_to); row.addStretch()
         splitter = QSplitter(); box.addWidget(splitter,1)
-        self.result_table = self.table(['文件名','类型','大小 / 字节','内容检查','原始路径','本地文件','来源范围 SHA-256','采集时间 / UTC','源内偏移 / 字节','候选状态','文件系统','删除依据','来源范围数','相同内容'])
+        self.result_table = self.table(['文件名','类型','大小 / 字节','内容检查','原始路径','本地文件','来源范围 SHA-256','采集时间 / UTC','源内偏移 / 字节','候选状态','文件系统','删除依据','来源范围数','相同内容','修改时间'])
         self.result_table.setToolTip(f'{selection_modifier()} 可多选本页记录；分页或筛选会重置当前选择。')
         self.result_table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection); splitter.addWidget(self.result_table)
         preview = QFrame(); preview.setObjectName('previewPanel'); preview_box = QVBoxLayout(preview); preview_box.setContentsMargins(14,14,14,14); splitter.addWidget(preview)
@@ -401,6 +414,29 @@ class MainWindow(QMainWindow):
         self.computer_page.refresh_controls()
         self.workspace_button.setEnabled(not self.pending and not self.computer_page.readonly_pending)
         self.diagnostics_button.setEnabled(not self.pending and not self.computer_page.readonly_pending)
+
+    def reset_date_filter(self):
+        today = QDate.currentDate()
+        for edit in (self.date_from, self.date_to): edit.blockSignals(True)
+        self.date_from.setDate(today.addDays(-30)); self.date_to.setDate(today)
+        for edit in (self.date_from, self.date_to): edit.blockSignals(False)
+
+    def date_filter_toggled(self, checked):
+        self.date_from.setEnabled(checked); self.date_to.setEnabled(checked); self.filter_results()
+
+    def date_range_changed(self, *_):
+        if self.date_filter.isChecked():
+            self.filter_results()
+
+    def date_range(self):
+        if not self.date_filter.isChecked():
+            return None
+        first, last = self.date_from.date().toPython(), self.date_to.date().toPython()
+        return (first, last) if first <= last else (last, first)
+
+    def result_filters(self):
+        return {'category': self.category_filter.currentData(), 'status': self.status_filter.currentData(),
+                'query': self.search_text(), 'hide_duplicates': self.hide_duplicates.isChecked(), 'dates': self.date_range()}
 
     def search_text(self):
         return ' '.join(self.result_search.text().split()[:MAX_QUERY_TERMS])
@@ -536,7 +572,7 @@ class MainWindow(QMainWindow):
         if self.pending or self.computer_page.readonly_pending or not self.result_task_id:
             self.statusBar().showMessage('请先打开结果并等待当前任务结束。'); return
         try:
-            ids = self.repository.candidate_ids(self.result_task_id,category=self.category_filter.currentData(),status=self.status_filter.currentData(),query=self.search_text(),hide_duplicates=self.hide_duplicates.isChecked()) if all_filtered else self.selected_candidate_ids()
+            ids = self.repository.candidate_ids(self.result_task_id,**self.result_filters()) if all_filtered else self.selected_candidate_ids()
         except ValueError as error:
             self.statusBar().showMessage(str(error)); return
         if not ids:
@@ -680,6 +716,8 @@ class MainWindow(QMainWindow):
         self.category_filter.blockSignals(False); self.status_filter.blockSignals(False)
         self.result_search.blockSignals(True); self.result_search.clear(); self.result_search.blockSignals(False); self.search_timer.stop()
         self.hide_duplicates.blockSignals(True); self.hide_duplicates.setChecked(False); self.hide_duplicates.blockSignals(False)
+        self.date_filter.blockSignals(True); self.date_filter.setChecked(False); self.date_filter.blockSignals(False)
+        self.date_from.setEnabled(False); self.date_to.setEnabled(False); self.reset_date_filter()
         self.load_result_page()
         self.nav.setCurrentRow(4)
 
@@ -694,8 +732,7 @@ class MainWindow(QMainWindow):
             self.previous_page.setEnabled(False); self.next_page.setEnabled(False)
             return
         source = self.repository.source(task['source_id']) if task['source_id'] else None
-        filters = {'category':self.category_filter.currentData(),'status':self.status_filter.currentData(),'query':self.search_text(),
-                   'hide_duplicates':self.hide_duplicates.isChecked()}
+        filters = self.result_filters()
         total = self.repository.candidate_count(self.result_task_id,**filters)
         self.result_offset = min(self.result_offset, max(0, (total - 1) // self.page_size * self.page_size))
         candidates = self.repository.candidate_page(self.result_task_id, offset=self.result_offset, limit=self.page_size,**filters)
@@ -708,12 +745,15 @@ class MainWindow(QMainWindow):
                                       c.get('file_system') or '',
                                       deletion_evidence(c).label,
                                       len(c.get('extents') or ()) if c.get('file_system') else '',
-                                      duplicate_label(copies.get(c['id']))) for c in candidates])
+                                      duplicate_label(copies.get(c['id'])),
+                                      display_time(c.get('modified_at'), c.get('modified_basis'))) for c in candidates])
         for row, candidate in enumerate(candidates):
             for column, display in ((3, content_check(candidate.get('integrity'))),
                                     (9, candidate_status(candidate.get('status'))),
                                     (11, deletion_evidence(candidate))):
                 self.explain_item(self.result_table.item(row,column), display)
+            if candidate.get('modified_basis') in ('utc', 'local') and self.result_table.item(row,14).text():
+                self.result_table.item(row,14).setToolTip(modified_time_note(candidate))
             if candidate['id'] in copies:
                 self.result_table.item(row,13).setToolTip('SHA-256 与本次结果中其他候选相同。“最早一项”在隐藏重复项时保留；导出前请自行判断需要哪一份。')
         self.clear_preview()

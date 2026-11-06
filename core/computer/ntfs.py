@@ -9,6 +9,8 @@ from collections import OrderedDict
 from dataclasses import dataclass
 import struct
 
+from core.file_times import filetime_modified
+
 
 class NTFSError(ValueError):
     pass
@@ -236,6 +238,18 @@ def _data_stream(attrs, record_number, usa_offset, mft, volume):
             _resident_stream(attr, record_number, usa_offset, mft, volume)), attr
 
 
+def _modified(attrs):
+    """$STANDARD_INFORMATION modification time, else the chosen $FILE_NAME copy."""
+    for kind, offset in ((0x10, 8), (0x30, 16)):
+        for attr in attrs:
+            value = attr['value']
+            if attr['type'] == kind and not attr['nonresident'] and not attr['name'] and value is not None and len(value) >= offset + 8:
+                found = filetime_modified(struct.unpack_from('<Q', value, offset)[0])
+                if found:
+                    return found
+    return {}
+
+
 def _filename(attrs):
     names = []
     for attr in attrs:
@@ -332,7 +346,7 @@ def scan_ntfs(reader, partition, token, *, max_records=1000000, max_candidates=1
             attrs = _attributes(fixed)
             name, _ = _filename(attrs)
             candidate.update(name=name, original_path=f'[$MFT record {number}]/{name}',
-                             deletion_state='deleted_record', integrity='unsupported_layout')
+                             deletion_state='deleted_record', integrity='unsupported_layout', **_modified(attrs))
             declared_data = [attr for attr in attrs if attr['type'] == 0x80 and not attr['name']]
             if len(declared_data) == 1:
                 data_attr = declared_data[0]
