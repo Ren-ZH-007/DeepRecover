@@ -101,7 +101,9 @@ def disk_snapshot(devices):
 
 
 def _sanitized_disks(value):
-    if not isinstance(value, dict) or not isinstance(value.get('volumes'), list):
+    # An explicit non-detected status must survive re-sanitizing on save.
+    if (not isinstance(value, dict) or not isinstance(value.get('volumes'), list)
+            or value.get('status', 'detected') != 'detected'):
         return {'status': 'not_detected', 'physical_disk_count': None, 'volumes': []}
     volumes = []
     for item in value['volumes'][:MAX_VOLUMES]:
@@ -131,7 +133,7 @@ def _sanitized_disks(value):
 
 
 def _sanitized_errors(value):
-    if not isinstance(value, dict):
+    if not isinstance(value, dict) or value.get('status', 'collected') != 'collected':
         return {'status': 'not_collected', 'tasks': [], 'exports': []}
     def rows(items, fields):
         merged = {}

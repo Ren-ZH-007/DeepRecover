@@ -116,6 +116,20 @@ class DiagnosticsDiskAndErrorTests(unittest.TestCase):
             report = self.collect(disks=snapshot, errors=errors)
         self.assertEqual(report['disks']['status'], 'detected')
 
+    def test_every_state_is_unchanged_by_saving(self):
+        # The packaged smoke check requires the saved report to equal the shown one.
+        for disks, errors in ((None, None), (disk_snapshot(devices()), None), (None, {'tasks': [], 'exports': []}),
+                              (disk_snapshot([]), {'tasks': [{'kind': 'export', 'status': 'failed', 'error': None, 'count': 1}], 'exports': []})):
+            report = self.collect(disks=disks, errors=errors)
+            saved = json.loads(write_environment_report(self.workspace, report).read_text(encoding='utf-8'))
+            self.assertEqual(saved, report)
+
+    def test_forged_status_cannot_turn_missing_sections_into_observations(self):
+        report = self.collect(disks={'status': 'not_detected', 'volumes': [{'kind': 'partition', 'physical_disks': 1}]},
+                              errors={'status': 'not_collected', 'tasks': [{'kind': 'export', 'status': 'failed', 'error': 'OSError', 'count': 1}]})
+        self.assertEqual(report['disks'], {'status': 'not_detected', 'physical_disk_count': None, 'volumes': []})
+        self.assertEqual(report['errors'], {'status': 'not_collected', 'tasks': [], 'exports': []})
+
     def test_saved_report_rebuilds_disk_and_error_sections(self):
         report = self.collect(disks=disk_snapshot(devices()), errors={'tasks': [{'kind': 'export', 'status': 'failed', 'error': 'OSError', 'count': 2}], 'exports': []})
         expected_disks, expected_errors = json.loads(json.dumps(report['disks'])), json.loads(json.dumps(report['errors']))
