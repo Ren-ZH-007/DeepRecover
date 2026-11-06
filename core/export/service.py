@@ -3,13 +3,12 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import re
 import tempfile
-from uuid import uuid4
 
 from core.candidate_io import CandidateAccessError, candidate_input, range_chunks, range_digest, snapshot
 from core.tasks import TaskCancelled
 from core.computer.io import DiskError
+from core.export.naming import NamingError, choose_target
 
 
 class ExportError(RuntimeError):
@@ -80,9 +79,11 @@ def export_batch(repository, task_id, candidate_ids, destination, data_dir, toke
         for candidate_id in ids:
             token.checkpoint()
             candidate = repository.candidate(candidate_id)
-            extension = str(candidate['file_type']).lower()
-            extension = extension if re.fullmatch('[a-z0-9]{1,10}', extension) else 'bin'
-            target = batch_dir / f'{uuid4().hex}.{extension}'
+            try:
+                target = choose_target(batch_dir, candidate)
+            except NamingError:
+                # A folder slot taken by a same-named file: keep the export, drop the layout.
+                target = choose_target(batch_dir, {**candidate, 'source': 'unnamed'})
             source_task = repository.task(candidate['task_id'])
             source = repository.source(source_task['source_id']) if source_task['source_id'] else None
             record = repository.start_export(task_id, candidate_id, target, {**candidate, 'source_record': source})

@@ -144,6 +144,41 @@ class UiTests(unittest.TestCase):
             finally:
                 window.close()
 
+    def test_result_search_filters_pages_export_selection_and_resets_on_new_results(self):
+        app=QApplication.instance() or QApplication([])
+        with tempfile.TemporaryDirectory() as directory:
+            config=AppConfig(Path(directory)); config.initialize()
+            repo=Repository(config.database)
+            task=repo.create_task('android_acquisition', DataSource('android','SERIAL','Phone'))
+            repo.add_candidates(task,[Candidate('android_file',f'IMG_{i}.jpg','jpg',1,original_path=f'/sdcard/DCIM/IMG_{i}.jpg') for i in range(3)]
+                                +[Candidate('android_file','report.pdf','pdf',1,original_path='/sdcard/Download/report.pdf')])
+            repo.update_task(task,'completed')
+            other=repo.create_task('android_acquisition', DataSource('android','SERIAL','Phone'))
+            repo.add_candidates(other,[Candidate('android_file','a.jpg','jpg',1)]); repo.update_task(other,'completed')
+            window=MainWindow(config,repo)
+            try:
+                window.open_results(task)
+                self.assertEqual(window.result_table.rowCount(),4)
+                window.result_search.setText('img  2')
+                self.assertTrue(window.search_timer.isActive())
+                self.assertEqual(window.result_table.rowCount(),4)
+                window.result_search.returnPressed.emit()
+                self.assertFalse(window.search_timer.isActive())
+                self.assertEqual([window.result_table.item(r,0).text() for r in range(window.result_table.rowCount())],['IMG_2.jpg'])
+                window.result_search.setText('download'); window.search_timer.timeout.emit()
+                self.assertEqual(window.result_table.item(0,0).text(),'report.pdf')
+                with patch('app.main_window.QFileDialog.getExistingDirectory',return_value='') as chooser, \
+                     patch.object(repo,'candidate_ids',wraps=repo.candidate_ids) as ids:
+                    window.export_results(True)
+                self.assertEqual(ids.call_args.kwargs['query'],'download'); chooser.assert_called_once()
+                window.result_search.setText(' '.join('x'*20)); window.filter_results()
+                self.assertEqual(window.search_text(),' '.join('x'*8)); self.assertEqual(window.result_table.rowCount(),0)
+                window.open_results(other)
+                self.assertEqual(window.result_search.text(),''); self.assertFalse(window.search_timer.isActive())
+                self.assertEqual(window.result_table.rowCount(),1)
+            finally:
+                window.close()
+
     def test_scan_ui_select_run_progress_offsets_and_reopen_history(self):
         app=QApplication.instance() or QApplication([])
         with tempfile.TemporaryDirectory() as directory:

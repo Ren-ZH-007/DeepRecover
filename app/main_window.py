@@ -3,13 +3,14 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QPixmap, QColor, QAction, QKeySequence
 from PySide6.QtWidgets import (QAbstractItemView, QFileDialog, QHBoxLayout, QLabel,
     QListWidget, QMainWindow, QPushButton, QStackedWidget, QTableWidget,
-    QTableWidgetItem, QVBoxLayout, QWidget, QHeaderView, QInputDialog, QMessageBox, QProgressBar, QComboBox, QSplitter, QFrame, QListWidgetItem, QScrollArea, QDialog)
+    QTableWidgetItem, QVBoxLayout, QWidget, QHeaderView, QInputDialog, QMessageBox, QProgressBar, QComboBox, QSplitter, QFrame, QListWidgetItem, QScrollArea, QDialog, QLineEdit)
 from app.navigation import PAGES
 from core.tasks import TaskManager, TaskCancelled
 from core.device.android.adapter import AndroidAdapter, AdbError
 from core.device.ios.discovery import discover_backups
 from core.parser.ios_backup.manifest import iter_manifest, BackupError
 from core.acquisition.android import acquire_files
+from storage.database.repository import MAX_QUERY, MAX_QUERY_TERMS
 from storage.models.source import DataSource
 from core.scanner.signature.scanner import SignatureScanner, ScanError
 from core.candidate_io import CandidateAccessError
@@ -267,6 +268,14 @@ class MainWindow(QMainWindow):
         self.status_filter = QComboBox()
         for label,value in [('全部状态','all'),('候选','candidate'),('部分 / 受限','partial'),('失败','failed')]: self.status_filter.addItem(label,value)
         row.addWidget(self.status_filter)
+        self.result_search = QLineEdit(); self.result_search.setPlaceholderText('搜索文件名或原始路径')
+        self.result_search.setMaxLength(MAX_QUERY); self.result_search.setClearButtonEnabled(True)
+        self.result_search.setToolTip('不区分英文大小写；多个关键词用空格分开，需同时包含。')
+        self.result_search.setMinimumWidth(200); row.addWidget(self.result_search, 1)
+        self.search_timer = QTimer(self); self.search_timer.setSingleShot(True); self.search_timer.setInterval(300)
+        self.search_timer.timeout.connect(self.filter_results)
+        self.result_search.textChanged.connect(lambda _: self.search_timer.start())
+        self.result_search.returnPressed.connect(self.filter_results)
         self.result_selection_hint = QLabel(f'{selection_modifier()} 多选'); self.result_selection_hint.setObjectName('sectionNote'); row.addWidget(self.result_selection_hint)
         row.addStretch()
         self.result_page_label = QLabel('0 条'); self.result_page_label.setObjectName('sectionNote'); row.addWidget(self.result_page_label)
@@ -296,7 +305,7 @@ class MainWindow(QMainWindow):
         self.export_all_button = self.button(row,'导出全部筛选',lambda: self.export_results(True),'primary','check')
         self.button(row,'停止导出',self.cancel_export,'danger','stop')
         self.export_progress = QProgressBar(); self.export_progress.setRange(0,1000); self.export_progress.setValue(0); box.addWidget(self.export_progress)
-        self.export_status = QLabel('生成独立批次目录，不覆盖现有文件。导出后逐项核对源 / 目标 SHA-256。'); self.export_status.setObjectName('sectionNote'); self.export_status.setWordWrap(True); box.addWidget(self.export_status)
+        self.export_status = QLabel('生成独立批次目录，不覆盖现有文件。手机备份和删除记录的文件保留原名与目录，同名自动编号；签名候选使用随机名。导出后逐项核对源 / 目标 SHA-256。'); self.export_status.setObjectName('sectionNote'); self.export_status.setWordWrap(True); box.addWidget(self.export_status)
 
         box = self.page('任务与处理记录', '最近 200 个非预览任务。双击一条记录，重新打开候选结果或导出校验记录。')
         row = QHBoxLayout(); box.addLayout(row)
@@ -389,7 +398,11 @@ class MainWindow(QMainWindow):
         self.workspace_button.setEnabled(not self.pending and not self.computer_page.readonly_pending)
         self.diagnostics_button.setEnabled(not self.pending and not self.computer_page.readonly_pending)
 
+    def search_text(self):
+        return ' '.join(self.result_search.text().split()[:MAX_QUERY_TERMS])
+
     def filter_results(self, *_):
+        self.search_timer.stop()
         self.result_offset = 0
         if self.result_task_id:
             self.load_result_page()
@@ -519,7 +532,7 @@ class MainWindow(QMainWindow):
         if self.pending or self.computer_page.readonly_pending or not self.result_task_id:
             self.statusBar().showMessage('请先打开结果并等待当前任务结束。'); return
         try:
-            ids = self.repository.candidate_ids(self.result_task_id,category=self.category_filter.currentData(),status=self.status_filter.currentData()) if all_filtered else self.selected_candidate_ids()
+            ids = self.repository.candidate_ids(self.result_task_id,category=self.category_filter.currentData(),status=self.status_filter.currentData(),query=self.search_text()) if all_filtered else self.selected_candidate_ids()
         except ValueError as error:
             self.statusBar().showMessage(str(error)); return
         if not ids:
@@ -661,6 +674,7 @@ class MainWindow(QMainWindow):
         self.category_filter.blockSignals(True); self.status_filter.blockSignals(True)
         self.category_filter.setCurrentIndex(0); self.status_filter.setCurrentIndex(0)
         self.category_filter.blockSignals(False); self.status_filter.blockSignals(False)
+        self.result_search.blockSignals(True); self.result_search.clear(); self.result_search.blockSignals(False); self.search_timer.stop()
         self.load_result_page()
         self.nav.setCurrentRow(4)
 
@@ -675,7 +689,7 @@ class MainWindow(QMainWindow):
             self.previous_page.setEnabled(False); self.next_page.setEnabled(False)
             return
         source = self.repository.source(task['source_id']) if task['source_id'] else None
-        filters = {'category':self.category_filter.currentData(),'status':self.status_filter.currentData()}
+        filters = {'category':self.category_filter.currentData(),'status':self.status_filter.currentData(),'query':self.search_text()}
         total = self.repository.candidate_count(self.result_task_id,**filters)
         self.result_offset = min(self.result_offset, max(0, (total - 1) // self.page_size * self.page_size))
         candidates = self.repository.candidate_page(self.result_task_id, offset=self.result_offset, limit=self.page_size,**filters)
