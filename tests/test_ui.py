@@ -269,7 +269,8 @@ class UiTests(unittest.TestCase):
                 window.history_table.selectRow([t['id'] for t in window.history].index(task_id)); app.processEvents()
             def settle():
                 if window.computer_page._future is not None:
-                    window.computer_page._future.result(30); window.poll()
+                    from concurrent.futures import wait as wait_for
+                    wait_for([window.computer_page._future], 30); window.poll()  # errors go to the UI, not the test
                 if window.pending is not None:
                     try: window.pending[0].future.result(60)
                     except Exception: pass
@@ -350,7 +351,7 @@ class UiTests(unittest.TestCase):
             config=AppConfig(Path(directory)/'data'); config.initialize()
             window=MainWindow(config,Repository(config.database))
             steps=[Event() for _ in range(2)]; release=[Event() for _ in range(2)]
-            def paced_scan(path,token):
+            def paced_scan(path,token,**_):
                 for index,done in enumerate((0,20*MB)):
                     token.report_progress(done,100*MB,0)
                     steps[index].set()
@@ -390,7 +391,7 @@ class UiTests(unittest.TestCase):
             window=MainWindow(config,repo)
             scanner=SignatureScanner()
             ready,release=Event(),Event()
-            def cancelled_scan(path,token):
+            def cancelled_scan(path,token,**_):
                 iterator=scanner.scan(path,token)
                 try:
                     yield next(iterator)
