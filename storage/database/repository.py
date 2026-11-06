@@ -1,4 +1,5 @@
 import json
+import re
 import sqlite3
 from contextlib import closing
 from dataclasses import asdict
@@ -8,6 +9,8 @@ from uuid import uuid4
 from storage.models.classification import CATEGORIES
 
 SCHEMA_VERSION = 3
+MAX_QUERY = 200
+MAX_QUERY_TERMS = 8
 
 def now():
     return datetime.now(timezone.utc).isoformat()
@@ -84,7 +87,7 @@ class Repository:
             return [json.loads(row[0]) for row in db.execute("SELECT payload FROM candidates WHERE task_id=? ORDER BY rowid", (task_id,))]
 
     @staticmethod
-    def candidate_filter(task_id, category='all', status='all'):
+    def candidate_filter(task_id, category='all', status='all', query=''):
         clauses, args = ['task_id=?'], [task_id]
         if category != 'all':
             if category not in (*CATEGORIES, 'other'):
@@ -99,25 +102,33 @@ class Repository:
                 raise ValueError('Invalid candidate status')
             clauses.append("json_extract(payload,'$.status')=?")
             args.append(status)
+        if not isinstance(query, str) or len(query) > MAX_QUERY or len(query.split()) > MAX_QUERY_TERMS:
+            raise ValueError('Invalid search text')
+        # Plain substring match on name or original path; LIKE wildcards are literal.
+        for term in query.split():
+            pattern = '%' + re.sub(r'([\\%_])', r'\\\1', term) + '%'
+            clauses.append("(coalesce(json_extract(payload,'$.name'),'') LIKE ? ESCAPE '\\'"
+                           " OR coalesce(json_extract(payload,'$.original_path'),'') LIKE ? ESCAPE '\\')")
+            args.extend((pattern, pattern))
         return ' AND '.join(clauses), args
 
-    def candidate_page(self, task_id, *, offset=0, limit=100, category='all', status='all'):
+    def candidate_page(self, task_id, *, offset=0, limit=100, category='all', status='all', query=''):
         if not isinstance(offset, int) or not isinstance(limit, int) or offset < 0 or not 1 <= limit <= 1000:
             raise ValueError("Invalid page bounds")
-        where, args = self.candidate_filter(task_id, category, status)
+        where, args = self.candidate_filter(task_id, category, status, query)
         with closing(self.connect()) as db:
             return [json.loads(row[0]) for row in db.execute(
                 f"SELECT payload FROM candidates WHERE {where} ORDER BY rowid LIMIT ? OFFSET ?", (*args, limit, offset))]
 
-    def candidate_count(self, task_id, *, category='all', status='all'):
-        where, args = self.candidate_filter(task_id, category, status)
+    def candidate_count(self, task_id, *, category='all', status='all', query=''):
+        where, args = self.candidate_filter(task_id, category, status, query)
         with closing(self.connect()) as db:
             return db.execute(f"SELECT count(*) FROM candidates WHERE {where}", args).fetchone()[0]
 
-    def candidate_ids(self, task_id, *, category='all', status='all', limit=10000):
+    def candidate_ids(self, task_id, *, category='all', status='all', query='', limit=10000):
         if not 1 <= limit <= 10000:
             raise ValueError('Invalid selection limit')
-        where, args = self.candidate_filter(task_id, category, status)
+        where, args = self.candidate_filter(task_id, category, status, query)
         with closing(self.connect()) as db:
             ids = [row[0] for row in db.execute(f'SELECT id FROM candidates WHERE {where} ORDER BY rowid LIMIT ?', (*args, limit + 1))]
         if len(ids) > limit:
