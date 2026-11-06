@@ -62,6 +62,27 @@ class DiagnosticsUiTests(unittest.TestCase):
         self.assertIn('未执行', dialog.status_label.text())
         self.assertIn('未测试写入', dialog.values['workspace'].text())
 
+    def test_disk_mapping_and_error_types_come_from_existing_state_without_new_queries(self):
+        from tests.test_diagnostics_disks import PRIVATE, devices
+        dialog = self.checked()
+        self.assertIn('尚未检测', dialog.values['disks'].text())
+        self.assertEqual(dialog.values['errors'].text(), '没有失败、中断或取消的任务记录')
+        for kind, code in (('computer_scan', 'DiskError'), ('computer_scan', 'DiskError'), ('export', 'ExportError')):
+            self.repo.update_task(self.repo.create_task(kind), 'failed', code)
+        self.page.devices = devices()
+        before = self.config.database.read_bytes()
+        with patch('core.computer.devices.list_devices', side_effect=AssertionError('No disk detection')), \
+             patch('subprocess.run', side_effect=AssertionError('No commands')):
+            dialog.start_check(); self.finish()
+        self.assertEqual(self.config.database.read_bytes(), before)
+        self.assertEqual(dialog.values['disks'].text(), '3 块物理盘 · 4 个磁盘 / 卷 · 1 个未能确认所在物理盘')
+        self.assertEqual(dialog.values['errors'].text(), '3 次任务未成功 · 0 项导出未成功 · 最常见：DiskError')
+        dialog.save_report(); self.finish()
+        saved = dialog.saved_path.read_text(encoding='utf-8')
+        self.assertEqual(json.loads(saved)['disks']['physical_disk_count'], 3)
+        for value in PRIVATE:
+            self.assertNotIn(value, saved)
+
     def test_result_selection_changes_preserve_open_diagnostics_and_main_close_closes_it(self):
         self.window.show_environment_diagnostics()
         self.finish()

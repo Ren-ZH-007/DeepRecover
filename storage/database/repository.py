@@ -66,6 +66,17 @@ class Repository:
             db.execute("UPDATE tasks SET status='interrupted',updated_at=? WHERE status IN ('running','queued')", (now(),))
             db.execute("UPDATE exports SET status='interrupted',error_code='Interrupted' WHERE status='running'")
 
+    def error_summary(self):
+        """Counts of unsuccessful tasks and exports by kind, status and error type only."""
+        problems = ('failed', 'interrupted', 'cancelled')
+        with closing(self.connect()) as db:
+            tasks = db.execute("SELECT kind,status,error_code,count(*) FROM tasks WHERE status IN (?,?,?) "
+                               "GROUP BY kind,status,error_code", problems).fetchall()
+            exports = db.execute("SELECT status,error_code,count(*) FROM exports WHERE status IN (?,?,?) "
+                                 "GROUP BY status,error_code", problems).fetchall()
+        return {'tasks': [{'kind': k, 'status': s, 'error': e, 'count': n} for k, s, e, n in tasks],
+                'exports': [{'status': s, 'error': e, 'count': n} for s, e, n in exports]}
+
     def tasks(self):
         with closing(self.connect()) as db:
             return [dict(row) for row in db.execute("SELECT * FROM tasks WHERE kind NOT IN ('image_preview','video_preview','pdf_preview') ORDER BY created_at DESC LIMIT 200")]
