@@ -6,6 +6,12 @@ on:
     tags: ['v*']
     paths-ignore: ['docs/**', 'README.md']
   workflow_dispatch:
+    inputs:
+      release_version:
+        description: 'Publish this version after all platform checks pass (for example 0.10.0); empty builds Windows only'
+        required: false
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -33,10 +39,13 @@ jobs:
       - name: Validate version and tag
         id: version
         shell: pwsh
+        env:
+          REQUESTED_RELEASE_VERSION: ${{ inputs.release_version }}
         run: |
           $version = (& .venv/Scripts/python.exe -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])").Trim()
           if ($LASTEXITCODE -ne 0) { throw 'Cannot determine project version' }
           if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne "v$version") { throw 'Tag and project version differ' }
+          if ($env:REQUESTED_RELEASE_VERSION -and $env:REQUESTED_RELEASE_VERSION -ne $version) { throw 'Requested release and project version differ' }
           "version=$version" >> $env:GITHUB_OUTPUT
       - name: Test, compile, start executable and make ZIP
         shell: pwsh
@@ -113,11 +122,11 @@ jobs:
           compression-level: 0
 
   macos:
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.release_version != '')
     uses: ./.github/workflows/macos-build.yml
 
   publish:
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.release_version != '')
     needs: [windows, macos]
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -140,11 +149,14 @@ jobs:
       - name: Verify assets and publish the exact tested tag commit
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && format('v{0}', inputs.release_version) || github.ref_name }}
           RELEASE_COMMIT: ${{ github.sha }}
         shell: bash
         run: |
           set -euo pipefail
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo 'Invalid release tag' >&2; exit 1; }
+          project_version="$(python3 -c \"import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])\")"
+          [[ "$RELEASE_TAG" == "v$project_version" ]] || { echo 'Release tag and project version differ' >&2; exit 1; }
           mkdir publish-assets
           for platform in windows macos-arm64 macos-x86_64; do
             (cd "release-assets/$platform" && sha256sum --check SHA256SUMS.txt)
@@ -157,6 +169,15 @@ jobs:
           if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo 'A release already exists for this tag. Refusing to overwrite its assets.' >&2
             exit 1
+          fi
+          # Manual dispatch creates the immutable version ref only after all builds pass.
+          # GITHUB_TOKEN-created tags do not retrigger the push workflow.
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG" > existing-tag.json 2> tag-error.txt; then
+            tag_commit="$(python3 -c "import json; d=json.load(open('existing-tag.json')); print(d['object']['sha'] if d['object']['type']=='commit' else '')")"
+            [[ "$tag_commit" == "$RELEASE_COMMIT" ]] || { echo 'Existing tag differs from tested commit' >&2; exit 1; }
+          else
+            grep -q 'HTTP 404' tag-error.txt || { cat tag-error.txt >&2; exit 1; }
+            gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" -f "ref=refs/tags/$RELEASE_TAG" -f "sha=$RELEASE_COMMIT"
           fi
           gh release create "$RELEASE_TAG" publish-assets/*.zip publish-assets/SHA256SUMS.txt \
             --repo "$GITHUB_REPOSITORY" --target "$RELEASE_COMMIT" \
