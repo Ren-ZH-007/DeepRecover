@@ -1,5 +1,6 @@
 """Interrupted signature scans continue into the same task with identical results."""
 import json
+from contextlib import closing
 import os
 from pathlib import Path
 import random
@@ -122,7 +123,7 @@ class ResumeTests(unittest.TestCase):
         verified = next(c for c in self.repo.recent_candidates(task, 200) if c['sha256'])
         data[verified['offset'] + verified['size'] // 2] ^= 0xFF; path.write_bytes(data)
         # Simulate a raw device whose identity does not change on writes.
-        with sqlite3.connect(self.config.database) as db:
+        with closing(sqlite3.connect(self.config.database)) as db, db:
             from core.candidate_io import snapshot
             db.execute('UPDATE scan_checkpoints SET identity=? WHERE task_id=?', (json.dumps(snapshot(path.stat()), sort_keys=True), task))
         with self.assertRaisesRegex(ResumeError, '来源内容与已保存的候选不一致'):
@@ -143,7 +144,7 @@ class ResumeTests(unittest.TestCase):
         with self.assertRaisesRegex(ResumeError, '不存在'):
             plan_resume(self.repo, 'missing')
         broken = self.image_scan(path, 4)
-        with sqlite3.connect(self.config.database) as db:
+        with closing(sqlite3.connect(self.config.database)) as db, db:
             db.execute('UPDATE scan_checkpoints SET candidates=candidates+50 WHERE task_id=?', (broken,))
         with self.assertRaisesRegex(ResumeError, '不一致'):
             plan_resume(self.repo, broken)
