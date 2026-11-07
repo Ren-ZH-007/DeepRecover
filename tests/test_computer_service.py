@@ -16,6 +16,7 @@ from core.export.service import export_batch, ExportError
 from core.tasks import CancellationToken, TaskManager, TaskCancelled
 from storage.database.repository import Repository
 from storage.models.source import DataSource
+from tests.apfs_fixture import BS, ApfsImage
 from tests.exfat_fixture import ExfatImage, entry_set
 from tests.fixtures_ntfs import NTFSFixture, file_name, resident_attr, nonresident_attr
 from tests.test_scanner import png_image, JPEG
@@ -98,9 +99,34 @@ class ComputerServiceTests(unittest.TestCase):
         with self.assertRaises(CandidateAccessError): read_candidate(self.repo, ids[0], self.config.data_dir, CancellationToken())
 
     def test_unknown_filesystem_does_not_silently_become_deleted_recovery(self):
-        path = self.root / 'APFS.img'; path.write_bytes(bytes(32) + b'NXSB' + bytes(1024))
+        path = self.root / 'HFS.img'; path.write_bytes(bytes(1024) + b'H+' + bytes(2048))
+        self.assertEqual(inspect_source(path)[0].file_system, 'HFS+')
+        with self.assertRaises(ComputerError): list(ComputerScanner().scan(path, CancellationToken()))
+        path = self.root / 'APFS.img'; path.write_bytes(bytes(32) + b'NXSB' + bytes(1024 * 1024))
         self.assertEqual(inspect_source(path)[0].file_system, 'APFS')
         with self.assertRaises(ComputerError): list(ComputerScanner().scan(path, CancellationToken()))
+
+    def test_apfs_deleted_file_scan_export_and_history(self):
+        image = ApfsImage(); image.live_file('keep.txt', b'still here')
+        payload = png_image() * 40
+        image.deleted_file('已删除 图片.png', payload)
+        _fid, start = image.deleted_file('reused.bin', b'old' * 2000)
+        image.live_file('new.bin', b'new' * 2000, start=start)
+        path, task, ids = self.scan(image.build())
+        rows = {self.repo.candidate(i)['name']: self.repo.candidate(i) for i in ids}
+        self.assertEqual(set(rows), {'已删除 图片.png', 'reused.bin'})
+        ready, reused = rows['已删除 图片.png'], rows['reused.bin']
+        self.assertEqual((ready['file_system'], ready['deletion_state'], ready['integrity'], ready['status']),
+                         ('APFS', 'deleted_record', 'metadata_checked', 'candidate'))
+        self.assertEqual(ready['original_path'], '/已删除 图片.png')
+        self.assertEqual(ready['sha256'], hashlib.sha256(payload).hexdigest())
+        self.assertEqual(read_candidate(self.repo, ready['id'], self.config.data_dir, CancellationToken()), payload)
+        self.assertEqual((reused['integrity'], reused['status']), ('allocated_clusters', 'partial'))
+        with self.assertRaises(CandidateAccessError): candidate_input(self.repo, reused['id'], self.config.data_dir)
+        record, = self.export([ready['id']])
+        self.assertEqual(Path(record['output_path']).read_bytes(), payload)
+        self.assertEqual(record['source_sha256'], record['target_sha256'])
+        self.assertEqual(record['metadata']['deletion_state'], 'deleted_record')
 
     def test_source_limits_and_cancellation_are_explicit(self):
         path = self.root / 'file.img'; path.write_bytes(png_image() + JPEG)

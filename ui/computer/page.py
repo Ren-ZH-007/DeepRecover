@@ -11,7 +11,7 @@ from storage.models.source import DataSource
 from ui.recovery.presentation import task_status
 
 
-METADATA_FILESYSTEMS = {'NTFS', 'FAT32', 'EXFAT'}
+METADATA_FILESYSTEMS = {'NTFS', 'FAT32', 'EXFAT', 'APFS'}
 
 
 def list_computer_devices():
@@ -142,7 +142,7 @@ class ComputerPage(QWidget):
         self.partition_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
         work.addWidget(self.partition_combo)
         self.mode_combo = QComboBox()
-        self.mode_combo.addItem('解析删除记录（NTFS / FAT32 / exFAT）', 'deleted')
+        self.mode_combo.addItem('解析删除记录（NTFS / FAT32 / exFAT / APFS）', 'deleted')
         self.mode_combo.addItem('JPG / PNG / MP4 / MOV / PDF 签名候选（不判断是否已删除）', 'signature')
         work.addWidget(self.mode_combo)
         self.capability_label = QLabel('先选择来源并完成分区检测。')
@@ -173,8 +173,9 @@ class ComputerPage(QWidget):
         limits = window.card(box, '恢复依据与能力范围')
         for text in (
             '删除记录是文件系统元数据证据；数据可能被覆盖。只有布局和来源检查通过的候选可预览或导出，导出另行核对 SHA-256。',
-            'NTFS / FAT32 / exFAT 的支持取决于剩余元数据与分配状态。受限、压缩、加密、布局未知的记录保留限制状态，不标记恢复成功。',
-            'APFS / HFS+ 等来源可做连续 JPG / PNG / MP4 / MOV / PDF 签名扫描；本版不解析其删除记录。签名候选可能来自现存文件，不能证明曾被删除。',
+            'NTFS / FAT32 / exFAT / APFS 的支持取决于剩余元数据与分配状态。受限、压缩、加密、布局未知的记录保留限制状态，不标记恢复成功。',
+            'APFS 只支持未加密、单卷、无快照的外接盘和镜像；删除记录只能找到一部分文件，没找到的可能仍在磁盘上，可再做签名扫描。Apple 芯片和 T2 芯片 Mac 的内置磁盘有硬件加密，无法恢复。',
+            'HFS+ 等其他来源可做连续 JPG / PNG / MP4 / MOV / PDF 签名扫描；本版不解析其删除记录。签名候选可能来自现存文件，不能证明曾被删除。',
             '本程序只读访问来源，不提权、不卸载、不修复文件系统。正在使用的系统盘仍可能被其他程序写入；稳定镜像更适合验证。',
         ):
             label = QLabel(text); label.setObjectName('sectionNote'); label.setWordWrap(True); limits.addWidget(label)
@@ -348,6 +349,9 @@ class ComputerPage(QWidget):
             if fs.upper() not in METADATA_FILESYSTEMS:
                 self.mode_combo.setCurrentIndex(self.mode_combo.findData('signature'))
                 self.capability_label.setText(f'{fs}：本版仅提供连续图片 / 视频签名候选，不解析已删除记录；加密、覆盖或 TRIM 后的数据可能不可读。')
+            elif fs.upper() == 'APFS':
+                self.capability_label.setText('APFS：可检查删除记录（仅限未加密、单卷、无快照）。删除记录只能找到一部分文件；'
+                    '没找到的文件可能仍在磁盘上，请再做一次签名候选扫描。数据块已被再使用或曾被覆盖的记录不会被当成可校验导出的完整文件。')
             else:
                 self.capability_label.setText(f'{fs}：可检查删除记录。布局不明或簇已再分配的记录不会被当成可校验导出的完整文件。')
         self.refresh_controls()

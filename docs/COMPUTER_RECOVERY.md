@@ -1,5 +1,7 @@
 # 电脑磁盘与镜像恢复
 
+尚未发布：删除记录模式新增 APFS（未加密、单卷、无快照的外接盘和镜像），检查方式和限制见[说明](APFS_DELETED_RECORDS.md)。
+
 v0.9.0 的签名模式新增 PDF，支持范围与分页预览见[PDF 说明](PDF_PREVIEW.md)，正式附件核验见[发布记录](releases/0.9.0/PUBLISHED.json)。下方文件系统元数据与原始盘隔离边界保持原有要求。
 
 v0.8.0 新增 MP4/MOV 连续签名与采样范围检查，签名模式支持 JPG/PNG/MP4/MOV。候选边界与限制见[说明](VIDEO_SIGNATURE_SCAN.md)，正式附件核验见[发布记录](releases/0.8.0/PUBLISHED.json)。
@@ -14,10 +16,11 @@ v0.8.0 新增 MP4/MOV 连续签名与采样范围检查，签名模式支持 JPG
 | NTFS | 读取已删除 MFT 记录；支持 resident DATA 的 USA 修复、nonresident 碎片运行列表和碎片 MFT；以 `$Bitmap` 检查数据簇分配状态 |
 | FAT32 | 删除文件空内容或空闲单簇布局可进入校验流程；多簇删除后原链通常已消失，保留 `layout_unverified/partial`，不猜连续布局 |
 | exFAT | 校验 boot/删除 entryset，读取完整名称；仅 `NoFatChain` 明确连续且分配位图为空闲的布局可校验导出 |
-| APFS / HFS+ / 未知或损坏分区表 | 可选择整个源或可识别分区做连续 JPG/PNG/MP4/MOV/PDF/Office 文档/音频签名扫描；不解析其删除元数据 |
+| APFS | 从已释放的文件树节点读取删除记录（名称、路径、区段）；数据块须空闲、不被现存文件使用，且没有被其他已删除文件或元数据覆盖过，才可校验导出，见[说明](APFS_DELETED_RECORDS.md)。加密、有快照、多卷的容器拒绝解析 |
+| HFS+ / 未知或损坏分区表 | 可选择整个源或可识别分区做连续 JPG/PNG/MP4/MOV/PDF/Office 文档/音频签名扫描；不解析其删除元数据 |
 | BitLocker、FileVault、NTFS 压缩/加密/稀疏、属性扩展列表等 | 不解密、不猜测缺失布局；不支持的记录提示限制状态或拒绝元数据扫描 |
 
-删除记录模式支持任意扩展名，分类来自名称元数据；图片预览仅 JPG/PNG，视频预览按自包含 H.264 MP4/MOV 的[支持范围](VIDEO_PREVIEW.md)执行，PDF 分页预览按[文档支持范围](PDF_PREVIEW.md)执行。签名模式检查连续 JPG/PNG 容器、受支持的 MP4/MOV 容器与采样范围、PDF 结构与对象范围，Office 文档的压缩包或复合文档结构（见[说明](OFFICE_SIGNATURE_SCAN.md)），以及 WAV / MP3 / M4A 音频结构（见[说明](AUDIO_SIGNATURE_SCAN.md)）。签名模式只能恢复连续存放的文件，碎片文件需靠 NTFS 删除记录的运行列表读取。NTFS 暂以 `[$MFT record N]/文件名` 标识位置，不推测完整父目录；FAT32 短名称丢失的首字符显示 `_`，不伪造原字符。FAT32/exFAT 仅遍历现存目录，不追猜已删除目录的失效簇链。
+删除记录模式支持任意扩展名，分类来自名称元数据；图片预览仅 JPG/PNG，视频预览按自包含 H.264 MP4/MOV 的[支持范围](VIDEO_PREVIEW.md)执行，PDF 分页预览按[文档支持范围](PDF_PREVIEW.md)执行。签名模式检查连续 JPG/PNG 容器、受支持的 MP4/MOV 容器与采样范围、PDF 结构与对象范围，Office 文档的压缩包或复合文档结构（见[说明](OFFICE_SIGNATURE_SCAN.md)），以及 WAV / MP3 / M4A 音频结构（见[说明](AUDIO_SIGNATURE_SCAN.md)）。签名模式只能恢复连续存放的文件，碎片文件需靠 NTFS 删除记录的运行列表或 APFS 删除记录的区段读取。NTFS 暂以 `[$MFT record N]/文件名` 标识位置，不推测完整父目录；FAT32 短名称丢失的首字符显示 `_`，不伪造原字符。FAT32/exFAT 仅遍历现存目录，不追猜已删除目录的失效簇链。
 
 ## 使用步骤
 
@@ -61,7 +64,7 @@ DEEPRECOVER_DATA_DIR='/Volumes/OtherDisk/DeepRecover_Work' \
 
 删除记录单文件最多 8 GiB，最多 8,192 个物理范围；签名单候选检查最多 64 MiB，PNG 解压检查最多 256 MiB。每次最多 10,000 个候选、1,000,000 条元数据记录/目录项。达到限制明确失败或显示受限记录，不静默冒称完成。签名候选扫描可从断点手动继续（原始磁盘另须再次确认工作目录不在源盘上、分区未变，并复核最近已校验候选的摘要）；删除记录解析不支持断点续扫。原始 I/O 的取消需等待当前系统读取返回。图片预览沿用 32 MiB/1,600 万像素上限；视频上限为 64 MiB/10 分钟/横竖屏 1080p，见[视频说明](VIDEO_PREVIEW.md)。
 
-自动化使用自行构造的 NTFS、FAT32、exFAT 和分区表镜像，验证源哈希不变、resident USA、碎片顺序、分配重用拒绝、越界/循环/取消、校验导出和历史回读。原始设备 API、磁盘枚举和物理盘隔离使用受控替身测试，不扫描云端真实磁盘；原生构建/镜像验证不能替代真实 USB、系统盘、权限和文件系统兼容性验收。
+自动化使用自行构造的 NTFS、FAT32、exFAT、APFS 和分区表镜像，验证源哈希不变、resident USA、碎片顺序、分配重用拒绝、越界/循环/取消、校验导出和历史回读。原始设备 API、磁盘枚举和物理盘隔离使用受控替身测试，不扫描云端真实磁盘；原生构建/镜像验证不能替代真实 USB、系统盘、权限和文件系统兼容性验收。
 
 Windows/macOS 双架构的编译、270 项测试、电脑流程及关键截图见[测试报告](COMPUTER_TEST_REPORT_20261104.md)。
 

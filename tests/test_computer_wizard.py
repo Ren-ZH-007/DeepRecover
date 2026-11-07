@@ -140,7 +140,7 @@ class ComputerWizardTests(unittest.TestCase):
         self.page.set_devices([source]); self.page.device_tree.setCurrentItem(self.page.device_item(source.path))
         def inspect(*_):
             self.release.wait(5)
-            return [self.partition('APFS')]
+            return [self.partition('HFS+')]
         with patch('ui.computer.page.inspect_computer_source', side_effect=inspect):
             self.page.choose_device()
             self.assertFalse(self.page.show_auxiliary.isEnabled())
