@@ -214,6 +214,23 @@ class ComputerUiTests(unittest.TestCase):
         self.assertIn('签名候选扫描', self.page.capability_label.text())
         self.assertEqual(self.repo.tasks(), [])
 
+    def test_keeping_live_file_hits_is_a_signature_only_choice_passed_to_the_scan(self):
+        self.prepare_source()
+        self.page.mode_combo.setCurrentIndex(self.page.mode_combo.findData('deleted'))
+        self.assertFalse(self.page.include_live.isEnabled())
+        self.page.mode_combo.setCurrentIndex(self.page.mode_combo.findData('signature'))
+        self.assertTrue(self.page.include_live.isEnabled()); self.assertFalse(self.page.include_live.isChecked())
+        self.page.include_live.setChecked(True)
+        seen = {}
+        def scan(path, token, **kwargs):
+            seen.update(kwargs); token.report_progress(1, 1, 0, phase='computer', skipped=3)
+            return iter(())
+        with patch('ui.computer.page.QMessageBox.question', return_value=QMessageBox.StandardButton.Yes), \
+                patch('ui.computer.page.guard_computer_source'), \
+                patch('ui.computer.page.scan_computer_source', side_effect=scan):
+            self.page.start_scan(); self.finish_probe(); self.finish_task()
+        self.assertEqual((seen['mode'], seen['include_live']), ('signature', True))
+
     def test_scan_rechecks_disk_guard_before_task_and_binds_results(self):
         self.prepare_source(kind='device')
         order = []
@@ -225,7 +242,7 @@ class ComputerUiTests(unittest.TestCase):
             order.append('scan')
             self.assertEqual(len(self.repo.tasks()), 1)
             self.assertEqual(path, '/dev/disk99')
-            self.assertEqual(kwargs, {'kind':'device','mode':'deleted','partition_offset':0,'data_dir':self.config.data_dir})
+            self.assertEqual(kwargs, {'kind':'device','mode':'deleted','partition_offset':0,'data_dir':self.config.data_dir,'include_live':False})
             token.report_progress(1, 1, 1, phase='computer')
             yield self.candidate()
         with patch('ui.computer.page.QMessageBox.question', return_value=QMessageBox.StandardButton.Yes), \

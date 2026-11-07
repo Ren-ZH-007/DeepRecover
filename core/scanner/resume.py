@@ -1,5 +1,9 @@
 """Resume an interrupted signature scan into the same task, after re-verifying its source.
 
+A scan that stopped because it reached the per-task candidate limit cannot take
+more candidates, so it is continued instead: a new task scans the remaining
+range from the same point, with its own limit, and records which task it continues.
+
 Signature scans search sources sequentially and every candidate is committed
 in order, so continuing from the later of (a) the last recorded checkpoint and
 (b) the point right after the last committed candidate yields exactly what an
@@ -38,6 +42,7 @@ class ResumePlan:
     end: int
     identity: dict
     params: dict
+    continuation: bool = False          # a new task covers the rest; ``candidates`` is then 0
 
     @property
     def searched(self):
@@ -61,7 +66,7 @@ def _resume_point(candidate):
     return offset + (size if candidate.get('integrity') in CHECKED else 1)
 
 
-def plan_resume(repository, task_id):
+def plan_resume(repository, task_id, max_candidates=MAX_CANDIDATES):
     """Database-only plan; raises ResumeError with the reason a task cannot continue."""
     task = repository.task(task_id)
     if task is None:
@@ -82,8 +87,11 @@ def plan_resume(repository, task_id):
     committed = repository.candidate_count(task_id)
     if checkpoint['candidates'] > committed:
         raise ResumeError('断点与已保存的候选不一致，不能继续；请重新扫描。')
-    if committed >= MAX_CANDIDATES:
-        raise ResumeError('候选数量已达上限，继续扫描也无法保存更多结果。')
+    continuation = committed >= max_candidates
+    if continuation:
+        following = repository.continued_by(task_id)
+        if following is not None:
+            raise ResumeError('已从这次扫描继续扫描剩余部分，请在任务记录中查看后续任务。')
     position = checkpoint['position']
     last = repository.recent_candidates(task_id, 1)
     if last:
@@ -92,8 +100,10 @@ def plan_resume(repository, task_id):
     end = checkpoint['total']
     if type(start) is not int or not 0 <= start <= position <= end:
         raise ResumeError('断点超出来源范围，不能继续；请重新扫描。')
-    return ResumePlan(task_id, task['kind'], source['id'], source['locator'], position, committed,
-                      start, end, checkpoint['identity'], params)
+    if position >= end and continuation:
+        raise ResumeError('这次扫描已经搜索到来源末尾，没有剩余部分需要继续。')
+    return ResumePlan(task_id, task['kind'], source['id'], source['locator'], position, 0 if continuation else committed,
+                      start, end, checkpoint['identity'], params, continuation)
 
 
 def _spot_candidates(repository, plan):
@@ -147,15 +157,22 @@ def verify_resume(repository, plan, data_dir, token=None):
     return len(checks)
 
 
-def resume_operation(plan, data_dir):
-    """The task operation that continues ``plan``; the scanner re-checks identity on open."""
+def resume_operation(plan, data_dir, max_candidates=MAX_CANDIDATES):
+    """The task operation that continues ``plan``; the scanner re-checks identity on open.
+
+    A continuation records the task it continues; otherwise the original
+    task's own settings (including whether live-file hits are kept) carry over.
+    """
+    continues = plan.task_id if plan.continuation else plan.params.get('continues')
     if plan.kind == 'signature_scan':
         from core.scanner.signature.scanner import SignatureScanner
-        return lambda token: SignatureScanner().scan(plan.path, token, start=plan.position, start_count=plan.candidates,
-                                                     expected=plan.identity, checkpoint_every=CHECKPOINT_SECONDS)
+        return lambda token: SignatureScanner(max_candidates=max_candidates).scan(
+            plan.path, token, start=plan.position, start_count=plan.candidates, expected=plan.identity,
+            checkpoint_every=CHECKPOINT_SECONDS, continues=continues)
     from core.computer.service import ComputerScanner
     resume = {'position': plan.position, 'candidates': plan.candidates, 'identity': plan.identity,
               'partition_size': plan.params['partition_size']}
-    return lambda token: ComputerScanner(data_dir=data_dir).scan(
+    return lambda token: ComputerScanner(data_dir=data_dir, max_candidates=max_candidates).scan(
         plan.path, token, kind=plan.params['kind'], mode='signature', partition_offset=plan.params['partition_offset'],
-        resume=resume, checkpoint_every=CHECKPOINT_SECONDS)
+        resume=resume, checkpoint_every=CHECKPOINT_SECONDS, include_live=plan.params.get('include_live', True),
+        continues=continues)

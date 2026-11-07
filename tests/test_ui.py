@@ -204,8 +204,11 @@ class UiTests(unittest.TestCase):
                      patch.object(repo,'candidate_ids',wraps=repo.candidate_ids) as ids:
                     window.export_results(True)
                 self.assertTrue(ids.call_args.kwargs['hide_duplicates']); chooser.assert_called_once()
+                self.assertTrue(ids.call_args.kwargs['hide_system'])
+                window.hide_system.setChecked(False)
                 window.open_results(task)
                 self.assertFalse(window.hide_duplicates.isChecked()); self.assertEqual(window.result_table.rowCount(),4)
+                self.assertTrue(window.hide_system.isChecked())
             finally:
                 window.close()
 

@@ -12,6 +12,7 @@ from ui.recovery.presentation import task_status
 
 
 METADATA_FILESYSTEMS = {'NTFS', 'FAT32', 'EXFAT', 'APFS'}
+SIGNATURE_LIMIT = 10000
 
 
 def list_computer_devices():
@@ -33,12 +34,12 @@ def guard_computer_source(path, kind, data_dir):
         ensure_different_device(path, data_dir)
 
 
-def scan_computer_source(path, token, *, kind, mode, partition_offset, data_dir):
+def scan_computer_source(path, token, *, kind, mode, partition_offset, data_dir, include_live=False):
     from core.computer.service import ComputerScanner
     from core.scanner.resume import CHECKPOINT_SECONDS
     # Signature scans record checkpoints so an interrupted run can continue later.
     return ComputerScanner(data_dir=data_dir).scan(path, token, kind=kind, mode=mode,
-                                  partition_offset=partition_offset,
+                                  partition_offset=partition_offset, include_live=include_live,
                                   checkpoint_every=CHECKPOINT_SECONDS if mode == 'signature' else None)
 
 
@@ -145,6 +146,11 @@ class ComputerPage(QWidget):
         self.mode_combo.addItem('解析删除记录（NTFS / FAT32 / exFAT / APFS）', 'deleted')
         self.mode_combo.addItem('JPG / PNG / MP4 / MOV / PDF 签名候选（不判断是否已删除）', 'signature')
         work.addWidget(self.mode_combo)
+        self.include_live = QCheckBox('签名扫描也保留现存文件中的候选')
+        self.include_live.setToolTip('默认跳过完全位于文件系统仍在使用的区域（现存文件和系统元数据）中的签名候选：'
+                                     '它们是现存文件的内容，不是删除后留下的数据。只对 NTFS / FAT32 / exFAT / APFS 生效；'
+                                     '无法读取分配信息时不跳过任何候选。')
+        work.addWidget(self.include_live)
         self.capability_label = QLabel('先选择来源并完成分区检测。')
         self.capability_label.setObjectName('sectionNote'); self.capability_label.setWordWrap(True)
         work.addWidget(self.capability_label)
@@ -158,7 +164,8 @@ class ComputerPage(QWidget):
         work.addWidget(self.progress)
         self.status = QLabel('等待选择来源。候选保存在本地，可分页查看、按类型筛选并校验导出。')
         self.status.setObjectName('sectionNote'); self.status.setWordWrap(True)
-        self.status.setTextFormat(Qt.TextFormat.PlainText); work.addWidget(self.status)
+        self.status.setTextFormat(Qt.TextFormat.PlainText)
+        self.status.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse); work.addWidget(self.status)
         self.directory_help_button = window.button(work, '查看工作目录设置', self.show_work_directory,
                                                    'secondary', 'folder')
 
@@ -328,6 +335,7 @@ class ComputerPage(QWidget):
         self.use_device_button.setEnabled(not occupied and self.selected_device() is not None)
         self.partition_combo.setEnabled(not occupied and bool(self.partitions))
         self.mode_combo.setEnabled(not occupied and bool(self.partitions))
+        self.include_live.setEnabled(not occupied and self.mode_combo.currentData() == 'signature')
         partition = self.current_partition()
         supported = bool(partition) and (self.mode_combo.currentData() == 'signature' or
                      str(partition.file_system).upper() in METADATA_FILESYSTEMS)
@@ -429,6 +437,7 @@ class ComputerPage(QWidget):
         partition = self.current_partition()
         if self.occupied() or not self.source_path or partition is None: return
         path, kind, mode = self.source_path, self.source_kind, self.mode_combo.currentData()
+        include_live = mode == 'signature' and self.include_live.isChecked()
         if mode == 'deleted' and str(partition.file_system).upper() not in METADATA_FILESYSTEMS:
             self.status.setText('此文件系统暂不支持删除记录解析，请选择签名候选扫描。'); return
         text = (f'来源：{path}\n范围：{partition.label or partition.file_system}，起始 {partition.offset}\n'
@@ -446,10 +455,12 @@ class ComputerPage(QWidget):
                 self.window.open_results(task_id)
                 self.refresh_controls()
             self.window.run_task('computer_scan', lambda token: scan_computer_source(path, token,
-                kind=kind, mode=mode, partition_offset=partition.offset, data_dir=self.window.config.data_dir), complete,
+                kind=kind, mode=mode, partition_offset=partition.offset, data_dir=self.window.config.data_dir,
+                include_live=include_live), complete,
                 source=DataSource('computer', path, str(partition.file_system)),
                 persist_candidates=True, batch_size=1)
             if self.window.pending: self.active_task_id = self.window.pending[0].id
+            self.last_skipped = 0
             self.window.statusBar().showMessage(self.status.text())
             self.refresh_controls()
         self._readonly(lambda: guard_computer_source(path, kind, self.window.config.data_dir), begin,
@@ -508,7 +519,12 @@ class ComputerPage(QWidget):
                 self.last_task_id = self.active_task_id
                 count = self.window.repository.candidate_count(self.active_task_id)
                 outcome = task_status(task['status'])
-                self.status.setText(f"任务状态：{outcome.label} · 已入库 {count} 条候选。内容检查与删除依据请查看结果。")
+                text = f"任务状态：{outcome.label} · 已入库 {count} 条候选。"
+                if getattr(self, 'last_skipped', 0):
+                    text += f"另跳过 {self.last_skipped} 个位于现存文件区域的签名候选。"
+                if task['status'] == 'failed' and count >= SIGNATURE_LIMIT:
+                    text += '候选已达每次 10,000 条的上限：可在“任务记录”中选中这次扫描，点“从断点继续”，用新任务扫描剩余部分。'
+                self.status.setText(text + '内容检查与删除依据请查看结果。')
                 self.status.setToolTip(outcome.tooltip)
                 self.preflight_steps.setText('本次扫描已结束：请在结果页分别查看删除依据、内容检查和导出校验。')
                 if task['status'] == 'completed': self.progress.setValue(1000)
@@ -520,5 +536,7 @@ class ComputerPage(QWidget):
             if progress is not None:
                 self.progress.setValue(progress.processed * 1000 // progress.total if progress.total else 0)
                 rate = describe_rate(self.rate.update(pending[0].id, progress))
+                self.last_skipped = progress.skipped
+                skipped = f' · 跳过现存文件区域 {progress.skipped} 处' if progress.skipped else ''
                 self.status.setText(f'已处理 {format_bytes(progress.processed)} / {format_bytes(progress.total)}'
-                                    f' · {progress.candidates} 条候选（不等于恢复成功）' + (f' · {rate}' if rate else ''))
+                                    f' · {progress.candidates} 条候选（不等于恢复成功）{skipped}' + (f' · {rate}' if rate else ''))

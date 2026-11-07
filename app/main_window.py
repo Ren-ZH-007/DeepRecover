@@ -284,6 +284,10 @@ class MainWindow(QMainWindow):
         self.hide_duplicates.setToolTip('按 SHA-256 判断内容相同的候选，每组只显示最早的一项。'
                                         '未计算摘要的候选（如未通过结构检查）不参与比较，始终显示。')
         self.hide_duplicates.toggled.connect(self.filter_results); row.addWidget(self.hide_duplicates)
+        self.hide_system = QCheckBox('隐藏系统文件'); self.hide_system.setChecked(True)
+        self.hide_system.setToolTip('隐藏系统自动生成又自动删除的删除记录：.Spotlight-V100、.fseventsd 等目录中的文件，'
+                                    '以及 .DS_Store 和以“._”开头的附属文件。废纸篓（.Trashes、$RECYCLE.BIN）中的文件照常显示。')
+        self.hide_system.toggled.connect(self.filter_results); row.addWidget(self.hide_system)
         self.result_selection_hint = QLabel(f'{selection_modifier()} 多选'); self.result_selection_hint.setObjectName('sectionNote'); row.addWidget(self.result_selection_hint)
         row.addStretch()
         self.result_page_label = QLabel('0 条'); self.result_page_label.setObjectName('sectionNote'); row.addWidget(self.result_page_label)
@@ -447,7 +451,8 @@ class MainWindow(QMainWindow):
 
     def result_filters(self):
         return {'category': self.category_filter.currentData(), 'status': self.status_filter.currentData(),
-                'query': self.search_text(), 'hide_duplicates': self.hide_duplicates.isChecked(), 'dates': self.date_range()}
+                'query': self.search_text(), 'hide_duplicates': self.hide_duplicates.isChecked(), 'dates': self.date_range(),
+                'hide_system': self.hide_system.isChecked()}
 
     def search_text(self):
         return ' '.join(self.result_search.text().split()[:MAX_QUERY_TERMS])
@@ -735,6 +740,7 @@ class MainWindow(QMainWindow):
         self.category_filter.blockSignals(False); self.status_filter.blockSignals(False)
         self.result_search.blockSignals(True); self.result_search.clear(); self.result_search.blockSignals(False); self.search_timer.stop()
         self.hide_duplicates.blockSignals(True); self.hide_duplicates.setChecked(False); self.hide_duplicates.blockSignals(False)
+        self.hide_system.blockSignals(True); self.hide_system.setChecked(True); self.hide_system.blockSignals(False)
         self.date_filter.blockSignals(True); self.date_filter.setChecked(False); self.date_filter.blockSignals(False)
         self.date_from.setEnabled(False); self.date_to.setEnabled(False); self.reset_date_filter()
         self.load_result_page()
@@ -821,7 +827,7 @@ class MainWindow(QMainWindow):
             resumable = False
         busy = bool(self.pending or self.computer_page.readonly_pending)
         self.resume_button.setEnabled(resumable and not busy)
-        self.resume_button.setToolTip('' if resumable else '只有中断、停止或读取失败且留有断点记录的签名扫描可以继续。')
+        self.resume_button.setToolTip('' if resumable else '只有中断、停止、读取失败或候选达到上限且留有断点记录的签名扫描可以继续。')
 
     def resume_history_task(self):
         task = self.selected_history_task()
@@ -834,10 +840,16 @@ class MainWindow(QMainWindow):
         except ResumeError as error:
             self.statusBar().showMessage(str(error)); return
         percent = plan.searched * 100 // plan.size if plan.size else 100
-        text = (f'来源：{plan.path}\n已搜索 {format_bytes(plan.searched)} / {format_bytes(plan.size)}（约 {percent}%），'
-                f'已保存 {plan.candidates} 个候选。\n\n继续前会只读核对来源身份，并重新计算最近已校验候选的 SHA-256；'
-                '任何一项不一致都不会继续。新候选并入原任务。是否继续？')
-        if QMessageBox.question(self, '从断点继续扫描', text, QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        if plan.continuation:
+            text = (f'来源：{plan.path}\n这次扫描已保存 {self.repository.candidate_count(plan.task_id)} 个候选，达到每次 10,000 条的上限；'
+                    f'已搜索 {format_bytes(plan.searched)} / {format_bytes(plan.size)}（约 {percent}%）。\n\n'
+                    '将新建一个扫描任务，从停下的位置继续扫描剩余部分，新候选保存在新任务中，原任务保持不变。'
+                    '继续前会只读核对来源身份，并重新计算最近已校验候选的 SHA-256；任何一项不一致都不会继续。是否继续？')
+        else:
+            text = (f'来源：{plan.path}\n已搜索 {format_bytes(plan.searched)} / {format_bytes(plan.size)}（约 {percent}%），'
+                    f'已保存 {plan.candidates} 个候选。\n\n继续前会只读核对来源身份，并重新计算最近已校验候选的 SHA-256；'
+                    '任何一项不一致都不会继续。新候选并入原任务。是否继续？')
+        if QMessageBox.question(self, '继续扫描剩余部分' if plan.continuation else '从断点继续扫描', text, QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                                 QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
             return
         data_dir = self.config.data_dir
@@ -849,8 +861,14 @@ class MainWindow(QMainWindow):
                 self.scan_status.setText('已核对来源，正在从断点继续只读扫描…')
             else:
                 self.nav.setCurrentRow(7)
+            if plan.continuation:
+                # A new task needs its own source row; it names the same disk or file.
+                record = self.repository.source(plan.source_id)
+                source = DataSource(record['kind'], record['locator'], record['label'])
+            else:
+                source = SimpleNamespace(id=plan.source_id)
             self.run_task(plan.kind, resume_operation(plan, data_dir), done, persist_candidates=True,
-                          source=SimpleNamespace(id=plan.source_id), batch_size=1, resume_task=plan.task_id)
+                          source=source, batch_size=1, resume_task=None if plan.continuation else plan.task_id)
             if self.pending and plan.kind == 'computer_scan':
                 self.computer_page.active_task_id = self.pending[0].id
                 self.computer_page.status.setText('已核对来源，正在从断点继续只读扫描…')
