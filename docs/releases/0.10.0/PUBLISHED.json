@@ -1,0 +1,172 @@
+{
+  "success": true,
+  "tag": "v0.10.0",
+  "source_commit": "f38c2f36942ec2aca47b67ee1d67e24ef22e5945",
+  "release_url": "https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.10.0",
+  "build_url": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/42346184647",
+  "published_at_utc": "2026-11-07T06:22:31Z",
+  "published_at_asia_shanghai": "2026-11-07T14:22:31+08:00",
+  "workflow_run_conclusion": "success",
+  "repository_visibility_at_publication": "public",
+  "pre_release": true,
+  "previous_attempt": {
+    "run": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/42345627932",
+    "source_commit": "6ff2810bbb6c292adc7c35b300b7eaacc6a68156",
+    "result": "all three platforms built and passed; publish step failed on a shell quoting error before creating any tag or release (fixed in #39)"
+  },
+  "assets": [
+    {
+      "name": "DeepRecover-v0.10.0-macos-arm64.zip",
+      "bytes": 48082449,
+      "sha256": "78988371fa2beb72fb779531b24696d46b6985fb7a791d18360732dca0194ff5",
+      "download_url": "https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.10.0/DeepRecover-v0.10.0-macos-arm64.zip",
+      "zip_crc": "passed",
+      "entries": 504,
+      "architecture": "arm64",
+      "mach_o": "passed",
+      "preserved_symlinks": 118,
+      "bundle_version": "0.10.0"
+    },
+    {
+      "name": "DeepRecover-v0.10.0-macos-x86_64.zip",
+      "bytes": 52948926,
+      "sha256": "f2b2a942a21659febcf32e3859d5838d42050888cff96f8fb6a48bf37d1e97fb",
+      "download_url": "https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.10.0/DeepRecover-v0.10.0-macos-x86_64.zip",
+      "zip_crc": "passed",
+      "entries": 504,
+      "architecture": "x86_64",
+      "mach_o": "passed",
+      "preserved_symlinks": 118,
+      "bundle_version": "0.10.0"
+    },
+    {
+      "name": "DeepRecover-v0.10.0-windows-x64.zip",
+      "bytes": 61586015,
+      "sha256": "ae65c0d8da3efa173c673283ab5f3fe22246c002c17cdb78f94f6285068e6e84",
+      "download_url": "https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.10.0/DeepRecover-v0.10.0-windows-x64.zip",
+      "zip_crc": "passed",
+      "entries": 260,
+      "architecture": "x64",
+      "pe_machine": "0x8664",
+      "qt_platform_and_jpeg_plugins": true
+    }
+  ],
+  "sha256sums_verified_after_download": true,
+  "native_validation": {
+    "windows": {
+      "tests": {
+        "run": 640,
+        "result": "OK",
+        "skipped": 2
+      },
+      "packaged_smoke": "packaged executable, Qt navigation, SQLite schema, PNG/JPEG decode, 2 verified exports, clean exit",
+      "qa_workflows": {
+        "computer": {
+          "cases": 12,
+          "screenshots": 22
+        },
+        "guided": {
+          "cases": 5,
+          "screenshots": 5
+        },
+        "diagnostics": {
+          "cases": 4,
+          "screenshots": 4
+        },
+        "video": {
+          "cases": 7,
+          "screenshots": 6
+        },
+        "video_signature": {
+          "cases": 8,
+          "screenshots": 8
+        },
+        "pdf": {
+          "cases": 8,
+          "screenshots": 9
+        }
+      }
+    },
+    "macos_arm64": {
+      "tests": {
+        "run": 640,
+        "result": "OK"
+      },
+      "packaged_smoke": "Mach-O/Info.plist, offscreen, navigation, image decode, 2 verified exports",
+      "cocoa_workflows": {
+        "cases": 14,
+        "screenshots": 20
+      },
+      "qa_workflows": {
+        "computer": {
+          "cases": 12,
+          "screenshots": 22
+        },
+        "guided": {
+          "cases": 5,
+          "screenshots": 5
+        },
+        "diagnostics": {
+          "cases": 4,
+          "screenshots": 4
+        },
+        "video": {
+          "cases": 7,
+          "screenshots": 6
+        },
+        "video_signature": {
+          "cases": 8,
+          "screenshots": 8
+        },
+        "pdf": {
+          "cases": 8,
+          "screenshots": 9
+        }
+      },
+      "disk_metadata": "metadata queries only, no raw reads"
+    },
+    "macos_x86_64": {
+      "tests": {
+        "run": 640,
+        "result": "OK"
+      },
+      "packaged_smoke": "Mach-O/Info.plist, offscreen, navigation, image decode, 2 verified exports",
+      "cocoa_workflows": {
+        "cases": 14,
+        "screenshots": 20
+      },
+      "qa_workflows": {
+        "computer": {
+          "cases": 12,
+          "screenshots": 22
+        },
+        "guided": {
+          "cases": 5,
+          "screenshots": 5
+        },
+        "diagnostics": {
+          "cases": 4,
+          "screenshots": 4
+        },
+        "video": {
+          "cases": 7,
+          "screenshots": 6
+        },
+        "video_signature": {
+          "cases": 8,
+          "screenshots": 8
+        },
+        "pdf": {
+          "cases": 8,
+          "screenshots": 9
+        }
+      },
+      "disk_metadata": "metadata queries only, no raw reads"
+    },
+    "evidence": "counts taken from the run logs; validation artifacts are kept with the workflow run"
+  },
+  "macos_signing": "ad-hoc; no Developer ID certificate; not notarized",
+  "physical_device_acceptance": "not_run",
+  "apfs_capability": "deleted-record candidates from orphaned FS-tree nodes and files held by snapshots; unencrypted single-volume containers only; snapshots verified on synthetic containers only, not yet on a real Time Machine disk",
+  "raw_devices_opened_by_application_in_ci": false
+}
