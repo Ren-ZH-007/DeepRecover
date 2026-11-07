@@ -117,7 +117,8 @@ def candidate_input(repository, candidate_id, data_dir):
         if candidate['status'] != 'candidate' or not expected_hash or not isinstance(expected_stat, dict):
             raise CandidateAccessError('电脑候选缺少完整布局或来源校验信息，请重新扫描。')
         if kind == 'computer_deleted':
-            checked = candidate['integrity'] == 'metadata_checked' and candidate.get('deletion_state') == 'deleted_record'
+            checked = (candidate['integrity'], candidate.get('deletion_state')) in (
+                ('metadata_checked', 'deleted_record'), ('snapshot_checked', 'snapshot_record'))
         else:
             checked = checked_signature(candidate['integrity'], candidate['file_type'])
         if not checked:

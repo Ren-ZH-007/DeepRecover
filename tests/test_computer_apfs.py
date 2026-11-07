@@ -11,7 +11,7 @@ def payload(seed, size):
     return hashlib.sha256(seed.encode()).digest() * (size // 32) + b'x' * (size % 32)
 
 
-class ApfsDeletedTests(unittest.TestCase):
+class _Scanning(unittest.TestCase):
     def scan(self, image, **limits):
         reader = image.reader()
         before = hashlib.sha256(reader.data).hexdigest()
@@ -28,6 +28,8 @@ class ApfsDeletedTests(unittest.TestCase):
         reader = image.reader()
         return b''.join(reader.read_at(at, size) for at, size in candidate['extents'])
 
+
+class ApfsDeletedTests(_Scanning):
     def test_deleted_file_keeps_unicode_name_path_time_and_exact_bytes(self):
         image = ApfsImage(offset=8192)
         image.live_file('keep.txt', b'live')
@@ -220,7 +222,7 @@ class ApfsDeletedTests(unittest.TestCase):
         self.assertEqual([item['name'] for item in self.scan(image)], ['plain key.txt'])
 
     def test_unsupported_containers_are_refused(self):
-        for setting, message in (('encrypted', '加密'), ('snapshots', '快照'), ('volumes', '多个卷')):
+        for setting, message in (('encrypted', '加密'), ('volumes', '多个卷')):
             with self.subTest(setting=setting):
                 image = ApfsImage()
                 setattr(image, setting, 2 if setting != 'encrypted' else True)
@@ -283,3 +285,133 @@ class ApfsDeletedTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class ApfsSnapshotTests(_Scanning):
+    def test_file_deleted_after_a_snapshot_is_read_from_the_snapshot(self):
+        image = ApfsImage()
+        image.live_file('keep.txt', b'still here')
+        snap = image.snapshot('com.apple.TimeMachine.2026-11-06-101500.local', 6)
+        data = payload('in snapshot', 2 * BS + 99)
+        fid, start = image.snapshot_file(snap, '报告 final.docx', data)
+        candidate, = self.scan(image)
+        self.assertEqual(candidate['original_path'], '[快照 com.apple.TimeMachine.2026-11-06-101500.local]/报告 final.docx')
+        self.assertEqual((candidate['name'], candidate['size'], candidate['record_id']), ('报告 final.docx', len(data), fid))
+        self.assertEqual((candidate['integrity'], candidate['status'], candidate['deletion_state']),
+                         ('snapshot_checked', 'candidate', 'snapshot_record'))
+        self.assertEqual(candidate['extents'], [(image.at(start), len(data))])
+        self.assertEqual(candidate['structure_details'], {'check_version': 1, 'snapshot_name': snap['name'], 'snapshot_xid': 6,
+                                                          'snapshot_created_utc': '2025-06-15T15:06:40'})
+        self.assertEqual(candidate['modified_at'], '2023-11-14T22:13:20')
+        self.assertEqual(self.content(image, candidate), data)
+
+    def test_files_that_still_exist_are_not_reported_even_with_older_content(self):
+        image = ApfsImage()
+        fid, _start = image.live_file('changed.txt', payload('now', BS))
+        snap = image.snapshot('old', 5)
+        image.snapshot_file(snap, 'changed.txt', payload('then', BS), fid=fid)
+        self.assertEqual(self.scan(image), [])
+
+    def test_each_file_comes_once_from_the_newest_snapshot_that_has_it(self):
+        image = ApfsImage()
+        older = image.snapshot('older', 4, with_live=False)
+        newer = image.snapshot('newer', 7, with_live=False)
+        fid, _ = image.snapshot_file(older, 'draft.txt', payload('v1', BS))
+        image.snapshot_file(newer, 'draft.txt', payload('v2', 2 * BS), fid=fid)
+        image.snapshot_file(older, 'only old.txt', payload('old', 100))
+        result = {item['name']: item for item in self.scan(image)}
+        self.assertEqual(set(result), {'draft.txt', 'only old.txt'})
+        self.assertEqual(result['draft.txt']['original_path'], '[快照 newer]/draft.txt')
+        self.assertEqual(self.content(image, result['draft.txt']), payload('v2', 2 * BS))
+        self.assertEqual(result['only old.txt']['original_path'], '[快照 older]/only old.txt')
+
+    def test_unchanged_snapshots_share_tree_nodes(self):
+        image = ApfsImage()
+        first = image.snapshot('first', 4)
+        image.snapshot_file(first, 'shared.bin', payload('s', BS))
+        image.snapshot('second', 6, share=first)
+        candidate, = self.scan(image)
+        self.assertEqual(candidate['original_path'], '[快照 second]/shared.bin')
+        # root inode (current) + root inode and three file records (one snapshot node, read once)
+        self.assertEqual(len(self.scan(image, max_records=5)), 1)
+        with self.assertRaisesRegex(ValueError, '上限'):
+            self.scan(image, max_records=4)
+
+    def test_snapshot_and_current_nodes_are_not_counted_again_as_old_nodes(self):
+        image = ApfsImage()
+        image.live_file('keep.txt', b'live')                       # current tree: 1 + 3 records
+        snap = image.snapshot('s', 6)                               # snapshot tree: 1 + 3 + 3 records
+        image.snapshot_file(snap, 'held.txt', payload('h', BS))
+        image.deleted_file('old node.txt', payload('o', BS), xid=8)  # orphaned node: 3 records
+        found = {item['name']: item['integrity'] for item in self.scan(image, max_records=14)}
+        self.assertEqual(found, {'held.txt': 'snapshot_checked', 'old node.txt': 'metadata_checked'})
+
+    def test_directories_in_snapshots_and_live_directories_form_the_path(self):
+        image = ApfsImage()
+        live_dir = image.live_directory('项目')
+        snap = image.snapshot('s', 5)
+        gone_dir = image.snapshot_directory(snap, 'old folder', parent=live_dir)
+        image.snapshot_file(snap, 'notes.txt', b'notes', parent=gone_dir)
+        candidate, = self.scan(image)
+        self.assertEqual(candidate['original_path'], '[快照 s]/项目/old folder/notes.txt')
+
+    def test_snapshot_blocks_must_still_be_allocated(self):
+        image = ApfsImage()
+        snap = image.snapshot('s', 5)
+        image.snapshot_file(snap, 'not held.bin', payload('x', BS), held=False)
+        _fid, start = image.snapshot_file(snap, 'queued.bin', payload('q', BS))
+        image.queue(start, 1)
+        result = {item['name']: item for item in self.scan(image)}
+        for name in ('not held.bin', 'queued.bin'):
+            self.assertEqual((result[name]['integrity'], result[name]['status'], result[name]['extents']),
+                             ('allocation_unknown', 'partial', []))
+
+    def test_unsupported_snapshot_layouts_and_dataless_snapshots(self):
+        image = ApfsImage()
+        snap = image.snapshot('s', 5)
+        image.snapshot_file(snap, 'compressed.txt', payload('c', BS), bsd=0x20)
+        dataless = image.snapshot('dataless', 6, flags=1)
+        image.snapshot_file(dataless, 'no data.bin', payload('d', BS))
+        candidate, = self.scan(image)
+        self.assertEqual((candidate['name'], candidate['integrity']), ('compressed.txt', 'unsupported_layout'))
+
+    def test_snapshot_trees_are_not_carved_and_held_files_are_not_duplicated(self):
+        image = ApfsImage()
+        snap = image.snapshot('s', 6)
+        fid, start = image.snapshot_file(snap, 'held.txt', payload('h', BS))
+        image.orphan(7, [inode(fid, size=BS), drec(2, 'held.txt', fid), extent(fid, 0, BS, start)])
+        image.deleted_file('between snapshots.txt', payload('b', BS), xid=8)
+        found = self.scan(image)
+        self.assertEqual(sorted((item['name'], item['deletion_state']) for item in found),
+                         [('between snapshots.txt', 'deleted_record'), ('held.txt', 'snapshot_record')])
+        result = {item['name']: item for item in found}
+        self.assertEqual(result['between snapshots.txt']['integrity'], 'metadata_checked')
+
+    def test_orphan_record_whose_blocks_a_snapshot_holds_is_allocated(self):
+        image = ApfsImage()
+        snap = image.snapshot('s', 6)
+        _fid, start = image.snapshot_file(snap, 'snap.bin', payload('s', BS))
+        image.deleted_file('older.bin', payload('o', BS), xid=3, start=start)
+        result = {item['name']: item['integrity'] for item in self.scan(image)}
+        self.assertEqual(result, {'snap.bin': 'snapshot_checked', 'older.bin': 'allocated_clusters'})
+
+    def test_damaged_or_inconsistent_snapshot_metadata_is_refused(self):
+        image = ApfsImage()
+        image.snapshot_file(image.snapshot('s', 5), 'a.bin', b'a')
+        image.snapshot_count = 2
+        with self.assertRaisesRegex(ValueError, '快照数量'):
+            self.scan(image)
+        image.snapshot_count = None
+        data = bytearray(image.build()); data[17 * BS + 300] ^= 1
+        from tests.exfat_fixture import MemoryReader
+        with self.assertRaisesRegex(ValueError, '快照元数据'):
+            list(scan_apfs(MemoryReader(data), image.partition, CancellationToken()))
+        snap = image.snaps[0]
+        data = bytearray(image.build()); data[snap['node'] * BS + 300] ^= 1
+        with self.assertRaisesRegex(ValueError, '快照文件树'):
+            list(scan_apfs(MemoryReader(data), image.partition, CancellationToken()))
+
+    def test_snapshot_names_cannot_create_export_folders(self):
+        image = ApfsImage()
+        image.snapshot_file(image.snapshot('a/b', 5), 'x.txt', b'x')
+        self.assertEqual(self.scan(image)[0]['original_path'], '[快照 a_b]/x.txt')

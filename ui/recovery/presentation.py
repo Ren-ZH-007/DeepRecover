@@ -2,6 +2,8 @@
 from dataclasses import dataclass
 import re
 
+from core.file_times import display_time
+
 
 @dataclass(frozen=True)
 class DisplayText:
@@ -36,6 +38,7 @@ def content_check(value):
         'unknown': ('未验证', '记录未提供可解释的内容检查结果。', 'neutral'),
         'not_checked': ('未检查内容', '仅采集或索引文件；摘要或文件存在不证明内容完整。', 'neutral'),
         'metadata_checked': ('布局检查通过', '支持的文件布局与分配检查通过；不证明内容从未覆盖、完整或可解码。', 'info'),
+        'snapshot_checked': ('快照布局检查通过', '文件取自 APFS 快照。快照存在期间，它引用的数据块不会被覆盖；已核对区段完整、数据块仍被占用。未打开文件，不证明内容可解码。', 'info'),
         'structure_checked': ('图片结构检查通过', '支持范围内的图片容器结构通过检查；不等于完整解码、内容完整或文件曾被删除。', 'info'),
         'video_structure_checked': ('视频容器与采样范围检查通过', '已核对支持的容器、采样表和媒体范围；候选止于最后一个必需盒的末尾，未推断尾随数据。未逐帧解码，不能证明内容完整或曾被删除。', 'info'),
         'video_truncated': ('视频内容截断', '尚未覆盖所有必需容器与媒体范围；不能预览或导出此候选。', 'warning'),
@@ -106,6 +109,8 @@ def deletion_evidence(candidate):
             return DisplayText('文件系统删除记录', '读取到了文件系统的删除元数据；当前内容可能已被覆盖，仍须单独查看布局和来源检查。', raw, 'info')
         if state == 'unverified_record':
             return DisplayText('记录校验不足', '记录未通过必要校验，不能把它认定为可靠的删除记录。', raw, 'warning')
+        if state == 'snapshot_record':
+            return DisplayText('APFS 快照中的文件', '当前文件系统里已经没有这个文件，但 APFS 快照里还有。内容是拍摄快照那一刻的版本，之后的修改不在其中。', raw, 'info')
     return DisplayText('删除状态未知', '没有可解释的删除依据，不能从名称、摘要或候选状态推断文件曾被删除。', raw, 'warning')
 
 
@@ -119,9 +124,10 @@ def duplicate_label(info):
 
 def modified_time_note(candidate):
     """Where a shown modification time came from and how to read it."""
+    snapshot = candidate.get('deletion_state') == 'snapshot_record'
     origin = {'android_file': '设备文件系统', 'ios_backup': '备份索引 Manifest.db'}.get(
-        candidate.get('source'), f"{candidate.get('file_system') or '文件系统'} 删除记录")
-    caveat = '删除记录中的时间可能已被改写，仅供参考。' if candidate.get('source') == 'computer_deleted' else ''
+        candidate.get('source'), 'APFS 快照' if snapshot else f"{candidate.get('file_system') or '文件系统'} 删除记录")
+    caveat = '删除记录中的时间可能已被改写，仅供参考。' if candidate.get('source') == 'computer_deleted' and not snapshot else ''
     if candidate.get('modified_basis') == 'utc':
         return f'{origin}中的修改时间为 UTC，已换算为本机时区显示。{caveat}'
     return f'{origin}中的修改时间只有本地时钟、没有时区信息，按记录原样显示。{caveat}'
@@ -257,6 +263,17 @@ def audio_check_details(candidate):
         if details.get('tracks') == 1 and all(type(n) is int and 1 <= n <= 200000 for n in counts):
             return f'检查版本 1 · M4A · 1 个 AAC 音轨 · {counts[0]} 个采样 · {counts[1]} 个块。边界：最后必需盒末尾；未解码。'
     return ''
+
+
+def snapshot_check_details(candidate):
+    details = candidate.get('structure_details')
+    if candidate.get('integrity') != 'snapshot_checked' or not isinstance(details, dict) or details.get('check_version') != 1:
+        return ''
+    name, created = details.get('snapshot_name'), details.get('snapshot_created_utc')
+    if not isinstance(name, str) or not 0 < len(name) <= 255:
+        return ''
+    when = display_time(created, 'utc') if isinstance(created, str) else ''
+    return f'快照：{name}' + (f' · 拍摄于 {when}' if when else '') + '。内容为拍摄快照时的版本。'
 
 
 def pdf_check_details(candidate):

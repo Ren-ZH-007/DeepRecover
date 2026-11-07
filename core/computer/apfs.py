@@ -1,15 +1,22 @@
-"""Read-only APFS deleted-record candidates from orphaned file-system tree nodes.
+"""Read-only APFS deleted-file candidates from snapshots and orphaned tree nodes.
 
-APFS is copy-on-write: changing metadata writes new B-tree nodes and frees the
-old ones. A deleted file's directory record, inode and extents often survive in
-such freed leaf nodes until their blocks are reused. Only unencrypted,
-single-volume containers without snapshots are supported.
+Snapshots: a file that a snapshot still holds but the current tree no longer
+has is read from the snapshot's own file-system tree. Its blocks stay allocated
+while the snapshot exists, so the bytes are those of the moment it was taken.
 
-A candidate supplies extents only when every data block is free in the space
-manager (bitmap or free queue), is not used by the current tree, is not claimed
-by another deleted file whose records may be newer, and does not now hold an
-APFS object. Even then the content is not proven intact: overwrites by files
-whose own records are gone cannot be seen. See docs/APFS_FEASIBILITY.md.
+Orphaned nodes: APFS is copy-on-write, so changing metadata writes new B-tree
+nodes and frees the old ones. A deleted file's directory record, inode and
+extents often survive in such freed leaf nodes until their blocks are reused.
+
+Only unencrypted, single-volume containers are supported.
+
+A snapshot candidate supplies extents when its layout is complete and every
+block is still allocated. An orphaned-node candidate supplies extents only when
+every data block is free in the space manager (bitmap or free queue), is not
+used by the current tree, is not claimed by another deleted file whose records
+may be newer, and does not now hold an APFS object. Even then the content is
+not proven intact: overwrites by files whose own records are gone cannot be
+seen. See docs/APFS_FEASIBILITY.md and docs/APFS_DELETED_RECORDS.md.
 """
 from array import array
 from bisect import bisect_left, bisect_right
@@ -194,8 +201,9 @@ class _Container:
         incompatible = _u64(volume, 56)
         if incompatible & ~0x0B:
             raise ValueError('此 APFS 卷使用了暂不支持的特性（如系统封存卷或加密变更）。')
-        if _u64(volume, 216):
-            raise ValueError('此 APFS 卷有快照，暂不支持删除记录解析；可选择签名候选扫描。')
+        self.snapshot_count, self.snap_tree = _u64(volume, 216), _u64(volume, 152)
+        if self.snapshot_count and _u32(volume, 124) != 0x40000002:
+            raise ValueError('此 APFS 卷的快照元数据类型暂不支持。')
         if _u32(volume, 116) != _BTREE:
             raise ValueError('此 APFS 卷的文件树类型暂不支持。')
         self.hashed_names = bool(incompatible & 0x09)
@@ -335,6 +343,24 @@ class _Container:
             self.bitmap_cache[index] = cached = bits
         return count, cached
 
+    def all_held(self, start, end):
+        """True when every block in [start, end) is allocated and none waits in a free queue."""
+        if next(self.queued.overlapping(start, end), None) is not None:
+            return False
+        a = start
+        while a < end:
+            index = a // self.per_chunk
+            count, bits = self._chunk(index)
+            first = index * self.per_chunk
+            stop = min(end, first + self.per_chunk)
+            if stop - first > count:
+                raise ValueError('APFS 空间管理器结构无效。')
+            mask = (1 << (stop - a)) - 1
+            if bits is None or (bits >> (a - first)) & mask != mask:
+                return False
+            a = stop
+        return True
+
     def any_used(self, start, end):
         """True when a block in [start, end) is allocated and not waiting in a free queue."""
         pieces = [(start, end)]
@@ -434,46 +460,153 @@ def inode_fields(value):
     return fields
 
 
-def _current_tree(volume):
-    """Live file ids, live directory names, live extents and current node addresses."""
-    live, names, extents, nodes = set(), {}, [], set()
-    stack = [(volume.root_tree, None)]
+def _walk_tree(volume, root, xid, visited, what):
+    """Leaf (key, value) pairs of a file-system tree as of ``xid``.
+
+    Nodes already in ``visited`` (shared with a tree walked earlier) are skipped;
+    every node reached is added to it.
+    """
+    stack, seen = [(root, None)], set()
     while stack:
         volume.token.checkpoint()
         oid, expected = stack.pop()
-        paddr = volume.omap_lookup(volume.volume_omap, oid, volume.xid)
-        if paddr in nodes:
-            raise ValueError('APFS 当前文件树结构无效。')
-        nodes.add(paddr)
+        paddr = volume.omap_lookup(volume.volume_omap, oid, xid)
+        if paddr in seen:
+            raise ValueError(f'APFS {what}结构无效。')
+        seen.add(paddr)
+        if paddr in visited:
+            continue
+        visited.add(paddr)
         block = volume.block(paddr)
         if (not valid_object(block) or _u32(block, 24) & 0xFFFF not in (_BTREE, _BTREE_NODE)
                 or _u32(block, 28) != _FSTREE or _u32(block, 24) >> 16):
-            raise ValueError('APFS 当前文件树不完整，不能判断哪些文件仍然存在。')
+            raise ValueError(f'APFS {what}不完整，不能判断哪些文件仍然存在。')
         _flags, level, entries = node_entries(block)
         if expected is not None and level != expected:
-            raise ValueError('APFS 当前文件树结构无效。')
+            raise ValueError(f'APFS {what}结构无效。')
         for key, value in entries:
             if len(key) < 8 or value is None or (level and len(value) < 8):
-                raise ValueError('APFS 当前文件树结构无效。')
+                raise ValueError(f'APFS {what}结构无效。')
             if level:
                 stack.append((_u64(value, 0), level - 1)); continue
             volume.budget -= 1
             if volume.budget < 0:
                 raise ValueError('APFS 记录数量达到上限，扫描未完成。')
+            yield key, value
+
+
+def _current_tree(volume, visited):
+    """Live file ids, live directory names and live extents."""
+    live, names, extents = set(), {}, []
+    for key, value in _walk_tree(volume, volume.root_tree, volume.xid, visited, '当前文件树'):
+        header = _u64(key, 0)
+        oid, kind = header & ((1 << 60) - 1), header >> 60
+        if kind == 3:
+            live.add(oid)
+        elif kind == 9 and len(value) >= 18:
+            fid = _u64(value, 0); live.add(fid)
+            name = entry_name(key, volume.hashed_names)
+            if name is not None:
+                names[fid] = (oid, name)
+        elif kind == 8 and len(key) >= 16 and len(value) >= 16:
+            length, physical = _u64(value, 0) & ((1 << 56) - 1), _u64(value, 8)
+            if physical and length:
+                extents.append((physical, physical + -(-length // volume.bs), oid))
+    return live, names, _Intervals(extents)
+
+
+def _snapshots(volume):
+    """Snapshot metadata records, newest first: dicts with xid, name, created, superblock, flags."""
+    if not volume.snapshot_count:
+        return []
+    stack, seen, found = [volume.snap_tree], set(), []
+    while stack:
+        paddr = stack.pop()
+        if paddr in seen or len(seen) > 100000:
+            raise ValueError('APFS 快照元数据结构无效。')
+        seen.add(paddr)
+        block = volume.block(paddr)
+        if not valid_object(block) or _u32(block, 24) & 0xFFFF not in (_BTREE, _BTREE_NODE) or _u32(block, 28) != 0x10:
+            raise ValueError('APFS 快照元数据无法读取。')
+        _flags, level, entries = node_entries(block)
+        for key, value in entries:
+            if value is None or len(key) < 8:
+                raise ValueError('APFS 快照元数据结构无效。')
+            if level:
+                if len(value) < 8:
+                    raise ValueError('APFS 快照元数据结构无效。')
+                stack.append(_u64(value, 0)); continue
             header = _u64(key, 0)
-            oid_, kind = header & ((1 << 60) - 1), header >> 60
-            if kind == 3:
-                live.add(oid_)
-            elif kind == 9 and len(value) >= 18:
-                fid = _u64(value, 0); live.add(fid)
-                name = entry_name(key, volume.hashed_names)
-                if name is not None:
-                    names[fid] = (oid_, name)
-            elif kind == 8 and len(key) >= 16 and len(value) >= 16:
-                length, physical = _u64(value, 0) & ((1 << 56) - 1), _u64(value, 8)
-                if physical and length:
-                    extents.append((physical, physical + -(-length // volume.bs), oid_))
-    return live, names, _Intervals(extents), nodes
+            if header >> 60 != 1:                       # name records repeat the metadata records
+                continue
+            if len(value) < 51:
+                raise ValueError('APFS 快照元数据结构无效。')
+            _extentref, superblock, created, _changed, _inode, _type, flags, length = struct.unpack_from('<QQQQQIIH', value)
+            raw = value[50:50 + length]
+            if not length or len(raw) != length or raw[-1:] != b'\0':
+                raise ValueError('APFS 快照名称无效。')
+            xid = header & ((1 << 60) - 1)
+            if not 0 < xid <= volume.xid:
+                raise ValueError('APFS 快照事务号无效。')
+            found.append({'xid': xid, 'name': raw[:-1].decode('utf-8', 'replace'), 'created': created,
+                          'superblock': superblock, 'flags': flags})
+    if len(found) != volume.snapshot_count:
+        raise ValueError('APFS 快照元数据与卷记录的快照数量不一致。')
+    return sorted(found, key=lambda item: item['xid'], reverse=True)
+
+
+def _snapshot_files(volume, snapshots, visited, live, live_names):
+    """Candidates for files that a snapshot still holds but the current tree no longer has.
+
+    Snapshots are walked newest first, so each file is reported once, from the
+    newest snapshot that contains it. Returns (candidates, file ids seen, names).
+    """
+    claimed, seen, names, results = set(), set(), dict(live_names), []
+    for snapshot in snapshots:
+        superblock = volume.obj(snapshot['superblock'], 0x0D)
+        if superblock[32:36] != b'APSB':
+            raise ValueError('APFS 快照卷超级块无效。')
+        records = _Records(volume.hashed_names)
+        for key, value in _walk_tree(volume, _u64(superblock, 136), snapshot['xid'], visited, '快照文件树'):
+            records.add(snapshot['xid'], key, value)
+        local = {}
+        for (parent, name), (_x, (fid, kind)) in records.drec.items():
+            local[fid] = (parent, name, kind)
+        for fid, (parent, name, _kind) in local.items():
+            names.setdefault(fid, (parent, name))
+        seen.update(records.inode)
+        seen.update(fid for fid, _ in local.items())
+        if snapshot['flags']:
+            continue                                     # dataless or merging: its data is not held
+        label = '[快照 ' + snapshot['name'].replace('/', '_').replace('\\', '_') + ']'
+        details = {'check_version': 1, 'snapshot_name': snapshot['name'], 'snapshot_xid': snapshot['xid'],
+                   'snapshot_created_utc': unix_modified(snapshot['created'] // 1_000_000_000).get('modified_at')}
+        for fid, (_x, fields) in records.inode.items():
+            if fid in live or fid in claimed or fields['mode'] & _S_IFMT != _S_IFREG:
+                continue
+            volume.token.checkpoint()
+            claimed.add(fid)
+            parent, name, _kind = local.get(fid, (fields['parent'], f'APFS_{fid}.bin', _DT_REG))
+            integrity, extents = _check_snapshot(volume, fields, records)
+            results.append({'name': name, 'original_path': label + _path(parent, names) + '/' + name,
+                            'size': fields['size'] or 0, 'extents': extents if integrity == 'snapshot_checked' else [],
+                            'record_id': fid, 'integrity': integrity,
+                            'status': 'candidate' if integrity == 'snapshot_checked' else 'partial',
+                            'file_system': 'APFS', 'deletion_state': 'snapshot_record', 'structure_details': details,
+                            **unix_modified(fields['modified'] // 1_000_000_000)})
+    return results, seen, names
+
+
+def _path(fid, names, depth=0):
+    """Path of a directory from (parent, name) pairs; unknown parents are marked, never guessed."""
+    if fid in (_ROOT_DIR, _ROOT_PARENT):
+        return ''
+    if depth > 256:
+        return '[APFS 目录层级过深]'
+    if fid not in names:
+        return f'[APFS 目录 {fid}]'
+    parent, name = names[fid]
+    return _path(parent, names, depth + 1) + '/' + name
 
 
 def _carve(volume, current_nodes, records):
@@ -511,7 +644,7 @@ def _carve(volume, current_nodes, records):
 
 
 def scan_apfs(reader, partition, token, *, max_records=1000000, max_candidates=10000):
-    """Yield deleted APFS file records; never mounts or modifies the container."""
+    """Yield deleted APFS files from snapshots and old tree nodes; never mounts or modifies the container."""
     if type(max_records) is not int or type(max_candidates) is not int or min(max_records, max_candidates) < 1:
         raise ValueError('APFS 扫描上限无效。')
     try:
@@ -522,10 +655,12 @@ def scan_apfs(reader, partition, token, *, max_records=1000000, max_candidates=1
 
 def _scan(reader, partition, token, max_records, max_candidates):
     volume = _Container(reader, partition, token, max_records)
-    live, live_names, live_extents, current_nodes = _current_tree(volume)
+    visited = set()                                  # nodes of the current tree and of every snapshot tree
+    live, live_names, live_extents = _current_tree(volume, visited)
+    held, in_snapshots, known_names = _snapshot_files(volume, _snapshots(volume), visited, live, live_names)
     records = _Records(volume.hashed_names)
     volume.budget = max(volume.budget, 0)
-    objects, truncated = _carve(volume, current_nodes, records)
+    objects, truncated = _carve(volume, visited, records)
     checked_objects = {}
 
     def holds_object(start, end):
@@ -542,24 +677,14 @@ def _scan(reader, partition, token, max_records, max_candidates):
     for (parent, name), (xid, (fid, kind)) in records.drec.items():
         if fid not in names or names[fid][0] <= xid:
             names[fid] = (xid, parent, name, kind)
-
-    def path(fid, depth=0):
-        if fid in (_ROOT_DIR, _ROOT_PARENT):
-            return ''
-        if depth > 256:
-            return '[APFS 目录层级过深]'
-        if fid in live_names:
-            parent, name = live_names[fid]
-        elif fid in names:
-            _x, parent, name, _k = names[fid]
-        else:
-            return f'[APFS 目录 {fid}]'
-        return path(parent, depth + 1) + '/' + name
+    directories = dict(known_names)                  # current tree, then snapshots, then old nodes
+    for fid, (_x, parent, name, _kind) in names.items():
+        directories.setdefault(fid, (parent, name))
 
     deleted = {fid for fid, (_x, _p, _n, kind) in names.items() if kind == _DT_REG}
     deleted |= {oid for oid, (_x, fields) in records.inode.items() if fields['mode'] & _S_IFMT == _S_IFREG}
-    deleted -= live
-    results = []
+    deleted -= live | in_snapshots                   # files a snapshot holds are reported from the snapshot
+    results = list(held)
     for fid in deleted:
         token.checkpoint()
         named = names.get(fid)
@@ -570,7 +695,7 @@ def _scan(reader, partition, token, max_records, max_candidates):
             _x, parent, name, _k = named
         else:
             parent, name = inode[1]['parent'], f'APFS_{fid}.bin'
-        candidate = {'name': name, 'original_path': path(parent) + '/' + name, 'size': 0, 'extents': [],
+        candidate = {'name': name, 'original_path': _path(parent, directories) + '/' + name, 'size': 0, 'extents': [],
                      'record_id': fid, 'integrity': 'invalid_metadata', 'status': 'partial',
                      'file_system': 'APFS', 'deletion_state': 'deleted_record'}
         if inode is not None:
@@ -594,15 +719,13 @@ def _scan(reader, partition, token, max_records, max_candidates):
         raise ValueError('APFS 删除记录数量达到上限，扫描仅部分完成。')
 
 
-def _check(volume, fields, records, live_extents, others, holds_object):
-    """(integrity, extents) for one deleted inode; extents only when every check passes."""
+def _layout(volume, fields, records):
+    """(problem or None, extents in logical order) covering the file size from the newest records."""
     size = fields['size'] or 0
     if size > _MAX_FILE:
         return 'size_limit', []
     if fields['bsd'] & _UF_COMPRESSED or fields['internal'] & _INODE_IS_SPARSE:
         return 'unsupported_layout', []
-    if not size:
-        return 'metadata_checked', []
     owner = fields['private']
     pieces = sorted((logical, length, physical) for (o, logical), (_x, (length, physical)) in records.extent.items() if o == owner)
     covered, used = 0, []
@@ -618,6 +741,43 @@ def _check(volume, fields, records, live_extents, others, holds_object):
         used.append((logical, length, physical)); covered += length
     if covered < size:
         return 'invalid_metadata', []
+    return None, used
+
+
+def _byte_ranges(volume, used, size):
+    extents, remaining = [], size
+    for _logical, length, physical in used:
+        amount = min(length, remaining)
+        offset = volume.base + physical * volume.bs
+        if extents and extents[-1][0] + extents[-1][1] == offset:
+            extents[-1] = (extents[-1][0], extents[-1][1] + amount)
+        else:
+            extents.append((offset, amount))
+        remaining -= amount
+    return extents
+
+
+def _check_snapshot(volume, fields, records):
+    """A snapshot keeps its blocks allocated; anything else means the snapshot is not intact."""
+    problem, used = _layout(volume, fields, records)
+    if problem:
+        return problem, []
+    try:
+        if not all(volume.all_held(physical, physical + length // volume.bs) for _l, length, physical in used):
+            return 'allocation_unknown', []
+    except ValueError:
+        return 'allocation_unknown', []
+    return 'snapshot_checked', _byte_ranges(volume, used, fields['size'] or 0)
+
+
+def _check(volume, fields, records, live_extents, others, holds_object):
+    """(integrity, extents) for one deleted inode; extents only when every check passes."""
+    problem, used = _layout(volume, fields, records)
+    if problem:
+        return problem, []
+    size, owner = fields['size'] or 0, fields['private']
+    if not size:
+        return 'metadata_checked', []
     ranges = [(physical, physical + length // volume.bs) for _l, length, physical in used]
     live = sum(min(e, end) - max(s, start) for start, end in ranges for s, e, _o in live_extents.overlapping(start, end))
     blocks = sum(end - start for start, end in ranges)
@@ -635,13 +795,4 @@ def _check(volume, fields, records, live_extents, others, holds_object):
                 return 'overwritten_after_delete', []
     if any(holds_object(start, end) for start, end in ranges):
         return 'overwritten_after_delete', []
-    extents, remaining = [], size
-    for _logical, length, physical in used:
-        amount = min(length, remaining)
-        offset = volume.base + physical * volume.bs
-        if extents and extents[-1][0] + extents[-1][1] == offset:
-            extents[-1] = (extents[-1][0], extents[-1][1] + amount)
-        else:
-            extents.append((offset, amount))
-        remaining -= amount
-    return 'metadata_checked', extents
+    return 'metadata_checked', _byte_ranges(volume, used, size)

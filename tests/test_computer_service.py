@@ -128,6 +128,28 @@ class ComputerServiceTests(unittest.TestCase):
         self.assertEqual(record['source_sha256'], record['target_sha256'])
         self.assertEqual(record['metadata']['deletion_state'], 'deleted_record')
 
+    def test_apfs_snapshot_file_scan_export_and_gate(self):
+        image = ApfsImage(); image.live_file('keep.txt', b'still here')
+        snapshot = image.snapshot('com.apple.TimeMachine.2026-11-06-101500.local', 6)
+        payload = b'snapshot copy ' * 900
+        image.snapshot_file(snapshot, '季度 报告.txt', payload)
+        image.snapshot_file(snapshot, 'not held.bin', b'x' * 100, held=False)
+        _path, _task, ids = self.scan(image.build())
+        rows = {self.repo.candidate(i)['name']: self.repo.candidate(i) for i in ids}
+        ready, broken = rows['季度 报告.txt'], rows['not held.bin']
+        self.assertEqual((ready['deletion_state'], ready['integrity'], ready['status']), ('snapshot_record', 'snapshot_checked', 'candidate'))
+        self.assertEqual(ready['original_path'], '[快照 com.apple.TimeMachine.2026-11-06-101500.local]/季度 报告.txt')
+        self.assertEqual(ready['structure_details']['snapshot_xid'], 6)
+        self.assertEqual(read_candidate(self.repo, ready['id'], self.config.data_dir, CancellationToken()), payload)
+        with self.assertRaises(CandidateAccessError): candidate_input(self.repo, broken['id'], self.config.data_dir)
+        record, = self.export([ready['id']])
+        self.assertEqual(Path(record['output_path']).read_bytes(), payload)
+        self.assertEqual(Path(record['output_path']).name, '季度 报告.txt')
+        self.assertEqual(record['metadata']['deletion_state'], 'snapshot_record')
+        forged = dict(ready, deletion_state='deleted_record')
+        with patch.object(self.repo, 'candidate', return_value=forged), self.assertRaises(CandidateAccessError):
+            candidate_input(self.repo, ready['id'], self.config.data_dir)
+
     def test_source_limits_and_cancellation_are_explicit(self):
         path = self.root / 'file.img'; path.write_bytes(png_image() + JPEG)
         token = CancellationToken(); token.cancel()

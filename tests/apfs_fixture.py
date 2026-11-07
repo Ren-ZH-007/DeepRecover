@@ -3,7 +3,8 @@
 Layout (4 KiB blocks): 0 superblock copy, 1-4 checkpoint descriptors, 5-8
 checkpoint data (space manager, free queue), 9-10 container object map,
 11 volume superblock, 12-13 volume object map, 14 current file-system tree,
-15 chunk info, 16 allocation bitmap; files and old tree nodes from block 20.
+15 chunk info, 16 allocation bitmap, 17 snapshot metadata tree; files, old tree
+nodes, snapshot trees and snapshot superblocks from block 20.
 """
 from dataclasses import dataclass
 import struct
@@ -90,7 +91,8 @@ class ApfsImage:
         self.live = []                   # records of the current tree
         self.orphans = {}                # block -> (xid, records, root)
         self.next_block, self.next_fid = FIRST_FREE, 100
-        self.encrypted, self.snapshots, self.volumes = False, 0, 1
+        self.encrypted, self.volumes = False, 1
+        self.snaps, self.snapshot_count = [], None   # count overrides len(snaps) to fake a mismatch
 
     # -- allocation ------------------------------------------------------------
     def allocate(self, count):
@@ -161,6 +163,34 @@ class ApfsImage:
         self.orphan(xid, records)
         return fid, start
 
+    def snapshot(self, name, xid, *, with_live=True, flags=0, share=None):
+        """A snapshot taken at ``xid``: the root directory, the live files (optional) and its own files.
+
+        ``share`` reuses another snapshot's tree node, as when nothing changed between them.
+        """
+        assert 0 < xid < self.xid
+        spec = {'name': name, 'xid': xid, 'records': [], 'flags': flags, 'with_live': with_live,
+                'node': share['node'] if share else self.allocate(1), 'superblock': self.allocate(1), 'share': share}
+        self.used.update((spec['node'], spec['superblock']))
+        self.snaps.append(spec)
+        return spec
+
+    def snapshot_file(self, snap, name, payload, *, parent=2, fid=None, held=True, bsd=0, mode=0o100644):
+        """A file the snapshot holds; ``held`` keeps its blocks allocated, as a real snapshot does."""
+        fid = self.fid() if fid is None else fid
+        start, count = self.place(payload)
+        if held:
+            self.used.update(range(start, start + count))
+        snap['records'] += [inode(fid, parent=parent, size=len(payload), bsd=bsd, mode=mode), drec(parent, name, fid, hashed=self.hashed)]
+        if count:
+            snap['records'].append(extent(fid, 0, count * BS, start))
+        return fid, start
+
+    def snapshot_directory(self, snap, name, parent=2):
+        fid = self.fid()
+        snap['records'] += [inode(fid, parent=parent, mode=0o40755), drec(parent, name, fid, 4, self.hashed)]
+        return fid
+
     def queue(self, start, count, xid=9):
         """Blocks freed by a recent transaction: still set in the bitmap, listed in the free queue."""
         self.used.update(range(start, start + count))
@@ -183,7 +213,21 @@ class ApfsImage:
         # object maps
         omap_value = lambda paddr: struct.pack('<IIQ', 0, bs, paddr)
         self.write(10, node(10, xid, 0x40000002, 0x0B, [(struct.pack('<QQ', VOLUME_OID, xid), omap_value(11))], fixed=(16, 16)))
-        self.write(13, node(13, xid, 0x40000002, 0x0B, [(struct.pack('<QQ', ROOT_TREE_OID, xid), omap_value(14))], fixed=(16, 16)))
+        mappings = [(snap['xid'], snap['node']) for snap in self.snaps] + [(xid, 14)]
+        self.write(13, node(13, xid, 0x40000002, 0x0B, [(struct.pack('<QQ', ROOT_TREE_OID, at), omap_value(paddr))
+                                                        for at, paddr in sorted(mappings)], fixed=(16, 16)))
+        snap_entries = []
+        for snap in self.snaps:
+            if snap['share'] is None:
+                held = [inode(2, parent=1, mode=0o40755)] + (self.live if snap['with_live'] else []) + snap['records']
+                self.write(snap['node'], node(ROOT_TREE_OID, snap['xid'], 0x2, 0x0E, self.fs_records(held)))
+            raw = snap['name'].encode() + b'\0'
+            snap_entries.append((struct.pack('<Q', snap['xid'] | 1 << 60),
+                                 struct.pack('<QQQQQIIH', 0, snap['superblock'], 1_750_000_000 * 10 ** 9 + snap['xid'],
+                                             0, 900 + snap['xid'], 0x40000002, snap['flags'], len(raw)) + raw))
+            snap_entries.append((struct.pack('<QH', ((1 << 60) - 1) | 11 << 60, len(raw)) + raw, struct.pack('<Q', snap['xid'])))
+        snap_entries.sort(key=lambda kv: (struct.unpack_from('<Q', kv[0])[0] & ((1 << 60) - 1), kv[0][8:]))
+        self.write(17, node(17, xid, 0x40000002, 0x10, snap_entries))
         for at, tree in ((9, 10), (12, 13)):
             block = header(at, xid, 0x4000000B)
             struct.pack_into('<IIIIQ', block, 32, 0, 0, 0x40000002, 0x40000002, tree)
@@ -194,9 +238,16 @@ class ApfsImage:
         struct.pack_into('<Q', volume, 56, 1 if self.hashed else 0)
         struct.pack_into('<I', volume, 116, 2)
         struct.pack_into('<QQ', volume, 128, 12, ROOT_TREE_OID)
-        struct.pack_into('<Q', volume, 216, self.snapshots)
+        struct.pack_into('<I', volume, 124, 0x40000002)
+        struct.pack_into('<Q', volume, 152, 17)
+        struct.pack_into('<Q', volume, 216, len(self.snaps) if self.snapshot_count is None else self.snapshot_count)
         struct.pack_into('<Q', volume, 264, 0 if self.encrypted else 1)
         volume[704:713] = b'DR test\0\0'
+        for snap in self.snaps:                  # snapshot superblocks: physical copies without their own maps
+            copy = bytearray(volume)
+            struct.pack_into('<QQI', copy, 8, snap['superblock'], snap['xid'], 0x4000000D)
+            struct.pack_into('<Q', copy, 128, 0); struct.pack_into('<Q', copy, 152, 0); struct.pack_into('<Q', copy, 216, 0)
+            self.write(snap['superblock'], seal(copy))
         self.write(11, seal(volume))
         # free queue (checkpoint data block 6) and space manager (block 5)
         entries = [(struct.pack('<QQ', q_xid, start), struct.pack('<Q', count)) for q_xid, start, count in sorted(self.queued)]
