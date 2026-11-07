@@ -2,7 +2,7 @@
 import unittest
 
 from ui.recovery.presentation import (candidate_status, content_check, deletion_evidence,
-    export_guidance, export_status, task_status, task_kind, error_text)
+    export_guidance, export_status, task_status, task_kind, error_text, modified_time_note, snapshot_check_details)
 
 
 class ResultPresentationTests(unittest.TestCase):
@@ -26,6 +26,25 @@ class ResultPresentationTests(unittest.TestCase):
         self.assertIn('可能已被覆盖', record.explanation)
         self.assertEqual(layout.label, '布局检查通过')
         self.assertIn('不证明内容', layout.explanation)
+
+    def test_snapshot_files_are_explained_as_snapshot_versions(self):
+        candidate = {'source': 'computer_deleted', 'deletion_state': 'snapshot_record', 'integrity': 'snapshot_checked',
+                     'file_system': 'APFS', 'modified_basis': 'utc',
+                     'structure_details': {'check_version': 1, 'snapshot_name': 'com.apple.TimeMachine.2026-11-06-101500.local',
+                                           'snapshot_xid': 6, 'snapshot_created_utc': '2026-11-06T10:15:00'}}
+        evidence = deletion_evidence(candidate)
+        self.assertEqual(evidence.label, 'APFS 快照中的文件')
+        self.assertIn('拍摄快照那一刻', evidence.explanation)
+        self.assertEqual(content_check('snapshot_checked').label, '快照布局检查通过')
+        self.assertIn('不证明内容可解码', content_check('snapshot_checked').explanation)
+        details = snapshot_check_details(candidate)
+        self.assertTrue(details.startswith('快照：com.apple.TimeMachine.2026-11-06-101500.local · 拍摄于 '))
+        self.assertIn('APFS 快照', modified_time_note(candidate))
+        self.assertNotIn('可能已被改写', modified_time_note(candidate))
+        self.assertEqual(deletion_evidence({'source': 'computer_signature', 'deletion_state': 'snapshot_record'}).label, '未知（签名候选）')
+        for forged in ({**candidate, 'integrity': 'metadata_checked'}, {**candidate, 'structure_details': {'snapshot_name': 'x'}},
+                       {**candidate, 'structure_details': {'check_version': 1, 'snapshot_name': ''}}):
+            self.assertEqual(snapshot_check_details(forged), '')
 
     def test_partial_or_unverified_layout_does_not_present_as_full_file(self):
         for integrity in ['layout_unverified', 'allocation_unknown', 'allocated_clusters', 'unsupported_layout',

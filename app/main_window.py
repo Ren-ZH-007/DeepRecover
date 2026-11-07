@@ -25,6 +25,7 @@ from core.file_times import display_time
 from core.scanner.resume import CHECKPOINT_SECONDS, ResumeError, plan_resume, resume_operation, verify_resume
 from core.progress_rate import RateEstimator, describe_rate, format_bytes
 from ui.recovery.presentation import (candidate_status, content_check, deletion_evidence, video_check_details, pdf_check_details, office_check_details, audio_check_details,
+    snapshot_check_details,
     export_guidance, task_status, task_kind, source_kind, error_text, duplicate_label, modified_time_note)
 from ui.computer.page import ComputerPage, check_computer_access, computer_error_types
 from app.theme import STYLE, icon, brand_icon
@@ -176,7 +177,7 @@ class MainWindow(QMainWindow):
         for i, row in enumerate(rows):
             for j, value in enumerate(row):
                 item = QTableWidgetItem(str(value)); item.setToolTip(str(value))
-                if value in ('completed','exported','structure_checked','metadata_checked','device'): item.setForeground(QColor('#087c68'))
+                if value in ('completed','exported','structure_checked','metadata_checked','snapshot_checked','device'): item.setForeground(QColor('#087c68'))
                 elif value in ('failed','missing','invalid_structure','unauthorized'): item.setForeground(QColor('#c53f53'))
                 elif value in ('partial','truncated','validation_limit','cancelled','interrupted'): item.setForeground(QColor('#a86608'))
                 table.setItem(i, j, item)
@@ -513,11 +514,13 @@ class MainWindow(QMainWindow):
             note.setTextFormat(Qt.TextFormat.PlainText); note.setWordWrap(True)
             note.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse); section.addWidget(note)
             detail_text = (video_check_details(candidate) or pdf_check_details(candidate) or office_check_details(candidate)
-                           or audio_check_details(candidate))
+                           or audio_check_details(candidate) or snapshot_check_details(candidate))
             if key == 'content' and detail_text:
                 office = candidate.get('integrity') == 'office_structure_checked'
                 audio = candidate.get('integrity') == 'audio_structure_checked'
-                details = QLabel(detail_text); details.setObjectName('evidence-audio-details' if audio else 'evidence-office-details' if office else
+                snapshot = candidate.get('integrity') == 'snapshot_checked'
+                details = QLabel(detail_text); details.setObjectName('evidence-snapshot-details' if snapshot else 'evidence-audio-details' if audio else
+                                                                     'evidence-office-details' if office else
                                                                      'evidence-pdf-details' if candidate.get('file_type') == 'pdf' else 'evidence-video-details')
                 details.setTextFormat(Qt.TextFormat.PlainText); details.setWordWrap(True); section.addWidget(details)
         layout.addStretch(1); scroll.setWidget(content); box.addWidget(scroll,1)

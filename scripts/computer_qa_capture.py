@@ -120,6 +120,9 @@ def run(output):
             layout.deleted_file('已删除 照片.png', png)
             _fid, reused = layout.deleted_file('已覆盖 文档.txt', '较早删除的文档'.encode() * 300, xid=4)
             layout.deleted_file('后写入 文档.txt', '后来写入又删除的文档'.encode() * 100, xid=7, start=reused)
+            snapshot = layout.snapshot('com.apple.TimeMachine.2026-11-06-101500.local', 8)
+            sheet = '日期,金额\n2026-11-01,100\n'.encode() * 50
+            layout.snapshot_file(snapshot, '快照里的 表格.csv', sheet)
             apfs = root / '合成 APFS 来源.img'; apfs.write_bytes(layout.build())
             before = {path.name: hashlib.sha256(path.read_bytes()).hexdigest() for path in (ntfs, hfs, apfs)}
             window.nav.setCurrentRow(7); choose_image(ntfs)
@@ -195,8 +198,10 @@ def run(output):
             capture('09b-apfs-deleted-capability.png')
             apfs_task = scan(); apfs_rows = repo.candidate_page(apfs_task)
             assert {row['name']: row['integrity'] for row in apfs_rows} == {'已删除 照片.png': 'metadata_checked',
-                '已覆盖 文档.txt': 'overwritten_after_delete', '后写入 文档.txt': 'metadata_checked'}
-            assert all(row['deletion_state'] == 'deleted_record' and row['file_system'] == 'APFS' for row in apfs_rows)
+                '已覆盖 文档.txt': 'overwritten_after_delete', '后写入 文档.txt': 'metadata_checked',
+                '快照里的 表格.csv': 'snapshot_checked'}
+            assert all(row['file_system'] == 'APFS' and row['deletion_state'] ==
+                       ('snapshot_record' if row['name'] == '快照里的 表格.csv' else 'deleted_record') for row in apfs_rows)
             capture('09c-apfs-deleted-records.png')
             select('已删除 照片.png'); window.preview_selected(); finish()
             assert not window.preview_label.pixmap().isNull()
@@ -204,9 +209,20 @@ def run(output):
             assert item['status'] == 'exported' and Path(item['output_path']).read_bytes() == png
             assert item['source_sha256'] == item['target_sha256'] == hashlib.sha256(png).hexdigest()
             capture('09d-apfs-verified-export.png', window.export_dialog)
+            window.export_dialog.close(); window.open_results(apfs_task)
+            select('快照里的 表格.csv'); window.evidence_button.click(); app.processEvents()
+            assert window.evidence_dialog.findChild(QLabel, 'evidence-deletion-label').text() == 'APFS 快照中的文件'
+            assert window.evidence_dialog.findChild(QLabel, 'evidence-content-label').text() == '快照布局检查通过'
+            assert window.evidence_dialog.findChild(QLabel, 'evidence-snapshot-details').text().startswith(
+                '快照：com.apple.TimeMachine.2026-11-06-101500.local')
+            window.evidence_dialog.resize(680, 680)
+            capture('09e-apfs-snapshot-evidence.png', window.evidence_dialog)
+            window.evidence_dialog.close()
+            exported = export(root / 'APFS 快照导出'); item, = repo.exports(exported)
+            assert item['status'] == 'exported' and Path(item['output_path']).read_bytes() == sheet
             window.export_dialog.close()
-            record('CQA-12', filesystem='APFS', deleted_records=3, ready=2, overwritten_after_delete=1,
-                preview_decoded=True, verified_export=True)
+            record('CQA-12', filesystem='APFS', deleted_records=3, snapshot_records=1, ready=3, overwritten_after_delete=1,
+                preview_decoded=True, verified_exports=2, snapshot_evidence_explained=True)
             count = len(repo.tasks()); window.nav.setCurrentRow(7)
             page.set_devices([SimpleNamespace(path='/dev/disk99', size=1024, label='QA mock disk', system_disk=False)])
             page.device_tree.setCurrentItem(page.device_item('/dev/disk99'))
