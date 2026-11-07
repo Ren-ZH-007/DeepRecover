@@ -38,6 +38,14 @@ _EARLIER_COPY = ("EXISTS (SELECT 1 FROM candidates d WHERE d.task_id=candidates.
                  "AND json_extract(d.payload,'$.sha256')=json_extract(candidates.payload,'$.sha256') "
                  "AND d.rowid<candidates.rowid)")
 MAX_QUERY_TERMS = 8
+# Files an operating system creates and deletes on its own (search indexes, change logs,
+# AppleDouble sidecars). Folders that hold files people deleted (.Trashes, $RECYCLE.BIN)
+# are deliberately not listed.
+SYSTEM_FOLDERS = ('.Spotlight-V100', '.fseventsd', '.DocumentRevisions-V100', '.TemporaryItems', 'System Volume Information')
+_PATH = "coalesce(json_extract(payload,'$.original_path'),'')"
+_NAME = "coalesce(json_extract(payload,'$.name'),'')"
+_SYSTEM_FILE = ('(' + ' OR '.join([f"instr({_PATH}, '/{folder}/')>0" for folder in SYSTEM_FOLDERS]
+                                  + [f"{_NAME}='.DS_Store'", f"substr({_NAME},1,2)='._'"]) + ')')
 
 def now():
     return datetime.now(timezone.utc).isoformat()
@@ -141,6 +149,13 @@ class Repository:
                        "AND excluded.identity=scan_checkpoints.identity AND excluded.params=scan_checkpoints.params",
                        (task_id, *values, identity, params, now()))
 
+    def continued_by(self, task_id):
+        """Id of the task that continued ``task_id``'s remaining range after it hit the candidate limit."""
+        with closing(self.connect()) as db:
+            row = db.execute("SELECT task_id FROM scan_checkpoints WHERE json_extract(params,'$.continues')=? LIMIT 1",
+                             (task_id,)).fetchone()
+        return row[0] if row else None
+
     def scan_checkpoint(self, task_id):
         with closing(self.connect()) as db:
             row = db.execute("SELECT position,candidates,total,identity,params,updated_at FROM scan_checkpoints "
@@ -162,7 +177,7 @@ class Repository:
             return [json.loads(row[0]) for row in db.execute("SELECT payload FROM candidates WHERE task_id=? ORDER BY rowid", (task_id,))]
 
     @staticmethod
-    def candidate_filter(task_id, category='all', status='all', query='', hide_duplicates=False, dates=None, tz=None):
+    def candidate_filter(task_id, category='all', status='all', query='', hide_duplicates=False, dates=None, tz=None, hide_system=False):
         clauses, args = ['task_id=?'], [task_id]
         if category != 'all':
             if category not in (*CATEGORIES, 'other'):
@@ -189,6 +204,11 @@ class Repository:
             clauses.append(f'NOT {_EARLIER_COPY}')
         elif hide_duplicates is not False:
             raise ValueError('Invalid duplicate filter')
+        if hide_system is True:
+            clauses.append(f"json_extract(payload,'$.source')='computer_deleted' AND {_SYSTEM_FILE}")
+            clauses[-1] = f'NOT ({clauses[-1]})'
+        elif hide_system is not False:
+            raise ValueError('Invalid system file filter')
         if dates is not None:
             clauses.append(_DATE_CLAUSE)
             args.extend(_date_bounds(dates, tz))
@@ -209,23 +229,23 @@ class Repository:
                 f"FROM candidates WHERE task_id=? AND {_SHA} IS NOT NULL AND id IN ({marks})", (task_id, *ids)).fetchall()
         return {row[0]: (row[1], not row[2]) for row in rows if row[1] > 1}
 
-    def candidate_page(self, task_id, *, offset=0, limit=100, category='all', status='all', query='', hide_duplicates=False, dates=None, tz=None):
+    def candidate_page(self, task_id, *, offset=0, limit=100, category='all', status='all', query='', hide_duplicates=False, dates=None, tz=None, hide_system=False):
         if not isinstance(offset, int) or not isinstance(limit, int) or offset < 0 or not 1 <= limit <= 1000:
             raise ValueError("Invalid page bounds")
-        where, args = self.candidate_filter(task_id, category, status, query, hide_duplicates, dates, tz)
+        where, args = self.candidate_filter(task_id, category, status, query, hide_duplicates, dates, tz, hide_system)
         with closing(self.connect()) as db:
             return [json.loads(row[0]) for row in db.execute(
                 f"SELECT payload FROM candidates WHERE {where} ORDER BY rowid LIMIT ? OFFSET ?", (*args, limit, offset))]
 
-    def candidate_count(self, task_id, *, category='all', status='all', query='', hide_duplicates=False, dates=None, tz=None):
-        where, args = self.candidate_filter(task_id, category, status, query, hide_duplicates, dates, tz)
+    def candidate_count(self, task_id, *, category='all', status='all', query='', hide_duplicates=False, dates=None, tz=None, hide_system=False):
+        where, args = self.candidate_filter(task_id, category, status, query, hide_duplicates, dates, tz, hide_system)
         with closing(self.connect()) as db:
             return db.execute(f"SELECT count(*) FROM candidates WHERE {where}", args).fetchone()[0]
 
-    def candidate_ids(self, task_id, *, category='all', status='all', query='', hide_duplicates=False, dates=None, tz=None, limit=10000):
+    def candidate_ids(self, task_id, *, category='all', status='all', query='', hide_duplicates=False, dates=None, tz=None, hide_system=False, limit=10000):
         if not 1 <= limit <= 10000:
             raise ValueError('Invalid selection limit')
-        where, args = self.candidate_filter(task_id, category, status, query, hide_duplicates, dates, tz)
+        where, args = self.candidate_filter(task_id, category, status, query, hide_duplicates, dates, tz, hide_system)
         with closing(self.connect()) as db:
             ids = [row[0] for row in db.execute(f'SELECT id FROM candidates WHERE {where} ORDER BY rowid LIMIT ?', (*args, limit + 1))]
         if len(ids) > limit:

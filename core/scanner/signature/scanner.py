@@ -30,13 +30,14 @@ class SignatureScanner:
     def fingerprint(info):
         return snapshot(info)
 
-    def scan(self, source, token, *, start=0, start_count=0, expected=None, checkpoint_every=None):
+    def scan(self, source, token, *, start=0, start_count=0, expected=None, checkpoint_every=None, continues=None):
         """Yield candidates from ``start``; ``checkpoint_every`` seconds also yields ScanCheckpoint.
 
         Resuming at a checkpoint (or right after the last stored candidate)
         with ``start_count`` stored candidates yields exactly the candidates an
         uninterrupted scan would have produced from there. ``expected`` is the
-        source identity recorded by the original run.
+        source identity recorded by the original run. ``continues`` names the earlier
+        task whose remaining range this scan covers (recorded with its checkpoints).
         """
         if type(start) is not int or type(start_count) is not int or start < 0 or start_count < 0:
             raise ValueError('Invalid resume position')
@@ -58,7 +59,8 @@ class SignatureScanner:
                 count = start_count
                 carry = b''
                 identity, last_mark = snapshot(original), monotonic()
-                mark = lambda at: ScanCheckpoint(at, count, total, identity, {'scanner': 'signature'})
+                params = {'scanner': 'signature'} if continues is None else {'scanner': 'signature', 'continues': continues}
+                mark = lambda at: ScanCheckpoint(at, count, total, identity, params)
                 token.report_progress(min(start, max(total - 1, 0)), total, count)
                 if checkpoint_every is not None:
                     yield mark(start)

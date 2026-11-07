@@ -50,13 +50,13 @@ def check_access(repository, candidate_ids, data_dir, destination=None):
 
 
 class _Progress:
-    def __init__(self, token, total): self.token, self.total, self.processed, self.count = token, total, 0, 0
+    def __init__(self, token, total): self.token, self.total, self.processed, self.count, self.skipped = token, total, 0, 0, 0
     def checkpoint(self): self.token.checkpoint()
     def report_progress(self, processed, total, candidates, phase='computer'):
         amount = min(self.total - 1, processed * self.total // total) if total else 0
         self.processed = max(self.processed, amount)
         self.count = max(self.count, candidates)
-        self.token.report_progress(self.processed, self.total, self.count, phase='computer')
+        self.token.report_progress(self.processed, self.total, self.count, phase='computer', skipped=self.skipped)
 
 
 class ComputerScanner:
@@ -65,8 +65,14 @@ class ComputerScanner:
             raise ValueError('无效的电脑扫描上限。')
         self.data_dir, self.max_candidates, self.max_records = data_dir, max_candidates, max_records
 
-    def scan(self, path, token, *, kind='image', mode='deleted', partition_offset=None, resume=None, checkpoint_every=None):
-        """``resume`` ({position, candidates, identity, partition_size}) continues a signature scan."""
+    def scan(self, path, token, *, kind='image', mode='deleted', partition_offset=None, resume=None, checkpoint_every=None,
+             include_live=False, continues=None):
+        """``resume`` ({position, candidates, identity, partition_size}) continues a signature scan.
+
+        Signature scans skip hits lying entirely in space the volume's file system
+        still allocates (current files and metadata) unless ``include_live``;
+        ``continues`` names the earlier task whose remaining range this scan covers.
+        """
         token.checkpoint()
         if resume is not None and (mode != 'signature' or partition_offset is None):
             raise ComputerError('仅签名候选扫描可以从断点继续。')
@@ -102,7 +108,13 @@ class ComputerScanner:
                 if mode == 'signature':
                     params = {'scanner': 'computer_signature', 'kind': kind, 'partition_offset': partition.offset,
                               'partition_size': partition.size, 'file_system': partition.file_system}
-                    records = self._signatures(reader, partition, progress, start=start, count=count,
+                    if not include_live:            # absent in checkpoints of earlier versions, which kept every hit
+                        params['include_live'] = False
+                    if continues is not None:
+                        params['continues'] = continues
+                    from core.computer.allocation import allocation_map
+                    allocation = None if include_live else allocation_map(reader, partition, progress)
+                    records = self._signatures(reader, partition, progress, start=start, count=count, allocation=allocation,
                                                checkpoint=(params, original, checkpoint_every) if checkpoint_every is not None else None)
                 else:
                     from core.computer.ntfs import scan_ntfs
@@ -147,7 +159,7 @@ class ComputerScanner:
         except (OSError, ValueError) as error:
             raise ComputerError(str(error) or '电脑来源读取或文件系统解析失败。') from error
 
-    def _signatures(self, reader, partition, token, *, start=None, count=0, checkpoint=None):
+    def _signatures(self, reader, partition, token, *, start=None, count=0, checkpoint=None, allocation=None):
         start = partition.offset if start is None else start
         position, skip, carry = start, start, b''
         end = partition.offset + partition.size
@@ -165,12 +177,20 @@ class ComputerScanner:
                 match = find_signature(data, cursor, hits)
                 if match is None: break
                 at, kind = match; offset = base + at
-                if count >= self.max_candidates: raise ComputerError('签名候选数量达到上限，扫描仅部分完成。')
                 result = validate(reader, offset, end, kind, token, 64 * 1024 * 1024, 256 * 1024 * 1024)
                 if result is None:
                     cursor = at + 1; continue
-                count += 1
                 ready = result.integrity in CHECKED
+                if allocation is not None and allocation.all_allocated(offset, result.size):
+                    # Content of an existing file or of metadata: skipped the same way a stored hit
+                    # would be, so resuming from the last stored candidate repeats the same decision.
+                    token.skipped += 1
+                    skip = offset + (result.size if ready else 1); cursor = skip - base
+                    continue
+                # Checked only for a hit that would be stored; resuming after the last stored
+                # candidate reaches this same hit again.
+                if count >= self.max_candidates: raise ComputerError('签名候选数量达到上限，扫描仅部分完成。')
+                count += 1
                 kind = getattr(result, 'file_type', kind)
                 yield {'name': f'offset_{offset:016x}.{kind}', 'original_path': str(reader.path),
                     'size': result.size, 'offset': offset, 'extents': [(offset, result.size)] if ready else [],

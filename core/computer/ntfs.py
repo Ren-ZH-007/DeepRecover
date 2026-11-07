@@ -293,16 +293,8 @@ class _Bitmap:
         return bool(self.cache[page][cluster // 8 - page * 4096] & (1 << (cluster & 7)))
 
 
-def scan_ntfs(reader, partition, token, *, max_records=1000000, max_candidates=10000):
-    """Yield deleted NTFS file records; valid source extents need content hashing.
-
-    Compressed/encrypted/sparse, ATTRIBUTE_LIST and still-allocated clusters are
-    visible as partial records with no extents. Corrupt FILE records never gain
-    a verified deletion state. Limits fail explicitly and preserve prior yields.
-    """
-    if not _integer(max_records) or not _integer(max_candidates) or min(max_records, max_candidates) < 1:
-        raise ValueError('Invalid NTFS scan limits')
-    token.checkpoint()
+def open_volume(reader, partition, token):
+    """(volume, $MFT stream, $Bitmap) after checking the boot sector and both system records."""
     volume = _volume(reader, partition)
     first_offset = volume.offset + volume.mft_lcn * volume.cluster
     raw_first = _read(reader, first_offset, volume.record_size)
@@ -323,7 +315,20 @@ def scan_ntfs(reader, partition, token, *, max_records=1000000, max_candidates=1
     if not struct.unpack_from('<H', bitmap_record, 22)[0] & 1:
         raise NTFSError('NTFS $Bitmap 系统记录不是在用记录。')
     bitmap_stream, _ = _data_stream(_attributes(bitmap_record), 6, bitmap_usa, mft, volume)
-    bitmap = _Bitmap(bitmap_stream, volume.clusters, token)
+    return volume, mft, _Bitmap(bitmap_stream, volume.clusters, token)
+
+
+def scan_ntfs(reader, partition, token, *, max_records=1000000, max_candidates=10000):
+    """Yield deleted NTFS file records; valid source extents need content hashing.
+
+    Compressed/encrypted/sparse, ATTRIBUTE_LIST and still-allocated clusters are
+    visible as partial records with no extents. Corrupt FILE records never gain
+    a verified deletion state. Limits fail explicitly and preserve prior yields.
+    """
+    if not _integer(max_records) or not _integer(max_candidates) or min(max_records, max_candidates) < 1:
+        raise ValueError('Invalid NTFS scan limits')
+    token.checkpoint()
+    volume, mft, bitmap = open_volume(reader, partition, token)
     count, total = 0, mft.size // volume.record_size
     token.report_progress(0, total, count, phase='computer')
     for number in range(min(total, max_records)):

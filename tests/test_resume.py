@@ -10,7 +10,7 @@ from types import SimpleNamespace
 import unittest
 
 from app.app_config import AppConfig
-from core.computer.service import ComputerScanner
+from core.computer.service import ComputerError, ComputerScanner
 from core.scanner.resume import ResumeError, plan_resume, resume_operation, verify_resume
 from core.scanner.signature.scanner import ScanError, SignatureScanner
 from core.tasks import CancellationToken, ScanCheckpoint, TaskCancelled, TaskManager
@@ -59,6 +59,8 @@ class ResumeTests(unittest.TestCase):
             handle.future.result(60)
         except TaskCancelled:
             pass
+        except (ScanError, ComputerError) as error:     # the candidate limit; the task is recorded as failed
+            self.assertIn('上限', str(error))
         return handle.id
 
     def resume(self, task):
@@ -172,6 +174,55 @@ class ResumeTests(unittest.TestCase):
         plain = list(SignatureScanner().scan(path, CancellationToken()))
         self.assertFalse(any(isinstance(item, ScanCheckpoint) for item in plain))
 
+    # -- continuing after the candidate limit -------------------------------------
+    def run_to_end(self, first, limit, interrupt_first_continuation=False):
+        """Follow continuations (and ordinary resumes) until the source is fully searched."""
+        chain, rows = [first], list(self.repo.candidates(first))
+        interrupted = False
+        while self.repo.task(chain[-1])['status'] != 'completed':
+            plan = plan_resume(self.repo, chain[-1], max_candidates=limit)
+            verify_resume(self.repo, plan, self.config.data_dir)
+            if plan.continuation:
+                self.assertEqual(plan.candidates, 0)
+                record = self.repo.source(plan.source_id)
+                operation = resume_operation(plan, self.config.data_dir, max_candidates=limit)
+                if interrupt_first_continuation and not interrupted:
+                    interrupted, inner = True, operation
+                    operation = lambda token: interrupt_after(inner(token), token, 2)
+                new = self.run_task(plan.kind, operation, DataSource(record['kind'], record['locator'], record['label']))
+                self.assertEqual(self.repo.scan_checkpoint(new)['params']['continues'], chain[-1])
+                with self.assertRaisesRegex(ResumeError, '后续任务'):
+                    plan_resume(self.repo, chain[-1], max_candidates=limit)
+                chain.append(new); rows.extend(self.repo.candidates(new))
+            else:
+                before = self.repo.candidate_count(chain[-1])
+                self.run_task(plan.kind, resume_operation(plan, self.config.data_dir, max_candidates=limit),
+                              SimpleNamespace(id=plan.source_id), chain[-1])
+                rows.extend(self.repo.candidates(chain[-1])[before:])
+        return chain, rows
+
+    def test_computer_scan_at_the_limit_continues_in_new_tasks(self):
+        path = self.root / '大 镜像.img'; path.write_bytes(source_bytes(3_300_000))
+        reference = summary(self.repo.candidates(self.computer_scan(path)))
+        limit = 7
+        first = self.run_task('computer_scan', lambda token: ComputerScanner(self.config.data_dir, max_candidates=limit).scan(
+            path, token, kind='image', mode='signature', partition_offset=0, checkpoint_every=0), DataSource('computer', str(path), 'raw'))
+        self.assertEqual((self.repo.task(first)['status'], self.repo.candidate_count(first)), ('failed', limit))
+        chain, rows = self.run_to_end(first, limit, interrupt_first_continuation=True)
+        self.assertGreater(len(chain), 3)
+        self.assertEqual(summary(rows), reference)
+        self.assertTrue(all(self.repo.candidate_count(task) <= limit for task in chain))
+
+    def test_file_scan_at_the_limit_continues_in_new_tasks(self):
+        path = self.root / 'disk.img'; path.write_bytes(source_bytes(1_500_000))
+        reference = summary(self.repo.candidates(self.image_scan(path)))
+        limit = 5
+        first = self.run_task('signature_scan', lambda token: SignatureScanner(max_candidates=limit).scan(path, token, checkpoint_every=0),
+                              DataSource('image', str(path), path.name))
+        self.assertEqual(self.repo.task(first)['status'], 'failed')
+        _chain, rows = self.run_to_end(first, limit)
+        self.assertEqual(summary(rows), reference)
+
     # -- computer signature scans ----------------------------------------------
     def computer_scan(self, path, limit=None):
         source = DataSource('computer', str(path), 'raw')
@@ -192,6 +243,27 @@ class ResumeTests(unittest.TestCase):
                 plan = self.resume(task)
                 self.assertEqual(plan.params['scanner'], 'computer_signature')
                 self.assertEqual(self.repo.task(task)['status'], 'completed')
+                self.assertEqual(summary(self.repo.candidates(task)), reference)
+
+    def test_resume_repeats_live_space_skipping(self):
+        from tests.fat_fixture import Fat32Fixture
+        volume = Fat32Fixture()
+        data = source_bytes(1_200_000)
+        start = volume.cluster_offset(10)
+        volume.data[start:start + len(data)] = data
+        for cluster in range(10, 10 + len(data) // 512, 3):        # every third cluster belongs to a live file
+            volume.set_fat(cluster, 0x0fffffff)
+        path = self.root / 'fat.img'; path.write_bytes(volume.data)
+        reference = summary(self.repo.candidates(self.computer_scan(path)))
+        everything = summary(self.repo.candidates(self.run_task('computer_scan', lambda token: ComputerScanner(self.config.data_dir).scan(
+            path, token, kind='image', mode='signature', partition_offset=0, include_live=True), DataSource('computer', str(path), 'raw'))))
+        self.assertGreater(len(reference), 5)
+        self.assertGreater(len(everything), len(reference))
+        for limit in (1, 3, len(reference) // 2):
+            with self.subTest(limit=limit):
+                task = self.computer_scan(path, limit)
+                self.assertIs(self.repo.scan_checkpoint(task)['params']['include_live'], False)
+                self.resume(task)
                 self.assertEqual(summary(self.repo.candidates(task)), reference)
 
     def test_computer_resume_refuses_changed_image_and_deleted_mode(self):

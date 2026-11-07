@@ -30,6 +30,7 @@ class Progress:
     total: int
     candidates: int
     phase: str = 'scan'
+    skipped: int = 0          # signature hits inside space a live file system still uses
 
 class CancellationToken:
     def __init__(self):
@@ -47,13 +48,15 @@ class CancellationToken:
         with self._progress_lock:
             return self._progress
 
-    def report_progress(self, processed, total, candidates, phase='scan'):
-        if not 0 <= processed <= total or candidates < 0:
+    def report_progress(self, processed, total, candidates, phase='scan', skipped=None):
+        if not 0 <= processed <= total or candidates < 0 or (skipped is not None and skipped < 0):
             raise ValueError('Invalid progress')
         with self._progress_lock:
             if self._progress and (total != self._progress.total or processed < self._progress.processed or candidates < self._progress.candidates):
                 raise ValueError('Progress cannot go backwards')
-            self._progress = Progress(processed, total, candidates, phase)
+            if skipped is None:
+                skipped = self._progress.skipped if self._progress else 0
+            self._progress = Progress(processed, total, candidates, phase, skipped)
 
 @dataclass
 class TaskHandle:
