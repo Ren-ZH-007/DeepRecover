@@ -1,11 +1,13 @@
 """Computer recovery orchestration, with explicit deletion evidence and limits."""
 from pathlib import Path
+from time import monotonic
 
 from core.computer.content import checked_extents, extent_digest, MAX_FILE_SIZE
 from core.computer.devices import ensure_different_device
 from core.computer.io import DiskReader, DiskError
 from core.computer.partitions import Partition, PartitionError, source_partitions
 from core.scanner.validation import validate, find_signature, CHECKED, INVALID
+from core.tasks import ScanCheckpoint
 from storage.models.candidate import Candidate, CandidateStatus
 
 
@@ -60,8 +62,13 @@ class ComputerScanner:
             raise ValueError('无效的电脑扫描上限。')
         self.data_dir, self.max_candidates, self.max_records = data_dir, max_candidates, max_records
 
-    def scan(self, path, token, *, kind='image', mode='deleted', partition_offset=None):
+    def scan(self, path, token, *, kind='image', mode='deleted', partition_offset=None, resume=None, checkpoint_every=None):
+        """``resume`` ({position, candidates, identity, partition_size}) continues a signature scan."""
         token.checkpoint()
+        if resume is not None and (mode != 'signature' or partition_offset is None):
+            raise ComputerError('仅签名候选扫描可以从断点继续。')
+        if checkpoint_every is not None and mode != 'signature':
+            raise ComputerError('仅签名候选扫描记录断点。')
         if kind == 'device':
             if self.data_dir is None: raise ComputerError('扫描原始磁盘前必须指定其他物理盘上的工作目录。')
             ensure_different_device(path, self.data_dir)
@@ -73,16 +80,27 @@ class ComputerScanner:
                 raise ComputerError('不能扫描正在使用的程序数据库或日志。')
         try:
             with DiskReader(path, kind) as reader:
-                original = reader.check()
+                original = reader.check(resume['identity'] if resume is not None else None)
                 partitions = source_partitions(reader)
                 if partition_offset is None:
                     partition = next((p for p in partitions if p.file_system in ('NTFS', 'FAT32', 'exFAT')), partitions[0]) if mode == 'deleted' else partitions[0]
                 else:
                     partition = next((p for p in partitions if p.offset == partition_offset), None)
                     if partition is None: raise ComputerError('所选分区已变化，请重新检测来源。')
+                start, count = partition.offset, 0
+                if resume is not None:
+                    start, count = resume['position'], resume['candidates']
+                    if (resume.get('partition_size') != partition.size or type(start) is not int or type(count) is not int
+                            or not partition.offset <= start <= partition.offset + partition.size or count < 0):
+                        raise ComputerError('所选分区或断点已变化，不能继续；请重新扫描。')
                 progress = _Progress(token, partition.size)
-                token.report_progress(0, partition.size, 0, phase='computer')
-                if mode == 'signature': records = self._signatures(reader, partition, progress)
+                progress.processed = min(start - partition.offset, max(partition.size - 1, 0)); progress.count = count
+                token.report_progress(progress.processed, partition.size, count, phase='computer')
+                if mode == 'signature':
+                    params = {'scanner': 'computer_signature', 'kind': kind, 'partition_offset': partition.offset,
+                              'partition_size': partition.size, 'file_system': partition.file_system}
+                    records = self._signatures(reader, partition, progress, start=start, count=count,
+                                               checkpoint=(params, original, checkpoint_every) if checkpoint_every is not None else None)
                 else:
                     from core.computer.ntfs import scan_ntfs
                     from core.computer.fat import scan_fat32
@@ -91,9 +109,10 @@ class ComputerScanner:
                     if engine is None: raise ComputerError('此文件系统暂不支持删除记录解析；可选择签名候选扫描。')
                     limit = {'max_records' if partition.file_system == 'NTFS' else 'max_entries': self.max_records}
                     records = engine(reader, partition, progress, max_candidates=self.max_candidates, **limit)
-                count = 0
                 for record in records:
                     token.checkpoint()
+                    if isinstance(record, ScanCheckpoint):
+                        yield record; continue
                     if count >= self.max_candidates: raise ComputerError('电脑候选达到上限，扫描仅部分完成。')
                     size = record['size']; status = record['status']; integrity = record['integrity']
                     extents, digest = (), None
@@ -117,15 +136,21 @@ class ComputerScanner:
                         file_system=record.get('file_system', partition.file_system),
                         deletion_state=record.get('deletion_state', 'unknown'), record_id=record.get('record_id'),
                         structure_details=record.get('structure_details'),
-                        modified_at=record.get('modified_at'), modified_basis=record.get('modified_basis'))
+                        modified_at=record.get('modified_at'), modified_basis=record.get('modified_basis'),
+                        scan_next=record.get('scan_next'))
                 reader.check(original); token.checkpoint()
                 token.report_progress(partition.size, partition.size, progress.count, phase='computer')
         except (OSError, ValueError) as error:
             raise ComputerError(str(error) or '电脑来源读取或文件系统解析失败。') from error
 
-    def _signatures(self, reader, partition, token):
-        position, skip, carry, count = partition.offset, partition.offset, b'', 0
+    def _signatures(self, reader, partition, token, *, start=None, count=0, checkpoint=None):
+        start = partition.offset if start is None else start
+        position, skip, carry = start, start, b''
         end = partition.offset + partition.size
+        last_mark = monotonic()
+        if checkpoint is not None:
+            params, identity, every = checkpoint
+            yield ScanCheckpoint(start, count, end, identity, params)
         while position < end:
             token.checkpoint()
             block = reader.read_at(position, min(1024 * 1024, end - position))
@@ -145,9 +170,13 @@ class ComputerScanner:
                     'size': result.size, 'offset': offset, 'extents': [(offset, result.size)] if ready else [],
                     'integrity': result.integrity, 'status': 'candidate' if ready else ('failed' if result.integrity in INVALID else 'partial'),
                     'file_system': partition.file_system, 'deletion_state': 'unknown',
-                    'structure_details': getattr(result, 'details', None)}
+                    'structure_details': getattr(result, 'details', None), 'scan_next': offset + (result.size if ready else 1)}
                 skip = offset + (result.size if ready else 1); cursor = skip - base
             position += len(block)
             if skip > position: position, carry = skip, b''
             else: carry = data[-7:]
-            token.report_progress(min(max(skip, position - len(carry)) - partition.offset, partition.size - 1), partition.size, count)
+            searched = max(skip, position - len(carry))
+            token.report_progress(min(searched - partition.offset, partition.size - 1), partition.size, count)
+            if checkpoint is not None and monotonic() - last_mark >= every:
+                last_mark = monotonic()
+                yield ScanCheckpoint(min(searched, end), count, end, identity, params)

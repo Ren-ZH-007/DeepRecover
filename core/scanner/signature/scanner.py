@@ -1,10 +1,12 @@
 from pathlib import Path
 import os
 import stat
+from time import monotonic
 
 from core.scanner.validation import validate, find_signature, CHECKED, INVALID, SIGNATURES
 from storage.models.candidate import Candidate, CandidateStatus
 from core.candidate_io import snapshot, range_digest
+from core.tasks import ScanCheckpoint
 
 
 class ScanError(RuntimeError):
@@ -28,7 +30,16 @@ class SignatureScanner:
     def fingerprint(info):
         return snapshot(info)
 
-    def scan(self, source, token):
+    def scan(self, source, token, *, start=0, start_count=0, expected=None, checkpoint_every=None):
+        """Yield candidates from ``start``; ``checkpoint_every`` seconds also yields ScanCheckpoint.
+
+        Resuming at a checkpoint (or right after the last stored candidate)
+        with ``start_count`` stored candidates yields exactly the candidates an
+        uninterrupted scan would have produced from there. ``expected`` is the
+        source identity recorded by the original run.
+        """
+        if type(start) is not int or type(start_count) is not int or start < 0 or start_count < 0:
+            raise ValueError('Invalid resume position')
         source = Path(source).resolve()
         token.checkpoint()
         try:
@@ -38,10 +49,19 @@ class SignatureScanner:
                 original = os.fstat(search.fileno())
                 if not stat.S_ISREG(original.st_mode) or self.fingerprint(original) != self.fingerprint(os.fstat(container.fileno())):
                     raise ScanError('源文件不可用或已变化，请重新选择稳定的本地文件。')
+                if expected is not None and snapshot(original) != expected:
+                    raise ScanError('源文件已变化，不能从断点继续；请重新扫描。')
                 total = original.st_size
-                position = skip = count = 0
+                if start > total:
+                    raise ScanError('断点超出源文件长度，不能继续；请重新扫描。')
+                position = skip = start
+                count = start_count
                 carry = b''
-                token.report_progress(0, total, count)
+                identity, last_mark = snapshot(original), monotonic()
+                mark = lambda at: ScanCheckpoint(at, count, total, identity, {'scanner': 'signature'})
+                token.report_progress(min(start, max(total - 1, 0)), total, count)
+                if checkpoint_every is not None:
+                    yield mark(start)
                 while position < total:
                     token.checkpoint()
                     search.seek(position)
@@ -66,13 +86,15 @@ class SignatureScanner:
                         ready = validation.integrity in CHECKED
                         kind = getattr(validation, 'file_type', kind)
                         digest = range_digest(container, offset, validation.size, token) if ready else None
+                        following = offset + (validation.size if ready else 1)
                         yield Candidate(source='signature_scan', name=f'offset_{offset:016x}.{kind}',
                             file_type=kind, size=validation.size, original_path=str(source), offset=offset,
                             integrity=validation.integrity, structure_details=getattr(validation, 'details', None),
                             sha256=digest, source_stat=snapshot(original),
                             status=CandidateStatus.CANDIDATE if ready else (
-                                CandidateStatus.FAILED if validation.integrity in INVALID else CandidateStatus.PARTIAL))
-                        skip = offset + (validation.size if ready else 1)
+                                CandidateStatus.FAILED if validation.integrity in INVALID else CandidateStatus.PARTIAL),
+                            scan_next=following)
+                        skip = following
                         cursor = skip - base
                     position += len(block)
                     if skip > position:
@@ -83,7 +105,11 @@ class SignatureScanner:
                     # Keep the overlap unreported until the next search so
                     # offsets straddling blocks never make progress go back.
                     # Completion also requires the final source-identity check.
-                    token.report_progress(min(max(skip, position - len(carry)), total - 1), total, count)
+                    searched = max(skip, position - len(carry))
+                    token.report_progress(min(searched, total - 1), total, count)
+                    if checkpoint_every is not None and monotonic() - last_mark >= checkpoint_every:
+                        last_mark = monotonic()
+                        yield mark(min(searched, total))
                 if self.fingerprint(original) != self.fingerprint(os.fstat(search.fileno())) or self.fingerprint(original) != self.fingerprint(source.stat()):
                     raise ScanError('源文件在扫描期间发生变化，结果不可视为完整。')
                 token.checkpoint()

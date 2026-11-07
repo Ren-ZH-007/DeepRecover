@@ -6,6 +6,24 @@ import logging
 class TaskCancelled(Exception):
     pass
 
+
+RESUMABLE_STATUSES = frozenset({'cancelled', 'interrupted', 'failed'})
+
+@dataclass(frozen=True)
+class ScanCheckpoint:
+    """Resumable scan position, yielded between candidates when requested.
+
+    ``position`` is the first source offset not yet fully searched; every
+    candidate starting before it has already been yielded. The task runner
+    commits pending candidates before recording it.
+    """
+    position: int
+    candidates: int
+    total: int
+    identity: dict
+    params: dict
+
+
 @dataclass(frozen=True)
 class Progress:
     processed: int
@@ -52,10 +70,18 @@ class TaskManager:
         self.handles = []
         self._handles_lock = Lock()
 
-    def submit(self, kind, operation, *, persist_candidates=False, source=None, batch_size=100, with_task_id=False):
+    def submit(self, kind, operation, *, persist_candidates=False, source=None, batch_size=100, with_task_id=False,
+               resume_task=None):
+        """Run ``operation``; ``resume_task`` continues an existing task instead of creating one."""
         if not 1 <= batch_size <= 1000:
             raise ValueError("Invalid batch size")
-        task_id = self.repository.create_task(kind, source)
+        if resume_task is None:
+            task_id = self.repository.create_task(kind, source)
+        else:
+            task = self.repository.task(resume_task)
+            if task is None or task['kind'] != kind or task['status'] not in RESUMABLE_STATUSES:
+                raise ValueError('Task cannot be resumed')
+            task_id = resume_task
         token = CancellationToken()
         def run():
             self.repository.update_task(task_id, "running")
@@ -93,6 +119,15 @@ class TaskManager:
         try:
             batch, count = [], 0
             for candidate in iterator:
+                if isinstance(candidate, ScanCheckpoint):
+                    # Never record a position ahead of uncommitted candidates.
+                    if batch:
+                        self.repository.add_candidates(task_id, batch)
+                        count += len(batch)
+                        batch.clear()
+                    self.repository.save_checkpoint(task_id, candidate)
+                    token.checkpoint()
+                    continue
                 # Persist completed pulls before honoring cancellation at the
                 # storage hand-off. Acquisition uses one file per transaction.
                 if not candidate.acquired_at:

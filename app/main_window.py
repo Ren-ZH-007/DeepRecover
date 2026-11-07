@@ -1,4 +1,5 @@
 import sys
+from types import SimpleNamespace
 from PySide6.QtCore import Qt, QTimer, QDate
 from PySide6.QtGui import QPixmap, QColor, QAction, QKeySequence
 from PySide6.QtWidgets import (QAbstractItemView, QFileDialog, QHBoxLayout, QLabel,
@@ -21,6 +22,7 @@ from storage.models.classification import category
 from core.export.service import export_batch, ExportError
 from ui.recovery.export_history import ExportHistory
 from core.file_times import display_time
+from core.scanner.resume import CHECKPOINT_SECONDS, ResumeError, plan_resume, resume_operation, verify_resume
 from core.progress_rate import RateEstimator, describe_rate, format_bytes
 from ui.recovery.presentation import (candidate_status, content_check, deletion_evidence, video_check_details, pdf_check_details,
     export_guidance, task_status, task_kind, source_kind, error_text, duplicate_label, modified_time_note)
@@ -326,10 +328,14 @@ class MainWindow(QMainWindow):
 
         box = self.page('任务与处理记录', '最近 200 个非预览任务。双击一条记录，重新打开候选结果或导出校验记录。')
         row = QHBoxLayout(); box.addLayout(row)
-        self.button(row,'刷新记录',self.refresh_history,'secondary','refresh'); self.button(row,'打开选中结果',self.open_history_result,'primary','folder'); row.addStretch(); self.button(row,'停止当前任务',self.cancel_task,'danger','stop')
+        self.button(row,'刷新记录',self.refresh_history,'secondary','refresh'); self.button(row,'打开选中结果',self.open_history_result,'primary','folder')
+        self.resume_button = self.button(row,'从断点继续',self.resume_history_task,'secondary','play'); self.resume_button.setEnabled(False)
+        row.addStretch(); self.button(row,'停止当前任务',self.cancel_task,'danger','stop')
         self.history_table = self.table(['任务类型','状态','更新时间 / UTC','错误类型']); box.addWidget(self.history_table,1)
         self.history_table.cellDoubleClicked.connect(lambda *_: self.open_history_result())
-        label = QLabel('中断或取消仅保留已提交的部分记录，不支持断点续扫。'); label.setObjectName('sectionNote'); box.addWidget(label)
+        self.history_table.itemSelectionChanged.connect(self.refresh_resume_button)
+        label = QLabel('中断、停止或读取失败的签名扫描可从断点继续：会先重新核对来源身份和最近已校验候选的摘要，结果并入原任务。删除记录解析需重新扫描。')
+        label.setObjectName('sectionNote'); label.setWordWrap(True); box.addWidget(label)
 
         box = self.page('工作空间设置', '选择本地工作目录，每个目录独立保留历史；正在处理任务时不能切换。', scrollable=True)
         data = self.card(box,'本地工作目录')
@@ -349,17 +355,20 @@ class MainWindow(QMainWindow):
         self.computer_page = ComputerPage(self)
         self.stack.addWidget(self.computer_page)
 
-    def run_task(self, kind, operation, on_success, *, persist_candidates=False, source=None, batch_size=100, with_task_id=False):
+    def run_task(self, kind, operation, on_success, *, persist_candidates=False, source=None, batch_size=100, with_task_id=False,
+                 resume_task=None):
         if self.pending or self.computer_page.readonly_pending:
             self.statusBar().showMessage('已有任务执行中，请等待或在任务记录页停止。'); return
         self.stop_previews()
         self.rate = RateEstimator(); self.scan_base_text = None
         self.pending = (self.manager.submit(kind, operation, persist_candidates=persist_candidates,
-                                            source=source, batch_size=batch_size, with_task_id=with_task_id), on_success)
+                                            source=source, batch_size=batch_size, with_task_id=with_task_id,
+                                            resume_task=resume_task), on_success)
         self.computer_page.refresh_controls()
         self.workspace_button.setEnabled(False)
         self.diagnostics_button.setEnabled(False)
         self.statusBar().showMessage('任务执行中…')
+        self.refresh_resume_button()
 
     def poll(self):
         self.computer_page.poll()
@@ -383,6 +392,7 @@ class MainWindow(QMainWindow):
             return
         handle, callback = self.pending
         self.pending = None
+        self.refresh_resume_button()
         try:
             result = handle.future.result()
             callback(result, handle.id)
@@ -628,7 +638,7 @@ class MainWindow(QMainWindow):
         source = self.scan_source
         self.scan_progress.setValue(0)
         self.scan_status.setText('正在只读扫描…')
-        self.run_task('signature_scan', lambda token: SignatureScanner().scan(source, token),
+        self.run_task('signature_scan', lambda token: SignatureScanner().scan(source, token, checkpoint_every=CHECKPOINT_SECONDS),
                       lambda _, task_id: self.open_results(task_id), persist_candidates=True,
                       source=DataSource('image', str(source), source.name), batch_size=1)
 
@@ -788,6 +798,58 @@ class MainWindow(QMainWindow):
                 self.explain_item(self.history_table.item(row,column), display)
             if task['id'] == selected_id:
                 self.history_table.selectRow(row)
+        self.refresh_resume_button()
+
+    def selected_history_task(self):
+        row = self.history_table.currentRow()
+        return self.history[row] if 0 <= row < len(self.history) and self.history_table.selectionModel().isRowSelected(row) else None
+
+    def refresh_resume_button(self):
+        task = self.selected_history_task()
+        try:
+            resumable = task is not None and plan_resume(self.repository, task['id']) is not None
+        except (ResumeError, ValueError):
+            resumable = False
+        busy = bool(self.pending or self.computer_page.readonly_pending)
+        self.resume_button.setEnabled(resumable and not busy)
+        self.resume_button.setToolTip('' if resumable else '只有中断、停止或读取失败且留有断点记录的签名扫描可以继续。')
+
+    def resume_history_task(self):
+        task = self.selected_history_task()
+        if task is None:
+            self.statusBar().showMessage('请先选择一条历史任务。'); return
+        if self.pending or self.computer_page.readonly_pending:
+            self.statusBar().showMessage('已有任务执行中，请等待或在任务记录页停止。'); return
+        try:
+            plan = plan_resume(self.repository, task['id'])
+        except ResumeError as error:
+            self.statusBar().showMessage(str(error)); return
+        percent = plan.searched * 100 // plan.size if plan.size else 100
+        text = (f'来源：{plan.path}\n已搜索 {format_bytes(plan.searched)} / {format_bytes(plan.size)}（约 {percent}%），'
+                f'已保存 {plan.candidates} 个候选。\n\n继续前会只读核对来源身份，并重新计算最近已校验候选的 SHA-256；'
+                '任何一项不一致都不会继续。新候选并入原任务。是否继续？')
+        if QMessageBox.question(self, '从断点继续扫描', text, QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                                QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
+            return
+        data_dir = self.config.data_dir
+        def begin(_checked):
+            done = (lambda _count, task_id: self.open_results(task_id))
+            if plan.kind == 'signature_scan':
+                self.nav.setCurrentRow(3)
+                self.scan_progress.setValue(plan.searched * 1000 // plan.size if plan.size else 0)
+                self.scan_status.setText('已核对来源，正在从断点继续只读扫描…')
+            else:
+                self.nav.setCurrentRow(7)
+            self.run_task(plan.kind, resume_operation(plan, data_dir), done, persist_candidates=True,
+                          source=SimpleNamespace(id=plan.source_id), batch_size=1, resume_task=plan.task_id)
+            if self.pending and plan.kind == 'computer_scan':
+                self.computer_page.active_task_id = self.pending[0].id
+                self.computer_page.status.setText('已核对来源，正在从断点继续只读扫描…')
+                self.computer_page.refresh_controls()
+            self.refresh_history()
+        self.computer_page._readonly(lambda: verify_resume(self.repository, plan, data_dir), begin,
+                                     '正在只读核对来源身份和已保存候选的摘要…',
+                                     lambda message: self.statusBar().showMessage(message))
 
     def cancel_task(self):
         self.stop_previews()
