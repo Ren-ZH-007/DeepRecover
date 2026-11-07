@@ -2,11 +2,11 @@
 
 个人自用、本地运行的手机与电脑数据恢复工作台。目标平台：Windows 10/11 x64、macOS 13+（Apple Silicon / Intel），Python 3.12 + PySide6 + SQLite。
 
-**当前预览版本：[v0.10.0](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.10.0)，已发布 Windows 和 macOS 双架构包，新增签名扫描断点续扫、Office 文档与音频签名扫描、APFS 删除记录与快照、结果搜索与日期筛选、保留原文件名导出。** 电脑功能的范围与使用方法见 [电脑恢复](docs/COMPUTER_RECOVERY.md)，macOS 启动说明见 [macOS 适配](docs/MACOS.md)。
+**当前预览版本：[v0.10.1](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.10.1)，已发布 Windows 和 macOS 双架构包：签名扫描跳过现存文件、达到上限后可继续扫描、更清楚的磁盘权限提示、结果默认隐藏系统文件；v0.10.0 新增断点续扫、Office 与音频签名扫描、APFS 删除记录与快照。** 电脑功能的范围与使用方法见 [电脑恢复](docs/COMPUTER_RECOVERY.md)，macOS 启动说明见 [macOS 适配](docs/MACOS.md)。
 
 v0.8.0 的支持范围与边界见[视频签名扫描](docs/VIDEO_SIGNATURE_SCAN.md)及[测试与截图](docs/VIDEO_SIGNATURE_TEST_REPORT_20261105.md)，正式附件下载核验见[发布记录](docs/releases/0.8.0/PUBLISHED.json)。签名候选的删除状态未知，不重组碎片或推断原文件尾随数据。
 
-v0.10.0 新增的 Office 文档签名扫描（docx / xlsx / pptx、doc / xls / ppt）及碎片文件的限制见[说明](docs/OFFICE_SIGNATURE_SCAN.md)，音频签名扫描（WAV / MP3 / M4A）见[说明](docs/AUDIO_SIGNATURE_SCAN.md)，APFS 删除记录与快照见[说明](docs/APFS_DELETED_RECORDS.md)；正式附件、摘要和三平台门禁核验见[发布记录](docs/releases/0.10.0/PUBLISHED.json)。
+v0.10.0 新增的 Office 文档签名扫描（docx / xlsx / pptx、doc / xls / ppt）及碎片文件的限制见[说明](docs/OFFICE_SIGNATURE_SCAN.md)，音频签名扫描（WAV / MP3 / M4A）见[说明](docs/AUDIO_SIGNATURE_SCAN.md)，APFS 删除记录与快照见[说明](docs/APFS_DELETED_RECORDS.md)；正式附件、摘要和三平台门禁核验见 [v0.10.0](docs/releases/0.10.0/PUBLISHED.json) 和 [v0.10.1](docs/releases/0.10.1/PUBLISHED.json) 的发布记录。
 
 v0.9.0 的 PDF 支持范围见[说明](docs/PDF_PREVIEW.md)及[测试与截图](docs/PDF_TEST_REPORT_20261105.md)，正式附件、摘要和三平台门禁核验见[发布记录](docs/releases/0.9.0/PUBLISHED.json)。候选删除状态未知，M5 实机按要求保留未执行状态。
 

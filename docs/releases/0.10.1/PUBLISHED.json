@@ -1,0 +1,51 @@
+{
+  "success": true,
+  "tag": "v0.10.1",
+  "source_commit": "d6f1093538547f27d4637ea331f453627aeed886",
+  "release_url": "https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.10.1",
+  "build_url": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/42357106656",
+  "published_at_utc": "2026-11-07T08:56:31Z",
+  "published_at_asia_shanghai": "2026-11-07T16:56:31+08:00",
+  "workflow_run_conclusion": "success",
+  "pre_release": true,
+  "previous_attempts": [
+    {
+      "run": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/42355640835",
+      "result": "Windows test opened a macOS /dev path and failed; nothing published (#43)"
+    },
+    {
+      "run": "https://github.com/Ren-ZH-007/DeepRecover/actions/runs/42356374248",
+      "result": "all tests passed but the new Windows skip was not registered in the release gate; nothing published (#44)"
+    }
+  ],
+  "assets": [
+    {
+      "name": "DeepRecover-v0.10.1-macos-arm64.zip",
+      "bytes": 48090353,
+      "sha256": "de7235569fe3f9cc6291f0dc9eafc36fa70411cc36cbb291d182cdff06096491",
+      "download_url": "https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.10.1/DeepRecover-v0.10.1-macos-arm64.zip",
+      "zip_crc": "passed",
+      "architecture": "arm64"
+    },
+    {
+      "name": "DeepRecover-v0.10.1-macos-x86_64.zip",
+      "bytes": 52957217,
+      "sha256": "c650cafc169be20d31cde6e57a65a8a5846a033511f6ca80d12bb4fd2dc006f3",
+      "download_url": "https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.10.1/DeepRecover-v0.10.1-macos-x86_64.zip",
+      "zip_crc": "passed",
+      "architecture": "x86_64"
+    },
+    {
+      "name": "DeepRecover-v0.10.1-windows-x64.zip",
+      "bytes": 61594318,
+      "sha256": "439b401fdfe77d16be33a5672bbdc6842387e2849473ae83431bf9bdfc72fcc2",
+      "download_url": "https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.10.1/DeepRecover-v0.10.1-windows-x64.zip",
+      "zip_crc": "passed",
+      "architecture": "x64"
+    }
+  ],
+  "sha256sums_verified_after_download": true,
+  "checks": "macOS Mach-O architecture and bundle version 0.10.1, Windows PE machine 0x8664",
+  "macos_signing": "ad-hoc; no Developer ID certificate; not notarized",
+  "physical_device_acceptance": "not_run"
+}

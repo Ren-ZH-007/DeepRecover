@@ -1,0 +1,3 @@
+439b401fdfe77d16be33a5672bbdc6842387e2849473ae83431bf9bdfc72fcc2  DeepRecover-v0.10.1-windows-x64.zip
+de7235569fe3f9cc6291f0dc9eafc36fa70411cc36cbb291d182cdff06096491  DeepRecover-v0.10.1-macos-arm64.zip
+c650cafc169be20d31cde6e57a65a8a5846a033511f6ca80d12bb4fd2dc006f3  DeepRecover-v0.10.1-macos-x86_64.zip
