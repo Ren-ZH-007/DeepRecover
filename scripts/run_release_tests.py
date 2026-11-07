@@ -12,6 +12,8 @@ os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 WINDOWS_SKIPS = {
     'test_export.ExportTests.test_replaced_target_is_neither_verified_nor_deleted_as_owned_output',
     'test_qa_regressions.DetailedQaRegressions.test_manifest_symlink_cannot_escape_selected_backup',
+    # Opens a macOS /dev path; the hint text itself is tested on every platform.
+    'test_live_space.PermissionHintTests.test_denied_device_open_explains_what_to_do',
 }
 
 
