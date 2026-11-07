@@ -56,6 +56,13 @@ def content_check(value):
         'pdf_encrypted': ('加密 PDF 暂不支持', '检测到加密标记，不尝试密码或解密。', 'warning'),
         'pdf_active_content': ('PDF 含活动内容', '脚本、表单、附件等活动内容不在静态预览范围内，不执行这些内容。', 'warning'),
         'pdf_external_reference': ('PDF 含外部引用', '不读取引用的外部文档、文件或网络地址。', 'warning'),
+        'office_structure_checked': ('Office 文档结构检查通过', '新版文档：已核对 ZIP 条目与中央目录、逐项解压校验 CRC-32，并确认内容类型和主文档部件；范围止于中央目录结束记录。旧版文档：已核对复合文档扇区表、目录树和每个数据流的扇区链；范围止于最高的已分配扇区。未打开或渲染文档，不能证明内容完整或曾被删除。', 'info'),
+        'office_truncated': ('Office 文档截断', '未找到完整的结束记录或所需扇区就到达来源结尾，不能导出。', 'warning'),
+        'office_invalid_structure': ('Office 结构检查失败', 'ZIP 条目、CRC-32、内容类型、关系或复合文档扇区链不一致。', 'danger'),
+        'office_validation_limit': ('达到 Office 检查限制', '超过单项 64 MiB、解压总量、条目或目录项上限，未完成验证。', 'warning'),
+        'office_unsupported': ('暂不支持此 Office 布局', '分卷或 ZIP64 压缩包、非常见压缩方式，或无法识别的主文档类型。', 'warning'),
+        'office_encrypted': ('加密 Office 文档暂不支持', '检测到加密的压缩条目或加密的文档包，不尝试密码或解密。', 'warning'),
+        'office_active_content': ('Office 文档含宏或活动内容', '检测到 VBA 宏或 ActiveX 控件；这类内容不在静态检查范围内，不能导出。', 'warning'),
         'missing': ('来源文件缺失', '索引时未找到可访问的来源文件；历史记录仍可查看。', 'danger'),
         'truncated': ('内容截断', '检查尚未完成就到达来源结尾，当前长度不是完整文件边界。', 'warning'),
         'invalid_structure': ('结构检查失败', '图片容器不符合支持的结构要求。', 'danger'),
@@ -197,6 +204,23 @@ def video_check_details(candidate):
     if any(type(n) is not int or not 1 <= n <= 200000 for n in counts):
         return ''
     return f'检查版本 1 · {counts[0]} 个轨道 · {counts[1]} 个采样 · {counts[2]} 个块 · {counts[3]} 个媒体盒。边界：最后必需盒末尾；未逐帧解码。'
+
+
+def office_check_details(candidate):
+    details = candidate.get('structure_details')
+    if candidate.get('integrity') != 'office_structure_checked' or not isinstance(details, dict):
+        return ''
+    if details.get('check_version') != 1 or details.get('rendered') is not False:
+        return ''
+    if details.get('container') == 'ooxml' and details.get('boundary_basis') == 'end_of_central_directory':
+        entries, main = details.get('entries'), details.get('main_part')
+        if type(entries) is int and 1 <= entries <= 10000 and isinstance(main, str) and 0 < len(main) <= 200:
+            return f'检查版本 1 · 新版 Office 文档 · {entries} 个条目 · 主文档 {main}。边界：中央目录结束记录；未打开文档。'
+    if details.get('container') == 'ole2' and details.get('boundary_basis') == 'highest_allocated_sector':
+        streams, sector = details.get('streams'), details.get('sector_size')
+        if type(streams) is int and 1 <= streams <= 10000 and sector in (512, 4096):
+            return f'检查版本 1 · 旧版 Office 复合文档 · {streams} 个数据流 · 扇区 {sector} 字节。边界：最高已分配扇区；未打开文档。'
+    return ''
 
 
 def pdf_check_details(candidate):

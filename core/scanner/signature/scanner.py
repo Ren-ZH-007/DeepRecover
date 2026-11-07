@@ -70,10 +70,11 @@ class SignatureScanner:
                         raise ScanError('源文件在扫描期间发生变化，结果不完整。')
                     data = carry + block
                     base = position - len(carry)
+                    hits = {}
                     cursor = max(0, skip - base)
                     while cursor < len(data):
                         token.checkpoint()
-                        match = find_signature(data, cursor)
+                        match = find_signature(data, cursor, hits)
                         if match is None:
                             break
                         at, kind = match
@@ -81,6 +82,10 @@ class SignatureScanner:
                         if count >= self.max_candidates:
                             raise ScanError('候选数量达到上限，扫描未完成；请缩小输入范围。')
                         validation = validate(container, offset, total, kind, token, self.max_file_size, self.max_decoded)
+                        if validation is None:
+                            # Not a candidate (e.g. an ordinary ZIP): keep searching, skip state unchanged.
+                            cursor = at + 1
+                            continue
                         count += 1
                         token.report_progress(offset, total, count)
                         ready = validation.integrity in CHECKED

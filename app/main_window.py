@@ -24,7 +24,7 @@ from ui.recovery.export_history import ExportHistory
 from core.file_times import display_time
 from core.scanner.resume import CHECKPOINT_SECONDS, ResumeError, plan_resume, resume_operation, verify_resume
 from core.progress_rate import RateEstimator, describe_rate, format_bytes
-from ui.recovery.presentation import (candidate_status, content_check, deletion_evidence, video_check_details, pdf_check_details,
+from ui.recovery.presentation import (candidate_status, content_check, deletion_evidence, video_check_details, pdf_check_details, office_check_details,
     export_guidance, task_status, task_kind, source_kind, error_text, duplicate_label, modified_time_note)
 from ui.computer.page import ComputerPage, check_computer_access, computer_error_types
 from app.theme import STYLE, icon, brand_icon
@@ -257,8 +257,8 @@ class MainWindow(QMainWindow):
         self.scan_progress = QProgressBar(); self.scan_progress.setRange(0,1000); self.scan_progress.setValue(0); work.addWidget(self.scan_progress)
         self.scan_status = QLabel('等待选择数据源。扫描结果将自动打开到候选索引。'); self.scan_status.setObjectName('sectionNote'); self.scan_status.setWordWrap(True); work.addWidget(self.scan_status)
         limits = self.card(box,'检查范围')
-        label = QLabel('图片 / 视频最多 64 MiB  ·  PDF 最多 16 MiB / 200 页  ·  PNG 解压上限 256 MiB  ·  最多 10,000 项'); label.setObjectName('sectionNote'); label.setWordWrap(True); limits.addWidget(label)
-        label = QLabel('视频限自包含的单 H.264 视频轨及可选 AAC 音轨；PDF 限传统交叉引用表的静态文档，不预览脚本、表单或外部引用。不重组碎片。通过检查不代表完整解码，也不能判断文件是否已删除。'); label.setObjectName('sectionNote'); label.setWordWrap(True); limits.addWidget(label)
+        label = QLabel('图片 / 视频 / Office 文档最多 64 MiB  ·  PDF 最多 16 MiB / 200 页  ·  PNG 与 Office 解压上限 256 MiB  ·  最多 10,000 项'); label.setObjectName('sectionNote'); label.setWordWrap(True); limits.addWidget(label)
+        label = QLabel('视频限自包含的单 H.264 视频轨及可选 AAC 音轨；PDF 限传统交叉引用表的静态文档，不预览脚本、表单或外部引用；Office 文档只做结构检查，不预览，含宏、加密的不能导出。只能找到连续存放的文件，不拼接碎片。通过检查不代表完整解码，也不能判断文件是否已删除。'); label.setObjectName('sectionNote'); label.setWordWrap(True); limits.addWidget(label)
         box.addStretch(1)
 
         box = self.page('查看候选结果', '筛选与预览后，按需导出；来源记录、候选状态和导出记录分别保留。')
@@ -512,9 +512,11 @@ class MainWindow(QMainWindow):
             note = QLabel(display.explanation); note.setObjectName(f'evidence-{key}-explanation')
             note.setTextFormat(Qt.TextFormat.PlainText); note.setWordWrap(True)
             note.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse); section.addWidget(note)
-            detail_text = video_check_details(candidate) or pdf_check_details(candidate)
+            detail_text = video_check_details(candidate) or pdf_check_details(candidate) or office_check_details(candidate)
             if key == 'content' and detail_text:
-                details = QLabel(detail_text); details.setObjectName('evidence-pdf-details' if candidate.get('file_type') == 'pdf' else 'evidence-video-details')
+                office = candidate.get('integrity') == 'office_structure_checked'
+                details = QLabel(detail_text); details.setObjectName('evidence-office-details' if office else
+                                                                     'evidence-pdf-details' if candidate.get('file_type') == 'pdf' else 'evidence-video-details')
                 details.setTextFormat(Qt.TextFormat.PlainText); details.setWordWrap(True); section.addWidget(details)
         layout.addStretch(1); scroll.setWidget(content); box.addWidget(scroll,1)
         close = QPushButton('关闭'); close.clicked.connect(dialog.close); box.addWidget(close)

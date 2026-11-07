@@ -93,7 +93,7 @@ class ComputerPage(QWidget):
         box = QVBoxLayout(content); box.setContentsMargins(24, 22, 24, 18); box.setSpacing(10)
         eyebrow = QLabel('DEEPRECOVER  /  COMPUTER'); eyebrow.setObjectName('pageEyebrow'); box.addWidget(eyebrow)
         title = QLabel('电脑磁盘与镜像恢复'); title.setObjectName('title'); box.addWidget(title)
-        subtitle = QLabel('选择 Windows / macOS 磁盘、U 盘或镜像，以只读方式检查删除记录或连续图片 / 视频签名。')
+        subtitle = QLabel('选择 Windows / macOS 磁盘、U 盘或镜像，以只读方式检查删除记录，或连续存放的图片 / 视频 / PDF / Office 文档签名。')
         subtitle.setObjectName('subtitle'); subtitle.setWordWrap(True); box.addWidget(subtitle)
         self.preflight_steps = QLabel('步骤 1 / 3：选择来源 → 检查工作目录与分区 → 核对后开始扫描')
         self.preflight_steps.setObjectName('sourceInfo'); self.preflight_steps.setWordWrap(True)
