@@ -12,6 +12,8 @@ MAX_METADATA = 8 * 1024 * 1024
 MAX_ENTRIES = 200000
 MAX_BOXES = 10000
 BRANDS = {b'isom', b'iso2', b'mp41', b'mp42', b'avc1', b'qt  ', b'M4V '}
+# MPEG-4 audio and audiobooks: one AAC track, no video (reported as m4a audio).
+AUDIO_BRANDS = {b'M4A ', b'M4B ', b'F4A ', b'F4B '}
 FRAGMENTED = {b'mvex', b'moof', b'mfra', b'styp', b'sidx'}
 ENCRYPTED = {b'pssh', b'encv', b'enca', b'sinf', b'senc', b'saio', b'saiz'}
 EXTERNAL = {b'rmra', b'rmda', b'rdrf', b'url ', b'urn '}
@@ -349,7 +351,8 @@ class Movie:
         ranges = []
         for _, start, end in tracks:
             ranges.extend(self.samples_for_track(start, end))
-        require(self.video_tracks == 1, 'unsupported')
+        # One H.264 video track (plus optional AAC), or a single AAC track (MPEG-4 audio).
+        require(self.video_tracks == 1 or (self.video_tracks == 0 and len(tracks) == 1), 'unsupported')
         ranges.sort()
         require(all(ranges[i - 1][1] <= ranges[i][0] for i in range(1, len(ranges))))
         return ranges
@@ -358,7 +361,7 @@ class Movie:
 def validate(stream, start, source_size, token, max_size):
     """Return an absolute-source-bounded candidate; rejected ranges are not exportable."""
     available = max(0, source_size - start)
-    seen, position, file_type = 0, 0, 'mp4'
+    seen, position, file_type, prefix = 0, 0, 'mp4', 'video_'
     budget, mdats, movie, ranges = [MAX_BOXES], [], None, None
     range_checks = 0
     def read(at, size):
@@ -402,7 +405,9 @@ def validate(stream, start, source_size, token, max_size):
                 data = read(position + header, size - header)
                 brands = {data[:4]} | {data[i:i + 4] for i in range(8, len(data), 4)}
                 file_type = 'mov' if data[:4] == b'qt  ' else 'mp4'
-                require(bool(brands & BRANDS), 'unsupported')
+                if data[:4] in AUDIO_BRANDS:
+                    file_type, prefix = 'm4a', 'audio_'
+                require(bool(brands & (BRANDS | AUDIO_BRANDS)), 'unsupported')
             elif kind == b'moov':
                 require(movie is None)
                 require(size - header <= MAX_METADATA, 'validation_limit')
@@ -436,6 +441,8 @@ def validate(stream, start, source_size, token, max_size):
                                'tracks': len(movie.track_ids), 'samples': movie.samples,
                                'chunks': len(ranges), 'media_boxes': len(mdats),
                                'bitstream_decoded': False}
-                    return VideoValidation(position, 'video_structure_checked', file_type, details)
+                    if movie.video_tracks == 0:
+                        return VideoValidation(position, 'audio_structure_checked', 'm4a', {**details, 'format': 'm4a'})
+                    return VideoValidation(position, 'video_structure_checked', 'mp4' if file_type == 'm4a' else file_type, details)
     except Rejected as error:
-        return VideoValidation(min(available, max_size, max(8, seen)), 'video_' + error.reason, file_type)
+        return VideoValidation(min(available, max_size, max(8, seen)), prefix + error.reason, file_type)

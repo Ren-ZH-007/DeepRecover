@@ -106,6 +106,16 @@ class M4UiTests(unittest.TestCase):
         self.assertIn('JPG/PNG',self.window.preview_label.text())
         self.assertEqual(self.repo.candidate(bad.id)['status'],'candidate')
 
+    def test_audio_and_office_candidates_explain_that_there_is_no_preview(self):
+        for file_type, message in (('mp3', '本版不提供音频预览'), ('m4a', '本版不提供音频预览'), ('docx', '仅支持 PDF')):
+            with self.subTest(file_type=file_type):
+                task,candidate,_=self.android(b'payload',file_type=file_type)
+                self.window.open_results(task); self.window.result_table.selectRow(0)
+                self.window.preview_selected()
+                self.assertIsNone(self.window.pending)
+                self.assertIn(message,self.window.statusBar().currentMessage())
+                self.assertEqual(self.repo.candidate(candidate.id)['status'],'candidate')
+
     def test_preview_uses_content_format_and_enforces_pixel_limit(self):
         _,candidate,_=self.android(JPEG,file_type='txt')
         image=preview_image(self.repo,candidate.id,self.config.data_dir,CancellationToken())
