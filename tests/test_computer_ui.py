@@ -193,7 +193,7 @@ class ComputerUiTests(unittest.TestCase):
         self.assertFalse(self.page.work_directory_label.visibleRegion().isEmpty())
         self.assertEqual(self.repo.tasks(), [])
 
-    def test_real_shape_apfs_other_disk_can_reach_signature_preflight_without_creating_task(self):
+    def test_real_shape_apfs_other_disk_reaches_deleted_record_preflight_without_creating_task(self):
         from core.computer import devices
         self.page._set_source('/dev/disk3s1', 'device')
         def info(path):
@@ -210,7 +210,8 @@ class ComputerUiTests(unittest.TestCase):
             normalize.assert_called_once_with('/dev/disk3s1')
         inspect.assert_called_once_with('/dev/disk3s1', kind='device')
         self.assertTrue(self.page.start_button.isEnabled())
-        self.assertEqual(self.page.mode_combo.currentData(), 'signature')
+        self.assertEqual(self.page.mode_combo.currentData(), 'deleted')
+        self.assertIn('签名候选扫描', self.page.capability_label.text())
         self.assertEqual(self.repo.tasks(), [])
 
     def test_scan_rechecks_disk_guard_before_task_and_binds_results(self):
