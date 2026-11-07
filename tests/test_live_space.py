@@ -1,5 +1,6 @@
 """Signature hits inside space a live file system still uses are skipped; real-device follow-ups."""
 import hashlib
+import sys
 from pathlib import Path
 import tempfile
 import unittest
@@ -124,6 +125,7 @@ class PermissionHintTests(unittest.TestCase):
         self.assertIn('sudo chmod o+r /dev/disk7 临时', permission_hint('/dev/disk7', 'darwin'))
         self.assertIn('管理员身份运行', permission_hint(r'\\.\PhysicalDrive1', 'win32'))
 
+    @unittest.skipIf(sys.platform == 'win32', 'opens a macOS /dev path; Windows resolves device paths differently')
     def test_denied_device_open_explains_what_to_do(self):
         from unittest.mock import patch
         from core.computer.io import DiskError, DiskReader
