@@ -6,7 +6,7 @@
 
 v0.8.0 的支持范围与边界见[视频签名扫描](docs/VIDEO_SIGNATURE_SCAN.md)及[测试与截图](docs/VIDEO_SIGNATURE_TEST_REPORT_20261105.md)，正式附件下载核验见[发布记录](docs/releases/0.8.0/PUBLISHED.json)。签名候选的删除状态未知，不重组碎片或推断原文件尾随数据。
 
-尚未发布的 Office 文档签名扫描（docx / xlsx / pptx、doc / xls / ppt）及碎片文件的限制见[说明](docs/OFFICE_SIGNATURE_SCAN.md)，音频签名扫描（WAV / MP3 / M4A）见[说明](docs/AUDIO_SIGNATURE_SCAN.md)，APFS 删除记录见[说明](docs/APFS_DELETED_RECORDS.md)。
+v0.10.0 新增的 Office 文档签名扫描（docx / xlsx / pptx、doc / xls / ppt）及碎片文件的限制见[说明](docs/OFFICE_SIGNATURE_SCAN.md)，音频签名扫描（WAV / MP3 / M4A）见[说明](docs/AUDIO_SIGNATURE_SCAN.md)，APFS 删除记录见[说明](docs/APFS_DELETED_RECORDS.md)。
 
 v0.9.0 的 PDF 支持范围见[说明](docs/PDF_PREVIEW.md)及[测试与截图](docs/PDF_TEST_REPORT_20261105.md)，正式附件、摘要和三平台门禁核验见[发布记录](docs/releases/0.9.0/PUBLISHED.json)。候选删除状态未知，M5 实机按要求保留未执行状态。
 
@@ -22,7 +22,7 @@ v0.9.0 的 PDF 支持范围见[说明](docs/PDF_PREVIEW.md)及[测试与截图](
 
 - 分层工程、虚拟环境依赖清单、入口和 8 个导航页面。
 - 电脑恢复入口：Windows 本地磁盘/U 盘、macOS 磁盘、原始镜像；MBR/扩展分区及 GPT 识别，源只读，原始盘工作目录/导出目标必须位于另一物理盘。
-- NTFS 删除记录与碎片布局、FAT32 空闲单簇、exFAT 明确连续布局候选；分配已重用或布局不明的记录保留为受限项。APFS 删除记录与快照（未发布）只支持未加密、单卷的外接盘和镜像：快照里还在、当前已删除的文件按快照版本列出；其余删除记录中数据块被再使用或曾被覆盖的保留为受限项，见[说明](docs/APFS_DELETED_RECORDS.md)和[可行性研究](docs/APFS_FEASIBILITY.md)。HFS+ 提供 JPG/PNG/MP4/MOV/PDF/Office 文档/音频连续签名候选，不解析删除记录。
+- NTFS 删除记录与碎片布局、FAT32 空闲单簇、exFAT 明确连续布局候选；分配已重用或布局不明的记录保留为受限项。APFS 删除记录与快照（v0.10.0）只支持未加密、单卷的外接盘和镜像：快照里还在、当前已删除的文件按快照版本列出；其余删除记录中数据块被再使用或曾被覆盖的保留为受限项，见[说明](docs/APFS_DELETED_RECORDS.md)和[可行性研究](docs/APFS_FEASIBILITY.md)。HFS+ 提供 JPG/PNG/MP4/MOV/PDF/Office 文档/音频连续签名候选，不解析删除记录。
 - 深蓝导航、浅色工作区、三步总览入口、卡片分区与统一图标；结果预览、分页工具栏和导出历史使用同一视觉主题。
 - 工作目录初始化、轮转日志、SQLite v3 迁移、数据源/候选/导出记录（兼容 v1/v2 历史记录）。
 - 后台任务执行、协作式取消、成功/失败/中断状态及任务历史。
