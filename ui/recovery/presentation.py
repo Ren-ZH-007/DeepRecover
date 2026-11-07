@@ -81,6 +81,8 @@ def content_check(value):
         'unsupported_layout': ('暂不支持此布局', '压缩、加密、稀疏或扩展布局不在当前支持范围。', 'warning'),
         'layout_unverified': ('文件布局未确认', '缺少可靠的簇链或连续布局依据，不猜测文件的完整范围。', 'warning'),
         'allocated_clusters': ('数据区域已被使用', '记录的数据簇已分配给其他内容，不能认定为原文件字节。', 'warning'),
+        'overwritten_after_delete': ('数据可能已被覆盖', '删除后，记录的数据块曾被其他文件或文件系统元数据使用，现在虽然空闲，内容也不能认定为原文件字节。', 'warning'),
+        'shared_with_live': ('与现存文件共用数据', '这是克隆出的副本，数据块仍属于一个现存文件；请直接复制现存文件，不导出此记录。', 'warning'),
         'allocation_unknown': ('分配状态未确认', '无法可靠确认数据区域是否仍空闲。', 'warning'),
         'invalid_record': ('记录校验不足', '文件系统记录未通过必要校验，不使用其范围导出完整文件。', 'danger'),
         'invalid_metadata': ('元数据检查失败', '文件系统元数据不完整或不一致，文件布局未确认。', 'danger'),

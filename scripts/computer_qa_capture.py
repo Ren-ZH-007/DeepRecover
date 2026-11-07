@@ -28,6 +28,7 @@ from core.computer import devices as disk_devices
 from core.computer.devices import DiskDevice
 from core.export.service import ExportError
 from storage.database.repository import Repository
+from tests.apfs_fixture import ApfsImage
 from tests.fixtures_ntfs import NTFSFixture, file_name, resident_attr, nonresident_attr
 from tests.test_scanner import png_image
 
@@ -114,8 +115,13 @@ def run(output):
             image.write_record(18, [resident_attr(0x30, file_name('加密 受限.png')),
                 nonresident_attr([(110, 1)], 100, flags=0x4000)])
             ntfs = root / '合成 NTFS 来源.img'; ntfs.write_bytes(image.image)
-            apfs = root / '合成 APFS 签名来源.img'; apfs.write_bytes(bytes(32) + b'NXSB' + bytes(4096) + png)
-            before = {path.name: hashlib.sha256(path.read_bytes()).hexdigest() for path in (ntfs, apfs)}
+            hfs = root / '合成 HFS+ 签名来源.img'; hfs.write_bytes(bytes(1024) + b'H+' + bytes(3070) + png)
+            layout = ApfsImage(); layout.live_file('仍在 文档.txt', '现存文件内容'.encode() * 100)
+            layout.deleted_file('已删除 照片.png', png)
+            _fid, reused = layout.deleted_file('已覆盖 文档.txt', '较早删除的文档'.encode() * 300, xid=4)
+            layout.deleted_file('后写入 文档.txt', '后来写入又删除的文档'.encode() * 100, xid=7, start=reused)
+            apfs = root / '合成 APFS 来源.img'; apfs.write_bytes(layout.build())
+            before = {path.name: hashlib.sha256(path.read_bytes()).hexdigest() for path in (ntfs, hfs, apfs)}
             window.nav.setCurrentRow(7); choose_image(ntfs)
             assert repo.tasks() == [] and len(page.partitions) == 1
             assert page.current_partition().file_system == 'NTFS' and page.mode_combo.currentData() == 'deleted'
@@ -167,14 +173,14 @@ def run(output):
                 reader.assert_not_called()
             capture('07-history-reopened.png', window.export_dialog)
             record('CQA-06', candidates_after_reopen=3, exports_after_reopen=2, source_read_for_history=False)
-            window.export_dialog.close(); window.nav.setCurrentRow(7); choose_image(apfs)
-            assert page.current_partition().file_system == 'APFS' and page.mode_combo.currentData() == 'signature'
+            window.export_dialog.close(); window.nav.setCurrentRow(7); choose_image(hfs)
+            assert page.current_partition().file_system == 'HFS+' and page.mode_combo.currentData() == 'signature'
             assert '不解析已删除记录' in page.capability_label.text()
-            capture('08-apfs-signature-capability.png')
-            apfs_task = scan(); apfs_rows = repo.candidate_page(apfs_task)
-            assert len(apfs_rows) == 1 and apfs_rows[0]['deletion_state'] == 'unknown'
-            capture('09-apfs-unknown-deletion-state.png')
-            record('CQA-07', filesystem='APFS', mode='signature', deletion_state='unknown')
+            capture('08-hfs-signature-capability.png')
+            hfs_task = scan(); hfs_rows = repo.candidate_page(hfs_task)
+            assert len(hfs_rows) == 1 and hfs_rows[0]['deletion_state'] == 'unknown'
+            capture('09-hfs-unknown-deletion-state.png')
+            record('CQA-07', filesystem='HFS+', mode='signature', deletion_state='unknown')
             window.result_table.selectRow(0); window.evidence_button.click(); app.processEvents()
             assert window.evidence_dialog.findChild(QLabel, 'evidence-deletion-label').text() == '未知（签名候选）'
             assert '不能判断是否曾被删除' in window.evidence_dialog.findChild(QLabel, 'evidence-deletion-explanation').text()
@@ -183,6 +189,24 @@ def run(output):
             window.evidence_dialog.close()
             record('CQA-11', deleted_record_explained=True, signature_deletion_state_unknown=True,
                 content_check_separate=True, export_evidence_separate=True, stored_candidate_unchanged=True)
+            window.nav.setCurrentRow(7); choose_image(apfs)
+            assert page.current_partition().file_system == 'APFS' and page.mode_combo.currentData() == 'deleted'
+            assert '签名候选扫描' in page.capability_label.text()
+            capture('09b-apfs-deleted-capability.png')
+            apfs_task = scan(); apfs_rows = repo.candidate_page(apfs_task)
+            assert {row['name']: row['integrity'] for row in apfs_rows} == {'已删除 照片.png': 'metadata_checked',
+                '已覆盖 文档.txt': 'overwritten_after_delete', '后写入 文档.txt': 'metadata_checked'}
+            assert all(row['deletion_state'] == 'deleted_record' and row['file_system'] == 'APFS' for row in apfs_rows)
+            capture('09c-apfs-deleted-records.png')
+            select('已删除 照片.png'); window.preview_selected(); finish()
+            assert not window.preview_label.pixmap().isNull()
+            exported = export(root / 'APFS 导出'); item, = repo.exports(exported)
+            assert item['status'] == 'exported' and Path(item['output_path']).read_bytes() == png
+            assert item['source_sha256'] == item['target_sha256'] == hashlib.sha256(png).hexdigest()
+            capture('09d-apfs-verified-export.png', window.export_dialog)
+            window.export_dialog.close()
+            record('CQA-12', filesystem='APFS', deleted_records=3, ready=2, overwritten_after_delete=1,
+                preview_decoded=True, verified_export=True)
             count = len(repo.tasks()); window.nav.setCurrentRow(7)
             page.set_devices([SimpleNamespace(path='/dev/disk99', size=1024, label='QA mock disk', system_disk=False)])
             page.device_tree.setCurrentItem(page.device_item('/dev/disk99'))
@@ -255,7 +279,7 @@ def run(output):
             record('CQA-10', physical_groups=True, auxiliary_and_snapshots_hidden_by_metadata=True,
                 unknown_source_visible=True, selected_source_bound_by_path=True,
                 filter_invalidates_preflight=True, inventory='synthetic', task_count_unchanged=True)
-            after = {path.name: hashlib.sha256(path.read_bytes()).hexdigest() for path in (ntfs, apfs)}
+            after = {path.name: hashlib.sha256(path.read_bytes()).hexdigest() for path in (ntfs, hfs, apfs)}
             assert after == before
         finally:
             if page._future:

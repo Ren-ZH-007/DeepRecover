@@ -15,6 +15,9 @@ class ComputerError(RuntimeError):
     pass
 
 
+DELETED_RECORD_FILESYSTEMS = ('NTFS', 'FAT32', 'exFAT', 'APFS')
+
+
 def inspect_source(path, kind='image'):
     try:
         with DiskReader(path, kind) as reader:
@@ -83,7 +86,7 @@ class ComputerScanner:
                 original = reader.check(resume['identity'] if resume is not None else None)
                 partitions = source_partitions(reader)
                 if partition_offset is None:
-                    partition = next((p for p in partitions if p.file_system in ('NTFS', 'FAT32', 'exFAT')), partitions[0]) if mode == 'deleted' else partitions[0]
+                    partition = next((p for p in partitions if p.file_system in DELETED_RECORD_FILESYSTEMS), partitions[0]) if mode == 'deleted' else partitions[0]
                 else:
                     partition = next((p for p in partitions if p.offset == partition_offset), None)
                     if partition is None: raise ComputerError('所选分区已变化，请重新检测来源。')
@@ -105,9 +108,10 @@ class ComputerScanner:
                     from core.computer.ntfs import scan_ntfs
                     from core.computer.fat import scan_fat32
                     from core.computer.exfat import scan_exfat
-                    engine = {'NTFS': scan_ntfs, 'FAT32': scan_fat32, 'exFAT': scan_exfat}.get(partition.file_system)
+                    from core.computer.apfs import scan_apfs
+                    engine = {'NTFS': scan_ntfs, 'FAT32': scan_fat32, 'exFAT': scan_exfat, 'APFS': scan_apfs}.get(partition.file_system)
                     if engine is None: raise ComputerError('此文件系统暂不支持删除记录解析；可选择签名候选扫描。')
-                    limit = {'max_records' if partition.file_system == 'NTFS' else 'max_entries': self.max_records}
+                    limit = {'max_records' if partition.file_system in ('NTFS', 'APFS') else 'max_entries': self.max_records}
                     records = engine(reader, partition, progress, max_candidates=self.max_candidates, **limit)
                 for record in records:
                     token.checkpoint()

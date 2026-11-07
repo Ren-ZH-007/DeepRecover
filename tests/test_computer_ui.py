@@ -115,7 +115,7 @@ class ComputerUiTests(unittest.TestCase):
         def inspect(path, kind, data_dir):
             threads.append(current_thread())
             self.assertEqual((path, kind, data_dir), (str(self.image), 'image', self.config.data_dir))
-            return [self.partition('APFS')]
+            return [self.partition('HFS+')]
         with patch('ui.computer.page.QFileDialog.getOpenFileName', return_value=(str(self.image), '')), \
                 patch('ui.computer.page.inspect_computer_source', side_effect=inspect):
             self.page.choose_image(); self.finish_probe()

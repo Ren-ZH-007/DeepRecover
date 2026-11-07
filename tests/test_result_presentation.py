@@ -29,7 +29,8 @@ class ResultPresentationTests(unittest.TestCase):
 
     def test_partial_or_unverified_layout_does_not_present_as_full_file(self):
         for integrity in ['layout_unverified', 'allocation_unknown', 'allocated_clusters', 'unsupported_layout',
-                          'invalid_record', 'invalid_extent', 'invalid_metadata', 'size_limit']:
+                          'invalid_record', 'invalid_extent', 'invalid_metadata', 'size_limit',
+                          'overwritten_after_delete', 'shared_with_live']:
             with self.subTest(integrity=integrity):
                 self.assertIn(content_check(integrity).tone, ('warning', 'danger'))
                 self.assertIn(integrity, content_check(integrity).tooltip)
