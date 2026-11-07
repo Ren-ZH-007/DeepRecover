@@ -63,6 +63,15 @@ def content_check(value):
         'office_unsupported': ('暂不支持此 Office 布局', '分卷或 ZIP64 压缩包、非常见压缩方式，或无法识别的主文档类型。', 'warning'),
         'office_encrypted': ('加密 Office 文档暂不支持', '检测到加密的压缩条目或加密的文档包，不尝试密码或解密。', 'warning'),
         'office_active_content': ('Office 文档含宏或活动内容', '检测到 VBA 宏或 ActiveX 控件；这类内容不在静态检查范围内，不能导出。', 'warning'),
+        'audio_structure_checked': ('音频结构检查通过', 'WAV：已核对 RIFF 长度、格式块与数据块；MP3：已逐帧核对帧头，总长度与首帧记录的字节数一致；M4A：已核对容器、采样表和媒体范围。未解码播放，不能证明内容完整或曾被删除。', 'info'),
+        'audio_truncated': ('音频内容截断', '未覆盖完整的音频数据或帧就到达来源结尾，不能导出。', 'warning'),
+        'audio_invalid_structure': ('音频结构检查失败', '格式字段、块长度、帧序列或采样范围不一致。', 'danger'),
+        'audio_validation_limit': ('达到音频检查限制', '超过单项 64 MiB、帧数或块数上限，未完成验证。', 'warning'),
+        'audio_unsupported': ('暂不支持此音频布局', '当前支持 PCM / 浮点 / A-law / μ-law WAV、带 ID3v2 标签的 MP3 Layer III，以及单 AAC 音轨的 M4A。', 'warning'),
+        'audio_boundary_unknown': ('音频边界未确认', 'MP3 缺少记录总字节数的 Xing / Info / VBRI 头，或 WAV 未写入总长度，无法确认文件在哪里结束。', 'warning'),
+        'audio_fragmented': ('分段音频暂不支持', '检测到分段容器；不拼接分段或猜测碎片范围。', 'warning'),
+        'audio_encrypted': ('加密音频暂不支持', '检测到受保护或加密的媒体标记；不尝试解密。', 'warning'),
+        'audio_external_reference': ('音频含外部引用', '媒体依赖外部来源或其他引用；不会访问其地址。', 'warning'),
         'missing': ('来源文件缺失', '索引时未找到可访问的来源文件；历史记录仍可查看。', 'danger'),
         'truncated': ('内容截断', '检查尚未完成就到达来源结尾，当前长度不是完整文件边界。', 'warning'),
         'invalid_structure': ('结构检查失败', '图片容器不符合支持的结构要求。', 'danger'),
@@ -220,6 +229,31 @@ def office_check_details(candidate):
         streams, sector = details.get('streams'), details.get('sector_size')
         if type(streams) is int and 1 <= streams <= 10000 and sector in (512, 4096):
             return f'检查版本 1 · 旧版 Office 复合文档 · {streams} 个数据流 · 扇区 {sector} 字节。边界：最高已分配扇区；未打开文档。'
+    return ''
+
+
+def audio_check_details(candidate):
+    details = candidate.get('structure_details')
+    if candidate.get('integrity') != 'audio_structure_checked' or not isinstance(details, dict) or details.get('check_version') != 1:
+        return ''
+    kind = details.get('format')
+    seconds = details.get('duration_seconds')
+    rate = details.get('sample_rate')
+    if kind in ('wav', 'mp3') and details.get('decoded') is False and type(rate) is int and 1 <= rate <= 1_000_000 \
+            and isinstance(seconds, (int, float)) and not isinstance(seconds, bool) and 0 <= seconds <= 360000:
+        if kind == 'wav' and details.get('boundary_basis') == 'riff_size' and details.get('encoding') in ('pcm', 'float', 'alaw', 'mulaw') \
+                and type(details.get('channels')) is int and 1 <= details['channels'] <= 32 and details.get('bits_per_sample') in (8, 16, 24, 32, 64):
+            return (f"检查版本 1 · WAV {details['encoding'].upper()} · {details['channels']} 声道 · {rate} Hz · "
+                    f"{details['bits_per_sample']} 位 · 约 {seconds:.1f} 秒。边界：RIFF 长度；未解码。")
+        if kind == 'mp3' and details.get('boundary_basis') in ('xing_byte_count', 'vbri_byte_count') \
+                and type(details.get('frames')) is int and 2 <= details['frames'] <= 500000 and details.get('channels') in (1, 2):
+            header = 'Xing / Info' if details['boundary_basis'] == 'xing_byte_count' else 'VBRI'
+            return (f"检查版本 1 · MP3 · {details['frames']} 帧 · {rate} Hz · {details['channels']} 声道 · 约 {seconds:.1f} 秒。"
+                    f"边界：{header} 头记录的字节数；未解码。")
+    if kind == 'm4a' and details.get('boundary_basis') == 'last_required_box' and details.get('bitstream_decoded') is False:
+        counts = [details.get(key) for key in ('samples', 'chunks', 'media_boxes')]
+        if details.get('tracks') == 1 and all(type(n) is int and 1 <= n <= 200000 for n in counts):
+            return f'检查版本 1 · M4A · 1 个 AAC 音轨 · {counts[0]} 个采样 · {counts[1]} 个块。边界：最后必需盒末尾；未解码。'
     return ''
 
 
