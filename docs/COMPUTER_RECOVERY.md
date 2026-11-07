@@ -14,10 +14,10 @@ v0.8.0 新增 MP4/MOV 连续签名与采样范围检查，签名模式支持 JPG
 | NTFS | 读取已删除 MFT 记录；支持 resident DATA 的 USA 修复、nonresident 碎片运行列表和碎片 MFT；以 `$Bitmap` 检查数据簇分配状态 |
 | FAT32 | 删除文件空内容或空闲单簇布局可进入校验流程；多簇删除后原链通常已消失，保留 `layout_unverified/partial`，不猜连续布局 |
 | exFAT | 校验 boot/删除 entryset，读取完整名称；仅 `NoFatChain` 明确连续且分配位图为空闲的布局可校验导出 |
-| APFS / HFS+ / 未知或损坏分区表 | 可选择整个源或可识别分区做连续 JPG/PNG/MP4/MOV/PDF 签名扫描；不解析其删除元数据 |
+| APFS / HFS+ / 未知或损坏分区表 | 可选择整个源或可识别分区做连续 JPG/PNG/MP4/MOV/PDF/Office 文档签名扫描；不解析其删除元数据 |
 | BitLocker、FileVault、NTFS 压缩/加密/稀疏、属性扩展列表等 | 不解密、不猜测缺失布局；不支持的记录提示限制状态或拒绝元数据扫描 |
 
-删除记录模式支持任意扩展名，分类来自名称元数据；图片预览仅 JPG/PNG，视频预览按自包含 H.264 MP4/MOV 的[支持范围](VIDEO_PREVIEW.md)执行，PDF 分页预览按[文档支持范围](PDF_PREVIEW.md)执行。签名模式检查连续 JPG/PNG 容器、受支持的 MP4/MOV 容器与采样范围，以及 PDF 结构与对象范围。NTFS 暂以 `[$MFT record N]/文件名` 标识位置，不推测完整父目录；FAT32 短名称丢失的首字符显示 `_`，不伪造原字符。FAT32/exFAT 仅遍历现存目录，不追猜已删除目录的失效簇链。
+删除记录模式支持任意扩展名，分类来自名称元数据；图片预览仅 JPG/PNG，视频预览按自包含 H.264 MP4/MOV 的[支持范围](VIDEO_PREVIEW.md)执行，PDF 分页预览按[文档支持范围](PDF_PREVIEW.md)执行。签名模式检查连续 JPG/PNG 容器、受支持的 MP4/MOV 容器与采样范围、PDF 结构与对象范围，以及 Office 文档的压缩包或复合文档结构（见[说明](OFFICE_SIGNATURE_SCAN.md)）。签名模式只能恢复连续存放的文件，碎片文件需靠 NTFS 删除记录的运行列表读取。NTFS 暂以 `[$MFT record N]/文件名` 标识位置，不推测完整父目录；FAT32 短名称丢失的首字符显示 `_`，不伪造原字符。FAT32/exFAT 仅遍历现存目录，不追猜已删除目录的失效簇链。
 
 ## 使用步骤
 

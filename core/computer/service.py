@@ -154,15 +154,17 @@ class ComputerScanner:
         while position < end:
             token.checkpoint()
             block = reader.read_at(position, min(1024 * 1024, end - position))
-            data, base = carry + block, position - len(carry)
+            data, base, hits = carry + block, position - len(carry), {}
             cursor = max(0, skip - base)
             while cursor < len(data):
                 token.checkpoint()
-                match = find_signature(data, cursor)
+                match = find_signature(data, cursor, hits)
                 if match is None: break
                 at, kind = match; offset = base + at
                 if count >= self.max_candidates: raise ComputerError('签名候选数量达到上限，扫描仅部分完成。')
                 result = validate(reader, offset, end, kind, token, 64 * 1024 * 1024, 256 * 1024 * 1024)
+                if result is None:
+                    cursor = at + 1; continue
                 count += 1
                 ready = result.integrity in CHECKED
                 kind = getattr(result, 'file_type', kind)
