@@ -1,5 +1,6 @@
 from pathlib import Path
 import sqlite3
+from contextlib import closing
 import tempfile
 import unittest
 
@@ -60,7 +61,7 @@ class DuplicateTests(unittest.TestCase):
 
     def test_existing_v3_database_gains_index_without_version_change(self):
         path = Path(self.temp.name) / 'old.db'
-        with sqlite3.connect(path) as db:
+        with closing(sqlite3.connect(path)) as db, db:
             db.execute("CREATE TABLE tasks(id TEXT PRIMARY KEY, kind TEXT NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL, error_code TEXT, source_id TEXT, result_path TEXT)")
             db.execute("CREATE TABLE candidates(id TEXT PRIMARY KEY, task_id TEXT NOT NULL REFERENCES tasks(id), payload TEXT NOT NULL)")
             db.execute("CREATE INDEX candidate_task ON candidates(task_id)")
@@ -69,7 +70,7 @@ class DuplicateTests(unittest.TestCase):
             db.execute("CREATE INDEX export_task ON exports(task_id)")
             db.execute("PRAGMA user_version=3")
         repo = Repository(path)
-        with sqlite3.connect(path) as db:
+        with closing(sqlite3.connect(path)) as db, db:
             self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], SCHEMA_VERSION)
             self.assertIn('candidate_sha', [r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='index'")])
         task = repo.create_task('signature_scan'); repo.add_candidates(task, [item('x.jpg', A), item('y.jpg', A)])
