@@ -43,6 +43,7 @@ class ResumePlan:
     identity: dict
     params: dict
     continuation: bool = False          # a new task covers the rest; ``candidates`` is then 0
+    skipped: int = 0                    # live-file hits skipped before ``position`` (0 if not recorded)
 
     @property
     def searched(self):
@@ -92,10 +93,16 @@ def plan_resume(repository, task_id, max_candidates=MAX_CANDIDATES):
         following = repository.continued_by(task_id)
         if following is not None:
             raise ResumeError('已从这次扫描继续扫描剩余部分，请在任务记录中查看后续任务。')
-    position = checkpoint['position']
+    position, skipped = checkpoint['position'], checkpoint.get('skipped')
     last = repository.recent_candidates(task_id, 1)
     if last:
-        position = max(position, _resume_point(last[0]))
+        following = _resume_point(last[0])
+        if following > position or (following == position and skipped is None):
+            # No hit is examined between a candidate and where searching continued after
+            # it, so the candidate's count is also the count at the restart point.
+            position, skipped = following, last[0].get('scan_skipped')
+    if type(skipped) is not int or skipped < 0:
+        skipped = 0                     # not recorded by earlier versions
     start = params.get('partition_offset', 0) if task['kind'] == 'computer_scan' else 0
     end = checkpoint['total']
     if type(start) is not int or not 0 <= start <= position <= end:
@@ -103,7 +110,7 @@ def plan_resume(repository, task_id, max_candidates=MAX_CANDIDATES):
     if position >= end and continuation:
         raise ResumeError('这次扫描已经搜索到来源末尾，没有剩余部分需要继续。')
     return ResumePlan(task_id, task['kind'], source['id'], source['locator'], position, 0 if continuation else committed,
-                      start, end, checkpoint['identity'], params, continuation)
+                      start, end, checkpoint['identity'], params, continuation, 0 if continuation else skipped)
 
 
 def _spot_candidates(repository, plan):
@@ -171,7 +178,7 @@ def resume_operation(plan, data_dir, max_candidates=MAX_CANDIDATES):
             checkpoint_every=CHECKPOINT_SECONDS, continues=continues)
     from core.computer.service import ComputerScanner
     resume = {'position': plan.position, 'candidates': plan.candidates, 'identity': plan.identity,
-              'partition_size': plan.params['partition_size']}
+              'partition_size': plan.params['partition_size'], 'skipped': plan.skipped}
     return lambda token: ComputerScanner(data_dir=data_dir, max_candidates=max_candidates).scan(
         plan.path, token, kind=plan.params['kind'], mode='signature', partition_offset=plan.params['partition_offset'],
         resume=resume, checkpoint_every=CHECKPOINT_SECONDS, include_live=plan.params.get('include_live', True),

@@ -27,7 +27,7 @@ v0.8.0 新增 MP4/MOV 连续签名与采样范围检查，签名模式支持 JPG
 | HFS+ / 未知或损坏分区表 | 可选择整个源或可识别分区做连续 JPG/PNG/MP4/MOV/PDF/Office 文档/音频签名扫描；不解析其删除元数据 |
 | BitLocker、FileVault、NTFS 压缩/加密/稀疏、属性扩展列表等 | 不解密、不猜测缺失布局；不支持的记录提示限制状态或拒绝元数据扫描 |
 
-删除记录模式支持任意扩展名，分类来自名称元数据；图片预览仅 JPG/PNG，视频预览按自包含 H.264 MP4/MOV 的[支持范围](VIDEO_PREVIEW.md)执行，PDF 分页预览按[文档支持范围](PDF_PREVIEW.md)执行。签名模式检查连续 JPG/PNG 容器、受支持的 MP4/MOV 容器与采样范围、PDF 结构与对象范围，Office 文档的压缩包或复合文档结构（见[说明](OFFICE_SIGNATURE_SCAN.md)），以及 WAV / MP3 / M4A 音频结构（见[说明](AUDIO_SIGNATURE_SCAN.md)）。签名模式只能恢复连续存放的文件，碎片文件需靠 NTFS 删除记录的运行列表或 APFS 删除记录的区段读取。NTFS 暂以 `[$MFT record N]/文件名` 标识位置，不推测完整父目录；FAT32 短名称丢失的首字符显示 `_`，不伪造原字符。FAT32/exFAT 仅遍历现存目录，不追猜已删除目录的失效簇链。
+删除记录模式支持任意扩展名，分类来自名称元数据；图片预览仅 JPG/PNG，视频预览按自包含 H.264 MP4/MOV 的[支持范围](VIDEO_PREVIEW.md)执行，PDF 分页预览按[文档支持范围](PDF_PREVIEW.md)执行。签名模式检查连续 JPG/PNG 容器、受支持的 MP4/MOV 容器与采样范围、PDF 结构与对象范围，Office 文档的压缩包或复合文档结构（见[说明](OFFICE_SIGNATURE_SCAN.md)），以及 WAV / MP3 / M4A 音频结构（见[说明](AUDIO_SIGNATURE_SCAN.md)）。签名模式只能恢复连续存放的文件，碎片文件需靠 NTFS 删除记录的运行列表或 APFS 删除记录的区段读取。NTFS 以 `[$MFT record N]/父目录/文件名` 标识位置：父目录名只取自仍在使用、序号一致的目录记录，已删除、被重用或损坏的父目录显示为 `[NTFS 目录 N]`，不推测目录名；FAT32 短名称丢失的首字符显示 `_`，不伪造原字符。FAT32/exFAT 仅遍历现存目录，不追猜已删除目录的失效簇链。
 
 ## 使用步骤
 

@@ -89,6 +89,10 @@ class Repository:
             db.execute("CREATE TABLE IF NOT EXISTS scan_checkpoints(task_id TEXT PRIMARY KEY REFERENCES tasks(id), "
                        "position INTEGER NOT NULL, candidates INTEGER NOT NULL, total INTEGER NOT NULL, "
                        "identity TEXT NOT NULL, params TEXT NOT NULL, updated_at TEXT NOT NULL)")
+            # Live-file hits skipped before a checkpoint's position. A table of its own, not a
+            # column: earlier readers insert checkpoints without naming columns.
+            db.execute("CREATE TABLE IF NOT EXISTS scan_skips(task_id TEXT PRIMARY KEY REFERENCES tasks(id), "
+                       "position INTEGER NOT NULL, skipped INTEGER NOT NULL)")
 
     def create_task(self, kind, source=None):
         task_id = str(uuid4())
@@ -136,7 +140,9 @@ class Repository:
 
     def save_checkpoint(self, task_id, checkpoint):
         values = (checkpoint.position, checkpoint.candidates, checkpoint.total)
+        skipped = checkpoint.skipped
         if (any(type(v) is not int or v < 0 for v in values) or checkpoint.position > checkpoint.total
+                or (skipped is not None and (type(skipped) is not int or skipped < 0))
                 or not isinstance(checkpoint.identity, dict) or not isinstance(checkpoint.params, dict)):
             raise ValueError('Invalid scan checkpoint')
         identity = json.dumps(checkpoint.identity, sort_keys=True)
@@ -148,6 +154,11 @@ class Repository:
                        "WHERE excluded.position>=scan_checkpoints.position AND excluded.total=scan_checkpoints.total "
                        "AND excluded.identity=scan_checkpoints.identity AND excluded.params=scan_checkpoints.params",
                        (task_id, *values, identity, params, now()))
+            if checkpoint.skipped is not None:
+                # Only for the position the checkpoint row now holds, i.e. when it was accepted.
+                db.execute("INSERT INTO scan_skips SELECT task_id,position,? FROM scan_checkpoints WHERE task_id=? AND position=? "
+                           "ON CONFLICT(task_id) DO UPDATE SET position=excluded.position, skipped=excluded.skipped",
+                           (checkpoint.skipped, task_id, checkpoint.position))
 
     def continued_by(self, task_id):
         """Id of the task that continued ``task_id``'s remaining range after it hit the candidate limit."""
@@ -158,12 +169,14 @@ class Repository:
 
     def scan_checkpoint(self, task_id):
         with closing(self.connect()) as db:
-            row = db.execute("SELECT position,candidates,total,identity,params,updated_at FROM scan_checkpoints "
-                             "WHERE task_id=?", (task_id,)).fetchone()
+            row = db.execute("SELECT c.position,c.candidates,c.total,c.identity,c.params,c.updated_at,s.skipped "
+                             "FROM scan_checkpoints c LEFT JOIN scan_skips s ON s.task_id=c.task_id AND s.position=c.position "
+                             "WHERE c.task_id=?", (task_id,)).fetchone()
         if row is None:
             return None
+        # ``skipped`` is None for scans that never counted skipped hits (earlier versions).
         return {'position': row[0], 'candidates': row[1], 'total': row[2], 'identity': json.loads(row[3]),
-                'params': json.loads(row[4]), 'updated_at': row[5]}
+                'params': json.loads(row[4]), 'updated_at': row[5], 'skipped': row[6]}
 
     def recent_candidates(self, task_id, limit=50):
         if not 1 <= limit <= 1000:

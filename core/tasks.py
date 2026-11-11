@@ -22,6 +22,7 @@ class ScanCheckpoint:
     total: int
     identity: dict
     params: dict
+    skipped: int | None = None      # hits skipped as live-file content before ``position``
 
 
 @dataclass(frozen=True)
