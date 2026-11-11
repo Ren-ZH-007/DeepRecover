@@ -13,7 +13,7 @@ v0.9.0 的签名模式新增 PDF，支持范围与分页预览见[PDF 说明](PD
 
 v0.8.0 新增 MP4/MOV 连续签名与采样范围检查，签名模式支持 JPG/PNG/MP4/MOV。候选边界与限制见[说明](VIDEO_SIGNATURE_SCAN.md)，正式附件核验见[发布记录](releases/0.8.0/PUBLISHED.json)。
 
-[v0.9.0 预览版已发布](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.9.0)，提供 Windows 和 macOS 双架构包。提供“电脑恢复”导航与概览入口，保留手机采集和备份流程。Windows/macOS 均能读取原始 `.img/.dd/.raw/.bin` 文件；原始磁盘入口按本机权限读取 Windows PhysicalDrive/盘符卷、macOS disk/rdisk 设备，包含可枚举的 U 盘。
+[v0.10.1 预览版已发布](https://github.com/Ren-ZH-007/DeepRecover/releases/tag/v0.10.1)，提供 Windows 和 macOS 双架构包。提供“电脑恢复”导航与概览入口，保留手机采集和备份流程。Windows/macOS 均能读取原始 `.img/.dd/.raw/.bin` 文件；原始磁盘入口按本机权限读取 Windows PhysicalDrive/盘符卷、macOS disk/rdisk 设备，包含可枚举的 U 盘。
 
 ## 支持范围
 
