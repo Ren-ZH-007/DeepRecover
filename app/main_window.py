@@ -871,6 +871,7 @@ class MainWindow(QMainWindow):
                           source=source, batch_size=1, resume_task=None if plan.continuation else plan.task_id)
             if self.pending and plan.kind == 'computer_scan':
                 self.computer_page.active_task_id = self.pending[0].id
+                self.computer_page.last_skipped = plan.skipped    # not a count left over from another scan
                 self.computer_page.status.setText('已核对来源，正在从断点继续只读扫描…')
                 self.computer_page.refresh_controls()
             self.refresh_history()

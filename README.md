@@ -39,10 +39,10 @@ v0.9.0 的 PDF 支持范围见[说明](docs/PDF_PREVIEW.md)及[测试与截图](
 
 ## 下载预览包
 
-- [Windows x64](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.9.0/DeepRecover-v0.9.0-windows-x64.zip)
-- [macOS Apple Silicon](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.9.0/DeepRecover-v0.9.0-macos-arm64.zip)
-- [macOS Intel](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.9.0/DeepRecover-v0.9.0-macos-x86_64.zip)
-- [SHA256SUMS.txt](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.9.0/SHA256SUMS.txt)
+- [Windows x64](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.10.1/DeepRecover-v0.10.1-windows-x64.zip)
+- [macOS Apple Silicon](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.10.1/DeepRecover-v0.10.1-macos-arm64.zip)
+- [macOS Intel](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.10.1/DeepRecover-v0.10.1-macos-x86_64.zip)
+- [SHA256SUMS.txt](https://github.com/Ren-ZH-007/DeepRecover/releases/download/v0.10.1/SHA256SUMS.txt)
 
 Windows 解压后运行目录中的 `DeepRecover.exe`，保留整个 `DeepRecover` 文件夹及 `_internal` 文件，不能只复制 EXE。macOS 按芯片类型下载，解压后将整个 `DeepRecover.app` 拖入“应用程序”。预览包无需另外安装 Python，Windows 包不是安装程序；源码归档则按下方步骤配置 Python。macOS 包未提供 Developer ID 签名或 Apple 公证，详见 [macOS 说明](docs/MACOS.md)。
 

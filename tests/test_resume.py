@@ -266,6 +266,63 @@ class ResumeTests(unittest.TestCase):
                 self.resume(task)
                 self.assertEqual(summary(self.repo.candidates(task)), reference)
 
+    def test_skipped_count_carries_over_a_resume(self):
+        path = self.live_fat_image()
+        reference = [r['scan_skipped'] for r in self.repo.candidates(self.computer_scan(path))]
+        self.assertGreater(reference[-1], reference[0])
+        for stop in ('candidate', 'checkpoint'):
+            for limit in (2, 6):
+                with self.subTest(stop=stop, limit=limit):
+                    source = DataSource('computer', str(path), 'raw')
+                    def operation(token):
+                        items = ComputerScanner(self.config.data_dir).scan(path, token, kind='image', mode='signature',
+                                                                            partition_offset=0, checkpoint_every=0)
+                        if stop == 'candidate':
+                            return interrupt_after(items, token, limit)
+                        return self.cancel_at_checkpoint(items, token, limit)
+                    task = self.run_task('computer_scan', operation, source)
+                    plan = plan_resume(self.repo, task)
+                    stored = self.repo.candidates(task)
+                    if stop == 'checkpoint':        # restarts from the checkpoint, past the last candidate
+                        self.assertEqual(plan.position, self.repo.scan_checkpoint(task)['position'])
+                        self.assertEqual(plan.skipped, self.repo.scan_checkpoint(task)['skipped'])
+                    self.assertGreaterEqual(plan.skipped, stored[-1]['scan_skipped'] if stored else 0)
+                    self.resume(task)
+                    self.assertEqual([r['scan_skipped'] for r in self.repo.candidates(task)], reference)
+
+    @staticmethod
+    def cancel_at_checkpoint(items, token, count):
+        seen = 0
+        for item in items:
+            yield item
+            if isinstance(item, ScanCheckpoint):
+                seen += 1
+                if seen >= count:
+                    token.cancel()
+
+    def test_checkpoints_of_earlier_versions_resume_counting_from_zero(self):
+        path = self.live_fat_image()
+        task = self.computer_scan(path, 3)
+        with closing(sqlite3.connect(self.config.database)) as db, db:
+            db.execute('DELETE FROM scan_skips')
+            db.execute("UPDATE candidates SET payload=json_remove(payload,'$.scan_skipped')")
+        plan = plan_resume(self.repo, task)
+        self.assertIsNone(self.repo.scan_checkpoint(task)['skipped'])
+        self.assertEqual(plan.skipped, 0)
+        self.resume(task)
+        self.assertEqual(self.repo.task(task)['status'], 'completed')
+
+    def live_fat_image(self):
+        from tests.fat_fixture import Fat32Fixture
+        volume = Fat32Fixture()
+        data = source_bytes(1_200_000)
+        start = volume.cluster_offset(10)
+        volume.data[start:start + len(data)] = data
+        for cluster in range(10, 10 + len(data) // 512, 3):        # every third cluster belongs to a live file
+            volume.set_fat(cluster, 0x0fffffff)
+        path = self.root / 'fat-live.img'; path.write_bytes(volume.data)
+        return path
+
     def test_computer_resume_refuses_changed_image_and_deleted_mode(self):
         path = self.root / 'disk.img'; path.write_bytes(source_bytes(1_200_000))
         task = self.computer_scan(path, 3)

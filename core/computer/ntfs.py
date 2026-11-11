@@ -272,6 +272,56 @@ def _filename(attrs):
     return name, reference
 
 
+_ROOT_RECORD = 5
+_MAX_DEPTH = 256
+
+
+class _Directories:
+    """Folder path of a parent reference, from in-use directory records only.
+
+    A parent counts only when its record is in use, is a directory, is a base
+    record and carries the reference's sequence number; otherwise (deleted,
+    reused or damaged) the path starts at an ``[NTFS 目录 N]`` marker instead of
+    a guessed name.
+    """
+
+    def __init__(self, mft, volume):
+        self.mft, self.volume, self.total = mft, volume, mft.size // volume.record_size
+        self.known = {_ROOT_RECORD: ''}
+
+    def _entry(self, reference):
+        number, sequence = reference & 0xFFFFFFFFFFFF, reference >> 48
+        if not number < self.total:
+            return None
+        try:
+            fixed, _ = _fixup(self.mft.read_at(number * self.volume.record_size, self.volume.record_size), self.volume.sector)
+            sequence_now, _links, _first, flags = struct.unpack_from('<HHHH', fixed, 16)
+            if flags & 3 != 3 or sequence_now != sequence or struct.unpack_from('<Q', fixed, 32)[0]:
+                return None
+            return _filename(_attributes(fixed))
+        except (NTFSError, struct.error, ValueError):
+            return None
+
+    def path(self, reference):
+        chain, seen = [], set()
+        while True:
+            number = reference & 0xFFFFFFFFFFFF
+            if number in self.known:
+                prefix = self.known[number]; break
+            if number in seen or len(chain) >= _MAX_DEPTH:
+                prefix = f'/[NTFS 目录 {number}]'; break
+            seen.add(number)
+            entry = self._entry(reference)
+            if entry is None:
+                prefix = self.known[number] = f'/[NTFS 目录 {number}]'; break
+            chain.append((number, entry[0]))
+            reference = entry[1]
+        for number, name in reversed(chain):
+            prefix += '/' + name
+            self.known[number] = prefix
+        return prefix
+
+
 class _Bitmap:
     def __init__(self, stream, clusters, token):
         if stream.size < (clusters + 7) // 8:
@@ -329,6 +379,7 @@ def scan_ntfs(reader, partition, token, *, max_records=1000000, max_candidates=1
         raise ValueError('Invalid NTFS scan limits')
     token.checkpoint()
     volume, mft, bitmap = open_volume(reader, partition, token)
+    directories = _Directories(mft, volume)
     count, total = 0, mft.size // volume.record_size
     token.report_progress(0, total, count, phase='computer')
     for number in range(min(total, max_records)):
@@ -349,8 +400,8 @@ def scan_ntfs(reader, partition, token, *, max_records=1000000, max_candidates=1
         try:
             fixed, usa = _fixup(raw, volume.sector)
             attrs = _attributes(fixed)
-            name, _ = _filename(attrs)
-            candidate.update(name=name, original_path=f'[$MFT record {number}]/{name}',
+            name, parent = _filename(attrs)
+            candidate.update(name=name, original_path=f'[$MFT record {number}]{directories.path(parent)}/{name}',
                              deletion_state='deleted_record', integrity='unsupported_layout', **_modified(attrs))
             declared_data = [attr for attr in attrs if attr['type'] == 0x80 and not attr['name']]
             if len(declared_data) == 1:

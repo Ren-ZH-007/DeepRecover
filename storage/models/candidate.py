@@ -41,6 +41,8 @@ class Candidate:
     modified_basis: str | None = None
     # Signature scans: source offset where searching continued after this candidate.
     scan_next: int | None = None
+    # Signature scans: hits skipped as live-file content before this candidate, counted from the task's start.
+    scan_skipped: int | None = None
 
     def __post_init__(self):
         if self.size < 0 or (self.offset is not None and self.offset < 0):

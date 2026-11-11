@@ -67,7 +67,7 @@ class ComputerScanner:
 
     def scan(self, path, token, *, kind='image', mode='deleted', partition_offset=None, resume=None, checkpoint_every=None,
              include_live=False, continues=None):
-        """``resume`` ({position, candidates, identity, partition_size}) continues a signature scan.
+        """``resume`` ({position, candidates, identity, partition_size[, skipped]}) continues a signature scan.
 
         Signature scans skip hits lying entirely in space the volume's file system
         still allocates (current files and metadata) unless ``include_live``;
@@ -99,12 +99,15 @@ class ComputerScanner:
                 start, count = partition.offset, 0
                 if resume is not None:
                     start, count = resume['position'], resume['candidates']
+                    skipped = resume.get('skipped', 0)
                     if (resume.get('partition_size') != partition.size or type(start) is not int or type(count) is not int
-                            or not partition.offset <= start <= partition.offset + partition.size or count < 0):
+                            or not partition.offset <= start <= partition.offset + partition.size or count < 0
+                            or type(skipped) is not int or skipped < 0):
                         raise ComputerError('所选分区或断点已变化，不能继续；请重新扫描。')
                 progress = _Progress(token, partition.size)
+                if resume is not None: progress.skipped = skipped
                 progress.processed = min(start - partition.offset, max(partition.size - 1, 0)); progress.count = count
-                token.report_progress(progress.processed, partition.size, count, phase='computer')
+                token.report_progress(progress.processed, partition.size, count, phase='computer', skipped=progress.skipped)
                 if mode == 'signature':
                     params = {'scanner': 'computer_signature', 'kind': kind, 'partition_offset': partition.offset,
                               'partition_size': partition.size, 'file_system': partition.file_system}
@@ -153,7 +156,7 @@ class ComputerScanner:
                         deletion_state=record.get('deletion_state', 'unknown'), record_id=record.get('record_id'),
                         structure_details=record.get('structure_details'),
                         modified_at=record.get('modified_at'), modified_basis=record.get('modified_basis'),
-                        scan_next=record.get('scan_next'))
+                        scan_next=record.get('scan_next'), scan_skipped=record.get('scan_skipped'))
                 reader.check(original); token.checkpoint()
                 token.report_progress(partition.size, partition.size, progress.count, phase='computer')
         except (OSError, ValueError) as error:
@@ -166,7 +169,7 @@ class ComputerScanner:
         last_mark = monotonic()
         if checkpoint is not None:
             params, identity, every = checkpoint
-            yield ScanCheckpoint(start, count, end, identity, params)
+            yield ScanCheckpoint(start, count, end, identity, params, getattr(token, 'skipped', 0))
         while position < end:
             token.checkpoint()
             block = reader.read_at(position, min(1024 * 1024, end - position))
@@ -196,7 +199,8 @@ class ComputerScanner:
                     'size': result.size, 'offset': offset, 'extents': [(offset, result.size)] if ready else [],
                     'integrity': result.integrity, 'status': 'candidate' if ready else ('failed' if result.integrity in INVALID else 'partial'),
                     'file_system': partition.file_system, 'deletion_state': 'unknown',
-                    'structure_details': getattr(result, 'details', None), 'scan_next': offset + (result.size if ready else 1)}
+                    'structure_details': getattr(result, 'details', None), 'scan_next': offset + (result.size if ready else 1),
+                    'scan_skipped': getattr(token, 'skipped', 0)}
                 skip = offset + (result.size if ready else 1); cursor = skip - base
             position += len(block)
             if skip > position: position, carry = skip, b''
@@ -205,4 +209,4 @@ class ComputerScanner:
             token.report_progress(min(searched - partition.offset, partition.size - 1), partition.size, count)
             if checkpoint is not None and monotonic() - last_mark >= every:
                 last_mark = monotonic()
-                yield ScanCheckpoint(min(searched, end), count, end, identity, params)
+                yield ScanCheckpoint(min(searched, end), count, end, identity, params, getattr(token, 'skipped', 0))
