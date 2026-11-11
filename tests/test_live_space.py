@@ -121,6 +121,8 @@ class PermissionHintTests(unittest.TestCase):
         text = permission_hint('/dev/disk4s1', 'darwin')
         self.assertIn('sudo chmod o+r /dev/disk4 /dev/disk4s1', text)
         self.assertIn('不会自行提权', text)
+        self.assertIn('所有账户都能读取', text)                  # the grant is not limited to this user
+        self.assertIn('sudo chmod o-r /dev/disk4 /dev/disk4s1 收回', text)
         self.assertIn('sudo chmod o+r /dev/disk4 /dev/rdisk4 ', permission_hint('/dev/rdisk4', 'darwin'))
         self.assertIn('sudo chmod o+r /dev/disk7 临时', permission_hint('/dev/disk7', 'darwin'))
         self.assertIn('管理员身份运行', permission_hint(r'\\.\PhysicalDrive1', 'win32'))
