@@ -153,6 +153,7 @@ class SystemFileFilterTests(unittest.TestCase):
         rows = [('/.Spotlight-V100/Store-V2/tmp.movePlan', 'tmp.movePlan'), ('/.fseventsd/0000000000a1b2c3', '0000000000a1b2c3'),
                 ('/文稿/.DS_Store', '.DS_Store'), ('/文稿/._报告.docx', '._报告.docx'),
                 ('/System Volume Information/IndexerVolumeGuid', 'IndexerVolumeGuid'),
+                ('[$MFT record 40]/System Volume Information/tracking.log', 'tracking.log'),     # NTFS
                 ('/.Trashes/501/照片.jpg', '照片.jpg'), ('/$RECYCLE.BIN/S-1-5-21/$RABC123.docx', '$RABC123.docx'),
                 ('/文稿/报告.docx', '报告.docx'), ('/文稿/my.Spotlight-V100.txt', 'my.Spotlight-V100.txt')]
         repo.add_candidates(task, [Candidate('computer_deleted', name, 'bin', 1, original_path=path) for path, name in rows]
@@ -161,7 +162,7 @@ class SystemFileFilterTests(unittest.TestCase):
         self.assertEqual(shown, ['照片.jpg', '$RABC123.docx', '报告.docx', 'my.Spotlight-V100.txt', '._looks_like_sidecar.png'])
         self.assertEqual(repo.candidate_count(task, hide_system=True), 5)
         self.assertEqual(len(repo.candidate_ids(task, hide_system=True)), 5)
-        self.assertEqual(repo.candidate_count(task), 10)
+        self.assertEqual(repo.candidate_count(task), 11)
         with self.assertRaises(ValueError):
             repo.candidate_count(task, hide_system='yes')
 

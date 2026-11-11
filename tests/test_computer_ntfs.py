@@ -38,6 +38,30 @@ class NtfsDeletedRecordTests(unittest.TestCase):
         self.assertEqual(self.content(fixture, row), expected)
         self.assertTrue(all(offset >= fixture.offset for offset, _ in row['extents']))
 
+    def test_parent_folders_come_only_from_in_use_directory_records(self):
+        fixture = NTFSFixture()
+        directory = lambda number, name, parent=5, sequence=1: fixture.write_record(
+            number, [resident_attr(0x30, file_name(name, parent, flags=0x10000000))], in_use=True, directory=True,
+            sequence=sequence)
+        directory(8, 'System Volume Information')
+        directory(9, '文稿'); directory(10, '项目 A', parent=9)
+        fixture.write_record(11, [resident_attr(0x30, file_name('已删除', flags=0x10000000))], directory=True)  # deleted folder
+        directory(12, '重用', sequence=2)                                                        # reused record
+        directory(13, '环', parent=14); directory(14, '路', parent=13)                            # damaged: a cycle
+        files = {17: ('IndexerVolumeGuid', 8), 18: ('报告.docx', 10), 19: ('a.txt', 11), 20: ('b.txt', 12),
+                 21: ('c.txt', 13), 22: ('root.txt', 5), 23: ('far.txt', 999)}
+        for number, (name, parent) in files.items():
+            fixture.write_record(number, [resident_attr(0x30, file_name(name, parent)), resident_attr(0x80, b'x')])
+        paths = {row['record_id']: row['original_path'] for row in self.scan(fixture)}   # deleted folders are not listed
+        self.assertEqual(paths, {
+            17: '[$MFT record 17]/System Volume Information/IndexerVolumeGuid',
+            18: '[$MFT record 18]/文稿/项目 A/报告.docx',
+            19: '[$MFT record 19]/[NTFS 目录 11]/a.txt',
+            20: '[$MFT record 20]/[NTFS 目录 12]/b.txt',
+            21: '[$MFT record 21]/[NTFS 目录 13]/路/环/c.txt',
+            22: '[$MFT record 22]/root.txt',
+            23: '[$MFT record 23]/[NTFS 目录 999]/far.txt'})
+
     def test_resident_data_crossing_sector_trailer_uses_original_usa_bytes(self):
         fixture = NTFSFixture()
         expected = self.add_file(fixture, content=bytes(range(256)) * 2)

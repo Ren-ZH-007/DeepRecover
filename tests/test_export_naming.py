@@ -55,6 +55,8 @@ class RelativePartsTests(unittest.TestCase):
                          ('Users', 'Ren', 'a.doc'))
         self.assertEqual(relative_parts(named('r.pdf', '[$MFT record 9]/r.pdf', 'computer_deleted', 'pdf')),
                          ('r.pdf',))
+        self.assertEqual(relative_parts(named('r.pdf', '[$MFT record 9]/[NTFS 目录 40]/项目/r.pdf', 'computer_deleted', 'pdf')),
+                         ('项目', 'r.pdf'))
 
     def test_synthetic_names_stay_opaque(self):
         for source in ('signature_scan', 'computer_signature', None):
