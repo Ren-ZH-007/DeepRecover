@@ -25,8 +25,9 @@ def permission_hint(path, platform=None):
         match = re.fullmatch(r'/dev/r?(disk\d+)(s\d+)?', path)
         nodes = ' '.join(dict.fromkeys(('/dev/' + match.group(1), path))) if match else path
         return (f'没有读取 {path} 的权限：macOS 只允许管理员读取磁盘设备，本程序不会自行提权。'
-                f'可在“终端”运行 sudo chmod o+r {nodes} 临时允许读取（拔出设备后自动恢复），'
-                '再点“重新检测当前来源”；也可以先用 dd 把磁盘复制成镜像，再选择镜像。')
+                f'可在“终端”运行 sudo chmod o+r {nodes} 临时允许读取，再点“重新检测当前来源”。'
+                f'注意：这期间本机所有账户都能读取整块磁盘；扫描结束后运行 sudo chmod o-r {nodes} 收回'
+                '（拔出设备也会恢复）。也可以先用 dd 把磁盘复制成镜像，再选择镜像。')
     if platform == 'win32':
         return '没有读取此磁盘的权限：Windows 只允许管理员读取磁盘设备。请右键以管理员身份运行 DeepRecover 后重新检测。'
     return f'没有读取 {path} 的权限：请用有权读取磁盘设备的账户运行，或先把磁盘复制成镜像再选择镜像。'
